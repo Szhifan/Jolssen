@@ -1,0 +1,20 @@
+{
+  "dataset_info": {
+    "type_of_response": "Source Dependent Response",
+    "grade_level": 10,
+    "subject": "English Language Arts",
+    "training_set_size": 1738,
+    "final_evaluation_set_size": 580,
+    "average_length_of_responses": 50,
+    "scoring_measures": ["Score1", "Score2"],
+    "final_score_basis": "Score1",
+    "inter_rater_reliability_score": "Score2",
+    "rubric_range": [0, 2]
+  },
+  "rubrics": {
+    "2": "The response demonstrates: a thoughtful and thorough examination of the text, uses information to move beyond the boundaries of the text, possible consideration of how, why or for whom the text was written, an ability to evaluate explicit and implicit information and/or makes insightful judgments about the text, possible evaluation of the author’s craft, including literary devices and/or a projection of the implications raised.",
+    "1": "The response demonstrates: sufficient, though limited, examination of the text, some attempt to use information to move beyond the boundaries of the text, possible consideration of how, why, or for whom the text was written, some ability to evaluate explicit and implicit information and/or makes plausible judgments about the text, possible evaluation of the author’s craft, including literary devices and/or a projection of the implications raised.",
+    "0": "The response demonstrates: a cursory examination of the text, does not move beyond the boundaries of the text, little or no consideration of how, why, or for whom the text was written, little or no ability to evaluate explicit and implicit information and/or makes superficial judgments about the text, the author’s craft, including literary devices and/or a projection of the implications raised, possible simplistic, unsupported, illogical, vague, and/or irrelevant information."
+  },
+  "question": "Explain the significance of the word “invasive” to the rest of the article. Support your response with information from the article."
+}

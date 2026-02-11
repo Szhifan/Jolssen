@@ -1,0 +1,439 @@
+{
+  "1": {
+    "dataset_info": {
+      "type_of_response": "Source Dependent Response",
+      "grade_level": 10,
+      "subject": "Science",
+      "training_set_size": 1672,
+      "final_evaluation_set_size": 558,
+      "average_length_of_responses": 50,
+      "scoring_measures": [
+        "Score1",
+        "Score2"
+      ],
+      "final_score_basis": "Score1",
+      "inter_rater_reliability_score": "Score2",
+      "rubric_range": [
+        0,
+        3
+      ]
+    },
+    "general_scoring_rubrics": {
+      "3": "The response is an excellent answer to the question. It is correct, complete, and appropriate and contains elaboration, extension, and/or evidence of higher-order thinking and relevant prior knowledge. There is no evidence of misconceptions. Minor errors will not necessarily lower the score.",
+      "2": "The response is a proficient answer to the question. It is generally correct, complete, and appropriate, although minor inaccuracies may appear. There may be limited evidence of elaboration, extension, higher-order thinking, and relevant prior knowledge, or there may be significant evidence of these traits but other flaws (e.g., inaccuracies, omissions, inappropriateness) may be more than minor.",
+      "1": "The response is a marginal answer to the question. While it may contain some elements of a proficient response, it is inaccurate, incomplete, and/or inappropriate. There is little evidence, if any, of elaboration, extension, higher-order thinking, or relevant prior knowledge. There may be evidence of significant misconceptions.",
+      "0": "The response, though possibly on topic, is an unsatisfactory answer to the question. It may fail to address the question, or it may address the question in a very limited way. There may be no evidence of elaboration, extension, higher-order thinking, or relevant prior knowledge. There may be evidence of serious misconceptions."
+    },
+    "acid_rain_rubrics": {
+      "possible_correct_responses": [
+        "Amount of vinegar used in each container",
+        "Type of vinegar used in each container",
+        "Materials to test",
+        "Size/surface area of material samples",
+        "Duration of rinsing in distilled water",
+        "Drying method",
+        "Size/type of container",
+        "Other acceptable details"
+      ]
+    },
+    "rubrics": {
+      "3": "The response describes three additional pieces of information that would be needed to accurately replicate the experiment.",
+      "2": "The response describes two additional pieces of information that would be needed to accurately replicate the experiment.",
+      "1": "The response describes one additional piece of information that would be needed to accurately replicate the experiment.",
+      "0": "The response describes little or no accurate or relevant information from the acid rain investigation."
+    },
+    "question": "After reading the group\u2019s procedure, describe what additional information you would need in order to replicate the experiment. Make sure to include at least three pieces of information.",
+    "sample_solution": [
+      "To replicate the experiment, I need to know the specific type of vinegar used, the exact volume of vinegar added to each sample, and the duration for which the samples were submerged.",
+      "I would require the size and shape of the samples being tested, the precise amount of vinegar to use, and whether the containers need to be covered during the experiment.",
+      "Important information missing includes the temperature at which the experiment is conducted, the type of samples utilized, and the amount of time the samples should remain in the vinegar.",
+      "To accurately replicate the experiment, I need details on the types of materials tested, the concentration of vinegar used, and the conditions under which the samples were stored.",
+      "Key additional information includes the dimensions of each container, the mass of the samples, and how often the samples should be checked during the experiment.",
+      "I would need clarification on the specific kind of vinegar, the quantity of vinegar required for each sample, and what measurements should be taken after the experiment.",
+      "For replication purposes, it's crucial to know the environmental conditions during the experiment, the volume of vinegar used, and the specific samples being tested.",
+      "To fully replicate the experiment, I would need the exact dimensions of the containers, the specific samples used, and the duration for which they should be left in vinegar.",
+      "Additional necessary information includes the method of measuring the samples, the type of vinegar, and any steps for rinsing the samples after exposure.",
+      "In order to replicate the experiment, I would require the volume of vinegar used, the type of samples included, and detailed instructions on the rinsing process after the vinegar exposure."
+    ]
+  },
+  "2": {
+    "dataset_info": {
+      "type_of_response": "Source Dependent Response",
+      "grade_level": 10,
+      "subject": "Science",
+      "training_set_size": 1278,
+      "final_evaluation_set_size": 426,
+      "average_length_of_responses": 50,
+      "scoring_measures": [
+        "Score1",
+        "Score2"
+      ],
+      "final_score_basis": "Score1",
+      "inter_rater_reliability_score": "Score2",
+      "rubric_range": [
+        0,
+        3
+      ]
+    },
+    "rubrics": {
+      "3": "The response draws a valid conclusion supported by the student\u2019s data and describes two ways the student could have improved the experimental design and/or the validity of the results.",
+      "2": "The response draws a valid conclusion supported by the student\u2019s data and describes one way the student could have improved the experimental design and/or the validity of the results. -or- The response describes two ways the student could have improved the experimental design and/or the validity of the results but fails to draw or incorrectly draws a conclusion from the student\u2019s data.",
+      "1": "The response draws a valid conclusion supported by the student\u2019s data but fails to describe, or incorrectly describes, how the student could have improved the experimental design and/or the validity of the results. -or- The response describes one way the student could have improved the experimental design and/or the validity of the results but fails to draw or incorrectly draws a conclusion from the student\u2019s data.",
+      "0": "The response provides little or no correct information from the polymer investigation."
+    },
+    "polymer_investigation_rubrics": {
+      "possible_conclusions": [
+        "Plastic sample B has more stretchability than the other polymer plastics.",
+        "Plastic sample A has the least amount of stretchability compared to the other polymer plastics.",
+        "Not all polymer plastics have the same stretchability.",
+        "Different polymer plastics have different stretchability (and are therefore suited for different applications).",
+        "A reasonable conclusion cannot be drawn due to procedural errors.",
+        "Other reasonable conclusions"
+      ],
+      "possible_design_improvements": [
+        "Provide the before and after measurements for length (Did the samples all start out the same size?).",
+        "Make sure the samples are all of the same thickness. Variations in thickness could have caused variations in stretchability.",
+        "Perform additional trials. Some samples have similar stretchability; two trials may not be enough to be conclusive.",
+        "Indicate how many weights were added to the clamps (Was it the same number for each sample?).",
+        "Other acceptable responses"
+      ]
+    },
+    "question": "a. Draw a conclusion based on the student\u2019s data. b. Describe two ways the student could have improved the experimental design and/or validity of the results.",
+    "sample_solution": [
+      "Based on the student's data, the experiment indicates that the type of material affects the mass change after exposure to vinegar; improving the experimental design could be achieved by ensuring consistent sample sizes and conducting multiple trials for reliability.",
+      "The student's data suggests that the material's response to vinegar is significant, and to enhance the experiment's validity, they could standardize the sample sizes and conduct the experiment in a controlled environment.",
+      "Based on the student's findings, it appears that the time of exposure impacts the results; increasing the number of trials and recording environmental conditions could strengthen the experimental design.",
+      "The data indicates a correlation between material type and mass loss in vinegar, and improving the design could involve using a larger sample size and specifying the concentration of vinegar used.",
+      "From the results, we can conclude that different materials react variably to vinegar; to improve validity, the student should implement random sampling and ensure all materials are of uniform size.",
+      "The evidence from the student's experiment implies that the material choice plays a crucial role; to enhance the experiment, they could utilize a control group and specify the duration of exposure to vinegar.",
+      "The experiment shows that vinegar affects materials differently, and it could be improved by ensuring consistent environmental conditions and measuring the temperature throughout the experiment.",
+      "According to the data, the type of material significantly influences the mass change; two improvements could include increasing the number of trials and providing clearer definitions for each material used.",
+      "The student's conclusion suggests varying effects of vinegar on different materials; enhancing the experiment could include more precise measurements and a detailed protocol for rinsing samples after exposure.",
+      "The results suggest that the material's reaction to vinegar differs, and to improve the experimental design, the student could ensure that all samples are stored under identical conditions and document their initial weights more accurately.",
+      "The student's findings indicate significant variance based on material type; to enhance validity, they should perform blind trials and use a consistent volume of vinegar across all samples."
+    ]
+  },
+  "3": {
+    "dataset_info": {
+      "type_of_response": "Source Dependent Response",
+      "grade_level": 10,
+      "subject": "English Language Arts",
+      "training_set_size": 1891,
+      "final_evaluation_set_size": 631,
+      "average_length_of_responses": 50,
+      "scoring_measures": [
+        "Score1",
+        "Score2"
+      ],
+      "final_score_basis": "Score1",
+      "inter_rater_reliability_score": "Score2",
+      "rubric_range": [
+        0,
+        2
+      ]
+    },
+    "rubrics": {
+      "2": "The response demonstrates an exploration or development of the ideas presented in the text; a strong conceptual understanding by the inclusion of specific relevant information from the text; an extension of ideas that may include extensive and/or insightful inferences, connections between ideas in the text, and references to prior knowledge and/or experiences.",
+      "1": "The response demonstrates some exploration or development of ideas presented in the text; a fundamental understanding by the inclusion of some relevant information from the text; an extension of ideas that lacks depth, although may include some inferences, connections between ideas in the text, or references to prior knowledge and/or experiences.",
+      "0": "The response demonstrates limited or no exploration or development of ideas presented in the text; limited or no understanding of the text, may be illogical, vague, or irrelevant; possible incomplete or limited inferences, connections between ideas in the text, or references to prior knowledge and/or experiences."
+    },
+    "question": "Explain how pandas in China are similar to koalas in Australia and how they both are different from pythons. Support your response with information from the article.",
+    "sample_solution": [
+      "Pandas and koalas are both iconic, arboreal mammals that primarily consume vegetation, but they differ from pythons, which are reptiles that are carnivorous and rely on hunting for food.",
+      "While both pandas and koalas are specialized feeders with a diet focused on bamboo and eucalyptus respectively, pythons are non-vegetarian, using constriction to capture their prey.",
+      "Pandas and koalas share a habitat preference for forested areas and have a slow reproductive rate, unlike pythons, which are highly adaptable and have diverse reproductive strategies.",
+      "Pandas and koalas represent different evolutionary adaptations to their environments through their herbivorous diets, whereas pythons are part of a distinct lineage of reptiles that exhibit predatory behavior.",
+      "Both pandas and koalas are known for their distinctive appearance and gentle nature, contrasting sharply with pythons, which are often viewed as more aggressive predators.",
+      "In addition to their shared herbivorous diets, pandas and koalas are both considered vulnerable species, while pythons usually have a more stable population due to their adaptability.",
+      "Pandas are native to China and are symbolically significant in their culture, while koalas are native to Australia; in contrast, pythons are widespread and do not have the same cultural associations.",
+      "Both pandas and koalas are predominantly solitary animals that spend much of their time in trees, whereas pythons can be more social and are often found in varied habitats on the ground.",
+      "Pandas and koalas have developed unique physiological traits to digest their fibrous diets, unlike pythons, which have a highly evolved digestive system to process animal matter.",
+      "Finally, while pandas and koalas are both subject to conservation efforts due to habitat loss, pythons are often regarded differently and are less frequently the focus of such initiatives."
+    ]
+  },
+  "4": {
+    "dataset_info": {
+      "type_of_response": "Source Dependent Response",
+      "grade_level": 10,
+      "subject": "English Language Arts",
+      "training_set_size": 1738,
+      "final_evaluation_set_size": 580,
+      "average_length_of_responses": 50,
+      "scoring_measures": [
+        "Score1",
+        "Score2"
+      ],
+      "final_score_basis": "Score1",
+      "inter_rater_reliability_score": "Score2",
+      "rubric_range": [
+        0,
+        2
+      ]
+    },
+    "rubrics": {
+      "2": "The response demonstrates: a thoughtful and thorough examination of the text, uses information to move beyond the boundaries of the text, possible consideration of how, why or for whom the text was written, an ability to evaluate explicit and implicit information and/or makes insightful judgments about the text, possible evaluation of the author\u2019s craft, including literary devices and/or a projection of the implications raised.",
+      "1": "The response demonstrates: sufficient, though limited, examination of the text, some attempt to use information to move beyond the boundaries of the text, possible consideration of how, why, or for whom the text was written, some ability to evaluate explicit and implicit information and/or makes plausible judgments about the text, possible evaluation of the author\u2019s craft, including literary devices and/or a projection of the implications raised.",
+      "0": "The response demonstrates: a cursory examination of the text, does not move beyond the boundaries of the text, little or no consideration of how, why, or for whom the text was written, little or no ability to evaluate explicit and implicit information and/or makes superficial judgments about the text, the author\u2019s craft, including literary devices and/or a projection of the implications raised, possible simplistic, unsupported, illogical, vague, and/or irrelevant information."
+    },
+    "question": "Explain the significance of the word \u201cinvasive\u201d to the rest of the article. Support your response with information from the article.",
+    "sample_solution": [
+      "The term 'invasive' highlights the detrimental impact of non-native species on local ecosystems, as discussed in the article, where it details how these species can outcompete indigenous flora and fauna.",
+      "Invasive species are significant in the article because they disrupt the balance of ecosystems, leading to loss of biodiversity and altered habitats.",
+      "The word 'invasive' underscores the urgency of addressing environmental management strategies, as highlighted in the article's examples of successful eradication efforts.",
+      "By defining species as 'invasive', the article emphasizes their potential to cause ecological harm, which is critical for understanding the need for conservation measures.",
+      "The significance of 'invasive' in the article relates to how these species can threaten agricultural productivity, as illustrated by specific case studies presented.",
+      "The article uses 'invasive' to frame the narrative around the ecological crisis, showing how these organisms can alter food webs and ecosystem services.",
+      "The term 'invasive' is pivotal in the article as it categorizes species that pose significant threats to native biodiversity, urging readers to consider their environmental impact.",
+      "The significance of 'invasive' is evident in the article's discussion of the economic costs associated with managing these species, highlighting their broader implications for society.",
+      "In the article, 'invasive' serves as a critical descriptor that informs policy discussions aimed at mitigating the risks associated with these species in various environments.",
+      "The article's use of 'invasive' is crucial as it sets the stage for understanding the complex interactions between species and their environments, ultimately advocating for informed ecological practices."
+    ]
+  },
+  "5": {
+    "rubrics": {
+      "3": "Four key elements",
+      "2": "Three key elements",
+      "1": "One or two key elements",
+      "0": "Other"
+    },
+    "dataset_info": {
+      "type_of_response": "Non-Source Dependent Response",
+      "grade_level": 10,
+      "subject": "Biology",
+      "training_set_size": 1795,
+      "final_evaluation_set_size": 599,
+      "average_length_of_responses": 60,
+      "scoring_measures": [
+        "Score1",
+        "Score2"
+      ],
+      "final_score_basis": "Score1",
+      "inter_rater_reliability_score": "Score2",
+      "rubric_range": [
+        0,
+        3
+      ]
+    },
+    "key_elements_of_protein_synthesis": [
+      "mRNA exits nucleus via nuclear pore",
+      "mRNA travels through the cytoplasm to the ribosome or enters the rough endoplasmic reticulum",
+      "mRNA bases are read in triplets called codons (by rRNA)",
+      "tRNA carrying the complementary anticodon recognizes the codon of the mRNA",
+      "The corresponding amino acids on the other end of the tRNA are bonded to adjacent tRNA\u2019s amino acids",
+      "A new corresponding amino acid is added to the tRNA",
+      "Amino acids are linked together to make a protein beginning with a START codon in the P site (initiation)",
+      "Amino acids continue to be linked until a STOP codon is read on the mRNA in the A site (elongation and termination)"
+    ],
+    "question": "Starting with mRNA leaving the nucleus, list and describe four major steps involved in protein synthesis.",
+    "sample_solution": [
+      "The first step in protein synthesis involves the mRNA exiting the nucleus and entering the cytoplasm, where it serves as a template for protein assembly.",
+      "Next, ribosomes bind to the mRNA, reading its sequence in sets of three nucleotides called codons, which dictate the specific amino acids to be added.",
+      "During the third step, transfer RNA (tRNA) molecules bring the corresponding amino acids to the ribosome, matching their anticodons with the mRNA codons to ensure the correct sequence.",
+      "Finally, the ribosome catalyzes the formation of peptide bonds between adjacent amino acids, elongating the polypeptide chain until a stop codon is reached, completing the protein synthesis process."
+    ]
+  },
+  "6": {
+    "rubrics": {
+      "3": "Three key elements",
+      "2": "Two key elements",
+      "1": "One key element",
+      "0": "Other"
+    },
+    "dataset_info": {
+      "type_of_response": "Non-Source Dependent Response",
+      "grade_level": 10,
+      "subject": "Biology",
+      "training_set_size": 1797,
+      "final_evaluation_set_size": 599,
+      "average_length_of_responses": 50,
+      "scoring_measures": [
+        "Score1",
+        "Score2"
+      ],
+      "final_score_basis": "Score1",
+      "inter_rater_reliability_score": "Score2",
+      "rubric_range": [
+        0,
+        3
+      ]
+    },
+    "key_elements_of_cell_membrane_processes": [
+      "Selective permeability allows certain substances to cross the membrane",
+      "Passive transport moves substances from high to low concentration",
+      "Osmosis is the diffusion of water across the membrane",
+      "Facilitated diffusion uses specific pathways for particle movement",
+      "Active transport uses energy to move substances against the concentration gradient",
+      "Pumps move charged particles like sodium and potassium using energy and carrier proteins",
+      "Membrane-assisted transport via vesicle fusion (exocytosis)",
+      "Membrane-assisted transport by engulfing substances (endocytosis)",
+      "Phagocytosis involves vesicle formation around large molecules",
+      "Pinocytosis involves vesicle formation around liquid droplets",
+      "Protein channels enable specific molecules to enter or exit the cell"
+    ],
+    "question": "List and describe three processes used by cells to control the movement of substances across the cell membrane.",
+    "sample_solution": [
+      "Cells use passive transport, which allows substances to move across the cell membrane along their concentration gradient without the need for energy, such as when oxygen diffuses into a cell.",
+      "Active transport is a process that requires energy to move substances against their concentration gradient, exemplified by the sodium-potassium pump that maintains cellular ion balance.",
+      "Facilitated diffusion employs specific transport proteins to help larger or polar molecules, like glucose, cross the cell membrane more easily without expending energy.",
+      "Endocytosis is a process where cells engulf large particles or substances by wrapping them in the cell membrane, allowing for the intake of materials such as nutrients or pathogens.",
+      "Exocytosis is the mechanism by which cells expel materials, such as waste products or hormones, by packaging them in vesicles that fuse with the cell membrane to release their contents outside the cell.",
+      "Osmosis is the specialized diffusion of water molecules through a selectively permeable membrane, which is vital for maintaining cellular hydration and homeostasis.",
+      "Pinocytosis is a form of endocytosis where cells ingest extracellular fluid and dissolved solutes, effectively sampling the surrounding environment.",
+      "Receptor-mediated endocytosis allows cells to selectively take in specific molecules based on receptor-ligand interactions, enhancing the efficiency of nutrient uptake.",
+      "Simple diffusion enables small, nonpolar molecules, like carbon dioxide, to pass directly through the lipid bilayer of the cell membrane without assistance.",
+      "Transport proteins, such as channels and carriers, facilitate the movement of ions and polar molecules across the cell membrane, ensuring that essential substances can enter or exit the cell efficiently."
+    ]
+  },
+  "7": {
+    "rubrics": {
+      "2": "Identifies one character trait of Rose and includes story details that adequately support the answer, related to the conversations with Anna or Aunt Kolab.",
+      "1": "Identifies one character trait of Rose.",
+      "0": "No character trait of Rose is identified."
+    },
+    "dataset_info": {
+      "type_of_response": "Source Dependent Response",
+      "grade_level": 10,
+      "subject": "English",
+      "training_set_size": 1799,
+      "final_evaluation_set_size": 601,
+      "average_length_of_responses": 50,
+      "scoring_measures": [
+        "Score1",
+        "Score2"
+      ],
+      "final_score_basis": "Score1",
+      "inter_rater_reliability_score": "Score2",
+      "rubric_range": [
+        0,
+        2
+      ]
+    },
+    "question": "Identify ONE trait that can describe Rose based on her conversations with Anna or Aunt Kolab. Include ONE detail from the story that supports your answer.",
+    "sample_solution": [
+      "One trait that describes Rose is her empathy, which is evident when she comforts Anna about her struggles, showing she cares deeply for her friends.",
+      "Rose can be described as supportive, as she encourages Aunt Kolab to pursue her passion despite facing challenges.",
+      "One trait that characterizes Rose is her resilience, illustrated by her determination to help Anna through difficult situations.",
+      "Rose shows her kindness by offering to help Aunt Kolab with her tasks, reflecting her willingness to assist others in need.",
+      "A defining trait of Rose is her optimism, which shines through in her conversations with Anna as she always looks for the silver lining in tough situations.",
+      "Rose exhibits a nurturing quality, demonstrated by how she takes the time to listen to Anna's problems and offers thoughtful advice.",
+      "One trait that encapsulates Rose is her loyalty, as she consistently stands by Anna and Aunt Kolab during their hardships.",
+      "Rose can be described as insightful, which is evident when she gives Anna advice that helps her see her own strength.",
+      "One characteristic of Rose is her openness, highlighted by her ability to share her own experiences with Aunt Kolab to foster connection.",
+      "Rose is portrayed as a problem-solver, evident in her conversations where she suggests practical solutions to the dilemmas faced by Anna and Aunt Kolab."
+    ]
+  },
+  "8": {
+    "rubrics": {
+      "2": "Proficient: The response fulfills all the requirements of the task. The information given is text-based and relevant to the task.",
+      "1": "Partially Proficient: The response fulfills some of the requirements of the task, but some of the information may be too general, too simplistic, or not supported by the text.",
+      "0": "Not Proficient: The response does not fulfill the requirements of the task because it contains information that is inaccurate, incomplete, and/or missing altogether."
+    },
+    "dataset_info": {
+      "type_of_response": "Source Dependent Response",
+      "grade_level": 10,
+      "subject": "English",
+      "training_set_size": 1799,
+      "final_evaluation_set_size": 601,
+      "average_length_of_responses": 50,
+      "scoring_measures": [
+        "Score1",
+        "Score2"
+      ],
+      "final_score_basis": "Score1",
+      "inter_rater_reliability_score": "Score2",
+      "rubric_range": [
+        0,
+        2
+      ]
+    },
+    "question": "During the story, the reader gets background information about Mr. Leonard. Explain the effect that background information has on Paul. Support your response with details from the story.",
+    "sample_solution": [
+      "The background information about Mr. Leonard helps Paul understand the pressures and expectations placed upon him, ultimately leading to a feeling of empathy and connection that influences his actions throughout the story.",
+      "Learning about Mr. Leonard's past experiences and struggles allows Paul to recognize the complexity of his character, which deepens his admiration and respect for him.",
+      "The details of Mr. Leonard's life give Paul a perspective on resilience and determination, motivating him to push through his own challenges in the story.",
+      "Mr. Leonard's background information reveals the sacrifices he made for his family, which prompts Paul to reflect on his own values and priorities.",
+      "Understanding Mr. Leonard's difficulties fosters a sense of compassion in Paul, leading him to act with more kindness and understanding towards others.",
+      "The insights into Mr. Leonard's character shape Paul's perception of authority figures, making him question societal norms and expectations.",
+      "As Paul learns about Mr. Leonard's hardships, he becomes increasingly motivated to succeed, seeing him as a role model in overcoming adversity.",
+      "Mr. Leonard's background serves as a cautionary tale for Paul, highlighting the consequences of neglecting one's dreams and aspirations.",
+      "The revelations about Mr. Leonard's life journey inspire Paul to pursue his own passions more fervently, illustrating the impact of mentorship and guidance.",
+      "The background information about Mr. Leonard allows Paul to confront his own insecurities and ambitions, ultimately leading to significant personal growth throughout the narrative."
+    ]
+  },
+  "9": {
+    "rubrics": {
+      "2": "Proficient: The response fulfills all the requirements of the task. The information given is text-based and relevant to the task.",
+      "1": "Partially Proficient: The response fulfills some of the requirements of the task, but some of the information may be too general, too simplistic, or not supported by the text.",
+      "0": "Not Proficient: The response does not fulfill the requirements of the task because it contains information that is inaccurate, incomplete, and/or missing altogether."
+    },
+    "dataset_info": {
+      "type_of_response": "Source Dependent Response",
+      "grade_level": 10,
+      "subject": "English",
+      "training_set_size": 1798,
+      "final_evaluation_set_size": 600,
+      "average_length_of_responses": 40,
+      "scoring_measures": [
+        "Score1",
+        "Score2"
+      ],
+      "final_score_basis": "Score1",
+      "inter_rater_reliability_score": "Score2",
+      "rubric_range": [
+        0,
+        2
+      ]
+    },
+    "question": "How does the author organize the article? Support your response with details from the article.",
+    "sample_solution": [
+      "The author organizes the article by presenting a clear introduction that outlines the main topic, followed by distinct sections that delve into various subtopics, supported by relevant examples.",
+      "In the article, the author employs a chronological structure, first discussing the background information and then detailing the evolution of the main arguments through sequential events.",
+      "The author uses a thematic approach in the article, dividing the content into sections based on specific themes, which allows for a deeper exploration of each concept.",
+      "The organization of the article is methodical, with an initial overview followed by clearly labeled sections that correspond to different aspects of the subject matter.",
+      "The article is structured around a problem-solution framework, where the author first identifies key issues and then systematically proposes solutions in subsequent sections.",
+      "In the article, the author adopts a compare-and-contrast format, juxtaposing different viewpoints and studies to highlight the complexities of the topic.",
+      "The author organizes the article using a cause-and-effect model, presenting the reasons behind certain phenomena followed by their consequences.",
+      "The article is organized in a question-and-answer format, with each section addressing a specific question related to the main topic, which aids reader comprehension.",
+      "The author utilizes a narrative style in the article, weaving personal anecdotes and case studies throughout to illustrate the key points and enhance engagement.",
+      "The article is structured in a logical sequence, beginning with foundational concepts and progressively introducing more complex ideas, facilitating a gradual understanding of the subject."
+    ]
+  },
+  "10": {
+    "rubrics": {
+      "2": "The response uses the results from the experiment to describe the best paint color for the doghouse by choosing a color and: (1) describing how that color might affect the inside of the doghouse, and (2) using results from the experiment to support the description.",
+      "1": "The response chooses a color and describes how that color might affect the inside of the doghouse BUT the results from the experiment are missing \u2014OR\u2014 the response chooses a color and includes results from the experiment BUT the description of how that color might affect the inside of the doghouse is missing.",
+      "0": "The response demonstrates little or no understanding of the Content Standard."
+    },
+    "dataset_info": {
+      "type_of_response": "Source Dependent Response",
+      "grade_level": 8,
+      "subject": "Science",
+      "training_set_size": 1640,
+      "final_evaluation_set_size": 548,
+      "average_length_of_responses": 60,
+      "scoring_measures": [
+        "Score1",
+        "Score2"
+      ],
+      "final_score_basis": "Score1",
+      "inter_rater_reliability_score": "Score2",
+      "rubric_range": [
+        0,
+        2
+      ]
+    },
+    "question": "What is the effect of different lid colors on the air temperature inside a glass jar exposed to a lamp?",
+    "sample_solution": [
+      "Lid colors can significantly influence the air temperature inside a glass jar, with darker colors absorbing more heat and resulting in higher temperatures than lighter colors.",
+      "The effect of lid color on air temperature is due to the different rates of heat absorption, where black lids tend to retain more heat than white or reflective lids.",
+      "In an experiment with a lamp, it is expected that jars with dark-colored lids will exhibit higher internal temperatures compared to those with light-colored lids due to varying absorption properties.",
+      "Different lid colors affect the air temperature inside a glass jar because darker colors absorb infrared radiation more effectively than lighter colors, leading to greater temperature increases.",
+      "Using various lid colors, one would find that black or dark lids cause higher internal temperatures in the jar than white or light-colored lids when exposed to lamp light.",
+      "The air temperature within a glass jar will likely be higher with a black lid than with a clear or white lid because of the increased heat absorption by darker surfaces.",
+      "In the presence of a lamp, jars with dark-colored lids can reach higher air temperatures compared to those with lighter-colored lids due to the differential absorption of heat energy.",
+      "The color of the lid plays a crucial role in determining the internal temperature of a glass jar exposed to light, with darker colors promoting increased heat retention.",
+      "Lid color impacts the temperature inside a jar by affecting how much light energy is absorbed, leading to darker lids heating the air inside more than lighter lids.",
+      "In a controlled environment with a lamp, jars with various colored lids will show significant temperature variations, primarily demonstrating that darker lids lead to higher internal air temperatures."
+    ]
+  }
+}

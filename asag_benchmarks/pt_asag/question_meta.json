@@ -1,0 +1,477 @@
+{
+    "36": {
+        "question": "Qual a diferen\u00e7a entre a c\u00e9lula animal e a c\u00e9lula vegetal?",
+        "sample_solution": [
+            "A c\u00e9lula animal e vegetal apresentam formato diferenciado. A c\u00e9lula animal possui formato irregular, enquanto a c\u00e9lula vegetal apresenta uma forma fixa.",
+            "A parede celular \u00e9 uma estrutura exclusiva das c\u00e9lulas vegetais. Ela corresponde a um envolt\u00f3rio externo \u00e0 membrana plasm\u00e1tica.",
+            "Nos vegetais, a c\u00e9lula apresenta, al\u00e9m da membrana plasm\u00e1tica, uma parede que a reveste externamente. Formada principalmente por celulose, essa parede celular garante maior resist\u00eancia \u00e0 c\u00e9lula vegetal, evitando a ruptura pela entrada de \u00e1gua",
+            "A c\u00e9lula animal possui formato irregular e a c\u00e9lula vegetal apresenta uma forma fixa. A c\u00e9lula vegetal possui parede celular, j\u00e1 que \u00e9 uma exclusividade. A c\u00e9lula animal tem a aus\u00eancia de vac\u00faolo, plastos e Glioxissomos.",
+            "na celula vegetal h\u00e1 cloroplasto, parede celular de celulose e vacuolo pulsatil",
+            "As c\u00e9lulas animais s\u00e3o todas aquelas que comp\u00f5em os seres vivos do reino anim\u00e1lia, composto por membrana plasm\u00e1tica, citoplasma e n\u00facleo verdadeiro. As c\u00e9lulas vegerais contem estruturas como parede celulares, plast\u00eddios e grandes vac\u00faolos",
+            "a presen\u00e7a de, vacuolos, plastos e parede celular",
+            "Entre as diferen\u00e7as que separam a c\u00e9lula vegetal da animal podemos destacar a presen\u00e7a de vac\u00faolos, plastos e parede celular. No citoplasma algumas organelas s\u00e3o comuns \u00e0s c\u00e9lulas vegetais e animais."
+        ],
+        "number_of_levels": 4,
+        "labels": [
+            0,
+            1,
+            2,
+            3
+        ],
+        "concepts": [
+            "membrana pl\u00e1sm\u00e1tica",
+            "celulose",
+            "formato irregular",
+            "forma fixa"
+        ],
+        "rubrics": {
+            "0": "Sem compreens\u00e3o: Os alunos nesta categoria demonstram uma compreens\u00e3o m\u00ednima ou inexistente das diferen\u00e7as entre as c\u00e9lulas animais e vegetais. As respostas s\u00e3o frequentemente irrelevantes, imprecisas ou totalmente incompreens\u00edveis, com muitos alunos afirmando 'n\u00e3o sei' ou fornecendo informa\u00e7\u00f5es desconectadas do tema, como a morte das c\u00e9lulas. N\u00e3o h\u00e1 reconhecimento de caracter\u00edsticas celulares claras.",
+            "1": "Compreens\u00e3o b\u00e1sica: Os alunos nesta categoria apresentam uma no\u00e7\u00e3o b\u00e1sica de que existem diferen\u00e7as entre c\u00e9lulas animais e vegetais, mas as respostas s\u00e3o superficiais e frequentemente imprecisas. Eles mencionam algumas caracter\u00edsticas, como a presen\u00e7a de cloroplastos e fun\u00e7\u00f5es gerais das c\u00e9lulas, mas sem detalhes ou clareza sobre a estrutura celular. H\u00e1 um entendimento limitado das organelas e suas fun\u00e7\u00f5es.",
+            "2": "Compreens\u00e3o intermedi\u00e1ria: Os alunos nesta categoria demonstram uma compreens\u00e3o razo\u00e1vel das diferen\u00e7as entre c\u00e9lulas animais e vegetais, mencionando caracter\u00edsticas espec\u00edficas como a parede celular, vac\u00faolos e plastos. As respostas s\u00e3o mais detalhadas e algumas explicam fun\u00e7\u00f5es, mas ainda podem carecer de precis\u00e3o em termos de terminologia cient\u00edfica e clareza. H\u00e1 uma tentativa de estabelecer compara\u00e7\u00f5es entre as c\u00e9lulas, mas com algumas imprecis\u00f5es.",
+            "3": "Compreens\u00e3o avan\u00e7ada: Os alunos nesta categoria apresentam uma compreens\u00e3o clara e detalhada das diferen\u00e7as entre c\u00e9lulas animais e vegetais. Eles discutem a presen\u00e7a de estruturas espec\u00edficas, como parede celular e cloroplastos, e explicam suas fun\u00e7\u00f5es corretamente. As respostas s\u00e3o bem organizadas, utilizando terminologia cient\u00edfica adequada, e mostram um entendimento profundo das caracter\u00edsticas e fun\u00e7\u00f5es celulares."
+        }
+    },
+    "37": {
+        "question": "Quais s\u00e3o as partes que comp\u00f5e a c\u00e9lula e suas fun\u00e7\u00f5es?",
+        "sample_solution": [
+            "MEMBRANA PLASM\u00c1TICA: O envelope externo da c\u00e9lula, que regula a troca de subt\u00e3ncias entre a c\u00e9lula e o meio externo. CITOPLASMA: um material gelatinoso interno no qual est\u00e3o mergulhados v\u00e1rios org\u00e2nulos menores. O citoplasma \u00e9 o local em que as subst\u00e2ncias que penetram na c\u00e9lula, como os nutrientes, por exemplo, sofrem tranforma\u00e7\u00f5es. N\u00daCLEO: estrutura relacionada \u00e0 coordena\u00e7\u00e3o das fun\u00e7\u00f5es da c\u00e9lula e \u00e0 multiplica\u00e7\u00e3o celular. No n\u00facleo est\u00e1 presente o DNA.",
+            "As c\u00e9lulas t\u00eam muitas partes, cada uma com uma fun\u00e7\u00e3o diferente. Algumas dessas pe\u00e7as, chamadas organelas, s\u00e3o estruturas especializadas que realizam determinadas tarefas dentro da c\u00e9lula.",
+            "A c\u00e9lula  \u00e9 constitu\u00edda de membrana celular, citoplasma e n\u00facleo. A membrana protege a c\u00e9lula e permite trocas entre ela e seu meio.O citoplasma \u00e9, geralmente, a maior parte da c\u00e9lula. Compreende a regi\u00e3o entre a membrana plasm\u00e1tica e o n\u00facleo.",
+            "Citoplasma:fica entre o n\u00facleo e a membrana plasm\u00e1tica e l\u00e1 se encontra o citosol onde fica da organelas celular Membrana plasm\u00e1tica: ela proteje e delimita a c\u00e9lula N\u00facleo: ele ret\u00e9m todas as informa\u00e7\u00f5es como o DNA e o RNA",
+            "Membrana plasm\u00e1tica: escolhe o que entra e o que sai da c\u00e9lula. Organelas:cada uma tem uma fun\u00e7\u00e3o espec\u00edfica para garantir o funcionamento adequado da c\u00e9lula.Citoplasma:parte interior da c\u00e9lula onde ficam as organelas e o n\u00facleoN\u00facleo: onde se armazena o DNA ou o RNA.",
+            "Nucleo: armazena o DNA e controla a c\u00e9lula.Citoplasma: l\u00edquido localizado entre a membrana plasm\u00e1tica e o n\u00facleo, nele se localizam as organelas e tamb\u00e9m serve de prote\u00e7\u00e3o para o n\u00facleo.Membrana plasmatica: Exerce a fun\u00e7\u00e3o de um filtro, selecionando o que entra e sai da c\u00e9lula.",
+            "A c\u00e9lula possui: n\u00facleo, onde se localiza o material gen\u00e9tico (organizado ou n\u00e3o); ret\u00edculos endoplasm\u00e1ticos, rugosos que realizam a s\u00edntese proteica e lisos respons\u00e1veis pelo transporte; mitocondria, respons\u00e1vel pela produ\u00e7\u00e3o de energia; complexo golgiense, respons\u00e1vel pela secre\u00e7\u00e3o de subst\u00e2ncias; membrana plasm\u00e1tica semi-perme\u00e1vel e entre outros",
+            "Todas as c\u00e9lulas possuem membrana celular (permeabilidade seletiva), ribossomos (s\u00edntese de prote\u00ednas), citosol (onde ocorrem as rea\u00e7\u00f5es qu\u00edmicas, preenchimento) e material gen\u00e9tico. As c\u00e9lulas animais apresentam, al\u00e9m dessas organelas: mitocondrias (respira\u00e7\u00e3o celular), ret\u00edculos endoplasm\u00e1ticos liso (transporte de subst\u00e2ncias e produ\u00e7\u00e3o de lip\u00eddios), ret\u00edculo endoplasm\u00e1tico rugoso (transporte e produ\u00e7\u00e3o de prote\u00ednas), complexo golgiense (armazenamento e secre\u00e7\u00e3o), citoesqueleto (estrutura), lisossomos (digest\u00e3o) e centr\u00edolos (flagelos e )."
+        ],
+        "number_of_levels": 4,
+        "labels": [
+            0,
+            1,
+            2,
+            3
+        ],
+        "concepts": [
+            "membrana pl\u00e1sm\u00e1tica",
+            "citoplasma",
+            "n\u00facleo"
+        ],
+        "rubrics": {
+            "0": "Sem compreens\u00e3o: Os alunos nesta categoria demonstram um conhecimento muito limitado sobre as partes da c\u00e9lula e suas fun\u00e7\u00f5es. As respostas frequentemente consistem em listas incompletas ou irrelevantes de termos sem explica\u00e7\u00f5es ou contextos adequados, como 'membrana plasm\u00e1tica' ou apenas letras. A falta de qualquer descri\u00e7\u00e3o funcional das partes da c\u00e9lula \u00e9 um sinal claro de uma compreens\u00e3o insuficiente.",
+            "1": "Compreens\u00e3o b\u00e1sica: Os alunos neste n\u00edvel apresentam um entendimento b\u00e1sico das partes da c\u00e9lula, mas suas respostas carecem de detalhes e clareza. Embora mencionem algumas partes, como 'n\u00facleo' e 'citoplasma', as descri\u00e7\u00f5es s\u00e3o superficiais e muitas vezes imprecisas, com pouca conex\u00e3o entre as fun\u00e7\u00f5es e as estruturas mencionadas. Erros comuns incluem a falta de explica\u00e7\u00f5es completas sobre como essas partes interagem ou suas fun\u00e7\u00f5es espec\u00edficas.",
+            "2": "Compreens\u00e3o intermedi\u00e1ria: Os alunos nesta categoria demonstram uma compreens\u00e3o mais s\u00f3lida das partes da c\u00e9lula e suas fun\u00e7\u00f5es, fornecendo descri\u00e7\u00f5es b\u00e1sicas e algumas conex\u00f5es funcionais. As respostas incluem explica\u00e7\u00f5es mais elaboradas, mas ainda podem apresentar erros factuais ou omiss\u00f5es importantes. A estrutura das respostas \u00e9 mais organizada, mas ainda pode carecer de profundidade em alguns aspectos.",
+            "3": "Compreens\u00e3o avan\u00e7ada: Os alunos no n\u00edvel mais alto exibem um conhecimento abrangente e detalhado das partes da c\u00e9lula e suas fun\u00e7\u00f5es. As respostas s\u00e3o bem estruturadas e incluem explica\u00e7\u00f5es claras e corretas de cada parte, mostrando uma boa compreens\u00e3o das intera\u00e7\u00f5es e fun\u00e7\u00f5es espec\u00edficas. Erros s\u00e3o raros, e a terminologia cient\u00edfica \u00e9 usada corretamente, indicando um bom dom\u00ednio do conte\u00fado."
+        }
+    },
+    "38": {
+        "question": "O corpo humano possui v\u00e1rios tipos de c\u00e9lulas que se organizam, de acordo com suas especializa\u00e7\u00f5es e fun\u00e7\u00f5es, formando os tecidos. Quais s\u00e3o as caracter\u00edsticas do tecido epitelial?",
+        "sample_solution": [
+            "O tecido epitelial apresenta as seguintes caracter\u00edsticas: falta de espa\u00e7o entre as c\u00e9lulas , falta de vasculariza\u00e7\u00e3o e excelente capacidade de renova\u00e7\u00e3o celular.",
+            "O tecido epitelial apresenta como caracter\u00edsticas principais a presen\u00e7a de pouca subst\u00e2ncia intercelular e c\u00e9lulas justapostas",
+            "O tecido epitelial \u00e9 o respons\u00e1vel por revestir todo o nosso corpo (pele), inclusive nossos \u00f3rg\u00e3os internos (\u00f3rg\u00e3os do sistema digestivo, respirat\u00f3rio e urin\u00e1rio).",
+            "A falta de espa\u00e7os entre as celulas, falta de vasculariza\u00e7\u00e3o e renova\u00e7\u00e3o celular e a capacidade de proteger o corpo da entrada de virus e baquiterias",
+            "O tecido epitelial caracteriza-se pela pouca quantidade de material intercelular e por apresentar c\u00e9lulas extremamente unidas",
+            "S\u00e3o formados por c\u00e9lulas pr\u00f3ximas, que se substituem rapidamente.",
+            "O tecido epitelial possui 3 camadas, sua regenera\u00e7\u00e3o \u00e9 r\u00e1pida, possui pouco l\u00edquido inter celular, nele se localizam as gl\u00e2ndulas sudor\u00edparas, esse tecido forma a pele.",
+            "Prote\u00e7\u00e3o, revestimento."
+        ],
+        "number_of_levels": 4,
+        "labels": [
+            0,
+            1,
+            2,
+            3
+        ],
+        "concepts": [
+            "c\u00e9lulas justapostas",
+            "revestimento",
+            "falta de espa\u00e7o entre as c\u00e9lulas"
+        ],
+        "rubrics": {
+            "0": "Sem compreens\u00e3o: Os alunos nesta categoria demonstram uma falta de compreens\u00e3o sobre as caracter\u00edsticas do tecido epitelial, muitas vezes usando respostas irrelevantes ou incoerentes. As respostas s\u00e3o frequentemente vagas, como 'n\u00e3o sei' ou cont\u00eam informa\u00e7\u00f5es incorretas ou confusas sobre o tecido, como associ\u00e1-lo a m\u00fasculos ou descrever caracter\u00edsticas que n\u00e3o s\u00e3o pertinentes.",
+            "1": "Compreens\u00e3o b\u00e1sica: Os alunos nesta categoria mostram uma compreens\u00e3o limitada das caracter\u00edsticas do tecido epitelial, mencionando algumas fun\u00e7\u00f5es b\u00e1sicas, como prote\u00e7\u00e3o, mas com erros na descri\u00e7\u00e3o das caracter\u00edsticas espec\u00edficas. As respostas podem ser incompletas ou imprecisas, como a afirma\u00e7\u00e3o de que o tecido \u00e9 'muito \u00famido' ou que 'protege os m\u00fasculos', indicando uma confus\u00e3o entre diferentes tipos de tecidos.",
+            "2": "Compreens\u00e3o intermedi\u00e1ria: Os alunos nesta categoria demonstram uma compreens\u00e3o moderada do tecido epitelial, identificando algumas caracter\u00edsticas corretas, como a presen\u00e7a de c\u00e9lulas justapostas e pouca subst\u00e2ncia intercelular. No entanto, eles podem falhar em detalhar a fun\u00e7\u00e3o geral do tecido ou em fazer conex\u00f5es com suas aplica\u00e7\u00f5es no corpo humano, como a prote\u00e7\u00e3o e revestimento, ainda que algumas fun\u00e7\u00f5es sejam mencionadas.",
+            "3": "Compreens\u00e3o avan\u00e7ada: Os alunos nesta categoria apresentam uma compreens\u00e3o s\u00f3lida das caracter\u00edsticas do tecido epitelial, descrevendo com precis\u00e3o a falta de espa\u00e7o entre as c\u00e9lulas, a aus\u00eancia de vasculariza\u00e7\u00e3o e a capacidade de renova\u00e7\u00e3o celular. As respostas s\u00e3o detalhadas e abrangem v\u00e1rias fun\u00e7\u00f5es do tecido, incluindo prote\u00e7\u00e3o contra pat\u00f3genos e a forma\u00e7\u00e3o de barreiras, demonstrando um entendimento claro e articulado do tema."
+        }
+    },
+    "39": {
+        "question": "Correr, estudar e dan\u00e7ar s\u00e3o atividades que necessitam de muita energia e que podemos realizar gra\u00e7as \u00e0s nossas c\u00e9lulas que trabalham sem parar. Como chamamos o conjunto de rea\u00e7\u00f5es qu\u00edmicas que ocorrem ao n\u00edvel das c\u00e9lulas e como ele acontece?",
+        "sample_solution": [
+            "O metabolismo celular \u00e9 um conjunto de rea\u00e7\u00f5es qu\u00edmicas de um organismo que fazem a produ\u00e7\u00e3o de energia para o funcionamento das c\u00e9lulas.",
+            "Conjunto de todas as rea\u00e7\u00f5es qu\u00edmicas que ocorrem nas c\u00e9lulas. Estas reac\u00e7\u00f5es s\u00e3o respons\u00e1veis pelos processos de s\u00edntese e degrada\u00e7\u00e3o dos nutrientes na c\u00e9lula e constituem a base da vida, permitindo o crescimento e reprodu\u00e7\u00e3o das c\u00e9lulas.",
+            "O metabolismo celular permite que todas as c\u00e9lulas de um organismo vivo cumpram suas fun\u00e7\u00f5es corretamente, criando a energia necess\u00e1ria para isso.",
+            "metabolismoEssas rea\u00e7\u00f5es podem estar relacionadas com a s\u00edntese de compostos org\u00e2nicos ou sua quebra para fabricar ATP e s\u00e3o todas coordenadas por enzimas. o metabolismo \u00e9 fundamental para a manuten\u00e7\u00e3o de todas as atividades do nosso organismo.",
+            "o metabolismo \u00e9 a rea\u00e7ao que precisam de ATP para ocorres e todas as celulas participam para fazer nosso corpo funcionar pelos estimulos",
+            "metabolismo celular - essas rea\u00e7\u00f5es quimicas ocorrem no organismo para gastar energia.",
+            "Metabolismo celular, pode ser dividido em anabolismo (s\u00edntese) e catabolismo (quebra).",
+            "Metabolismo, ocorre dentro de c\u00e9lulas, produz ATP (energia) e depende do alimento, da respira\u00e7\u00e3o e etc."
+        ],
+        "number_of_levels": 4,
+        "labels": [
+            0,
+            1,
+            2,
+            3
+        ],
+        "concepts": [
+            "metabolismo",
+            "transforma\u00e7\u00f5es qu\u00edmicas",
+            "energia"
+        ],
+        "rubrics": {
+            "0": "Sem compreens\u00e3o: Respostas rotuladas como 0 demonstram uma falta total de compreens\u00e3o sobre o conceito de metabolismo celular. Os alunos apresentam respostas irrelevantes ou n\u00e3o relacionadas \u00e0 pergunta, como apenas mencionar atividades f\u00edsicas ou express\u00f5es sem sentido. N\u00e3o h\u00e1 evid\u00eancia de conhecimento sobre rea\u00e7\u00f5es qu\u00edmicas ou processos celulares.",
+            "1": "Compreens\u00e3o b\u00e1sica: Respostas na categoria 1 mostram um reconhecimento b\u00e1sico do metabolismo, com alguns alunos mencionando termos relacionados como 'respira\u00e7\u00e3o celular' ou 'metabolismo'. No entanto, a compreens\u00e3o \u00e9 superficial, com erros significativos e falta de conex\u00e3o clara entre os processos qu\u00edmicos e a produ\u00e7\u00e3o de energia. Os alunos podem utilizar algumas palavras-chave, mas sem uma explica\u00e7\u00e3o coesa ou detalhada.",
+            "2": "Compreens\u00e3o intermedi\u00e1ria: As respostas classificadas como 2 revelam uma compreens\u00e3o moderada do metabolismo celular, onde os alunos conseguem identificar o metabolismo e algumas de suas fun\u00e7\u00f5es, como a quebra de nutrientes. Entretanto, as explica\u00e7\u00f5es carecem de profundidade e precis\u00e3o, apresentando conceitos err\u00f4neos ou confusos. Os alunos mencionam a divis\u00e3o entre anabolismo e catabolismo, mas as explica\u00e7\u00f5es podem estar incompletas ou mal formuladas.",
+            "3": "Compreens\u00e3o avan\u00e7ada: As respostas na categoria 3 demonstram uma compreens\u00e3o clara e detalhada do metabolismo celular, incluindo conceitos como anabolismo e catabolismo, al\u00e9m da produ\u00e7\u00e3o de ATP. Os alunos articulam as fun\u00e7\u00f5es das rea\u00e7\u00f5es qu\u00edmicas de maneira precisa, mostrando como elas se relacionam com a energia celular. As respostas s\u00e3o bem estruturadas e indicam um bom dom\u00ednio do assunto, com conex\u00f5es claras entre os conceitos apresentados."
+        }
+    },
+    "40": {
+        "question": "Qual a diferen\u00e7a entre fen\u00f3tipo e gen\u00f3tipo?",
+        "sample_solution": [
+            "O fen\u00f3tipo corresponde \u00e0s caracter\u00edsticas f\u00edsicas, fisiol\u00f3gicas ou comportamentais de um ser vivo. O gen\u00f3tipo corresponde \u00e0 constitui\u00e7\u00e3o gen\u00e9tica de um indiv\u00edduo.",
+            "O fen\u00f3tipo pode ser alterado (pelo o ambiente, pelos nossos h\u00e1bitos ou pela nossa vontade), enquanto o gen\u00f3tipo \u00e9 imut\u00e1vel, sendo id\u00eantico at\u00e9 o fim de nossa vida.",
+            "O gen\u00f3tipo \u00e9 a constitui\u00e7\u00e3o gen\u00e9tica de um individuo proveniente de ancestrais comuns, defini as caracter\u00edsticas da esp\u00e9cie. Fen\u00f3tipo s\u00e3o as caracter\u00edsticas fisicas, morfol\u00f3gicas e at\u00e9 comportamentais.",
+            "O gen\u00f3tipo pode ser definido como a constitui\u00e7\u00e3o gen\u00e9tica de um indiv\u00edduo, ou seja, o conjunto de genes recebidos do pai e da m\u00e3e. s\u00e3o esses genes, juntamente as influ\u00eancias do meio, que determinar\u00e3o o fenotipo de um ser.",
+            "- Gen\u00f3tipo: constitui\u00e7\u00e3o gen\u00e9tica de um indiv\u00edduo- Fen\u00f3tipo: caracter\u00edsticas fisiol\u00f3gicas, morfol\u00f3gicas e at\u00e9 mesmo comportamentais de um indiv\u00edduo.",
+            "Gen\u00f3tipo s\u00e3o as caracter\u00edsticas interiores, do DNA, fen\u00f3tipo s\u00e3o as exteriores que podem ser modificadas",
+            "genotipo - conjunto de genes fenotipo - caracteristicas visiveis que podem ser modificar",
+            "O fen\u00f3tipo corresponde \u00e0s caracter\u00edsticas f\u00edsicas, fisiol\u00f3gicas ou comportamentais de um ser vivo. O gen\u00f3tipo corresponde \u00e0 constitui\u00e7\u00e3o gen\u00e9tica de um indiv\u00edduo, que, somado a influ\u00eancias ambientais, determina seu fen\u00f3tipo. No caso do sistema sangu\u00edneo MN, por exemplo, os fen\u00f3tipos s\u00e3o os grupos M, N e MN. Os gen\u00f3tipos que correspondem a esses fen\u00f3tipos s\u00e3o, respectivamente, MM, NN e MN. Uma pessoa que possua o fen\u00f3tipo grupo sangu\u00edneo M apresenta como gen\u00f3tipo o par de genes MM."
+        ],
+        "number_of_levels": 4,
+        "labels": [
+            0,
+            1,
+            2,
+            3
+        ],
+        "concepts": [
+            "caracter\u00edsticas f\u00edsicas",
+            "gen\u00e9tica",
+            "heredit\u00e1rio",
+            "comportamento"
+        ],
+        "rubrics": {
+            "0": "Sem compreens\u00e3o: Os alunos nesta categoria demonstram uma compreens\u00e3o muito limitada do conceito de fen\u00f3tipo e gen\u00f3tipo. As respostas frequentemente cont\u00eam erros de terminologia, confus\u00f5es conceituais e falta de informa\u00e7\u00e3o relevante. Al\u00e9m disso, muitos alunos nesta categoria n\u00e3o conseguem fornecer informa\u00e7\u00f5es \u00fateis e podem at\u00e9 expressar incerteza sobre o tema.",
+            "1": "Compreens\u00e3o b\u00e1sica: Os alunos nesta categoria mostram um entendimento b\u00e1sico, mas impreciso, das defini\u00e7\u00f5es de fen\u00f3tipo e gen\u00f3tipo. As respostas incluem algumas caracter\u00edsticas, mas frequentemente s\u00e3o superficiais ou cont\u00eam erros conceituais, como a confus\u00e3o entre caracter\u00edsticas vis\u00edveis e invis\u00edveis. H\u00e1 uma tentativa de diferenciar os dois conceitos, mas a explica\u00e7\u00e3o pode carecer de detalhes ou clareza.",
+            "2": "Compreens\u00e3o intermedi\u00e1ria: Os alunos nesta categoria apresentam um entendimento mais claro e correto dos conceitos de fen\u00f3tipo e gen\u00f3tipo. Eles conseguem explicar que o fen\u00f3tipo se refere a caracter\u00edsticas que podem ser modificadas, enquanto o gen\u00f3tipo \u00e9 imut\u00e1vel. No entanto, algumas explica\u00e7\u00f5es podem ainda ser redundantes ou n\u00e3o incluir exemplos espec\u00edficos que solidifiquem ainda mais sua resposta.",
+            "3": "Compreens\u00e3o avan\u00e7ada: Os alunos nesta categoria demonstram uma compreens\u00e3o s\u00f3lida e detalhada dos conceitos de fen\u00f3tipo e gen\u00f3tipo. As respostas s\u00e3o claras e bem estruturadas, com defini\u00e7\u00f5es precisas e exemplos que ilustram a rela\u00e7\u00e3o entre os dois conceitos. Eles tamb\u00e9m reconhecem a influ\u00eancia do ambiente no fen\u00f3tipo e a imutabilidade do gen\u00f3tipo, demonstrando um entendimento profundo da mat\u00e9ria."
+        }
+    },
+    "41": {
+        "question": "O que significa transmiss\u00e3o de caracteres heredit\u00e1rios?",
+        "sample_solution": [
+            "\u00c9 a forma como as caracter\u00edsticas gen\u00e9ticas passam de pais para filhos.",
+            "\u00c9  como a transmiss\u00e3o de caracter\u00edsticas heredit\u00e1rias opera atrav\u00e9s de genes que s\u00e3o transmitidos dos pais para os filhos.",
+            "\u00e9 respons\u00e1vel pela transmiss\u00e3o de agentes gen\u00e9ticos que determinam a heran\u00e7a de caracter\u00edsticas comuns a uma determinada esp\u00e9cie.",
+            "Quer dizer que se passam as caracter\u00edsticas de pais para filhos",
+            "S\u00e3o as caracter\u00edsticas que vem dos pais, por exemplo uma pessoa tem que usar \u00f3culos mas n\u00e3o \u00e9 por problemas de vista e sim porque os pais t\u00eam esses problemas e veio do gene esse problema",
+            "Os genes de seus pais passam hereditariamente para os filhos",
+            "Transmiss\u00e3o de caracteres heredit\u00e1rios \u00e9 quando caracter\u00edsticas presentes no DNA do progenitor s\u00e3o passados para os filhos.",
+            "A transmiss\u00e3o de caracter\u00edsticas (f\u00edsicas ou psicol\u00f3gicas) que 'durarao at\u00e9 o final de nossos dias'"
+        ],
+        "number_of_levels": 4,
+        "labels": [
+            0,
+            1,
+            2,
+            3
+        ],
+        "concepts": [
+            "gen\u00e9tica",
+            "heredit\u00e1rias",
+            "pais e filhos"
+        ],
+        "rubrics": {
+            "0": "Sem compreens\u00e3o: As respostas com label 0 demonstram uma compreens\u00e3o m\u00ednima ou nenhuma sobre a transmiss\u00e3o de caracteres heredit\u00e1rios. Os alunos geralmente fornecem informa\u00e7\u00f5es irrelevantes ou incompletas, como apenas mencionar 'DNA' ou 'hereditariedade' sem contextualizar o conceito. Muitos alunos nesta categoria n\u00e3o conseguem explicar como as caracter\u00edsticas s\u00e3o transmitidas de pais para filhos, e algumas respostas s\u00e3o incoerentes ou n\u00e3o t\u00eam sentido.",
+            "1": "Compreens\u00e3o b\u00e1sica: As respostas com label 1 mostram uma compreens\u00e3o b\u00e1sica da transmiss\u00e3o de caracter\u00edsticas heredit\u00e1rias, identificando que as caracter\u00edsticas s\u00e3o passadas de pais para filhos, mas sem detalhes significativos. Os alunos frequentemente mencionam a ideia de heran\u00e7a gen\u00e9tica, por\u00e9m suas explica\u00e7\u00f5es s\u00e3o superficiais e podem carecer de precis\u00e3o cient\u00edfica. Exemplos como 'passar o DNA para seu filho' s\u00e3o comuns, mas n\u00e3o exploram como esse processo ocorre.",
+            "2": "Compreens\u00e3o intermedi\u00e1ria: As respostas com label 2 revelam uma compreens\u00e3o mais desenvolvida da transmiss\u00e3o de caracteres heredit\u00e1rios, com explica\u00e7\u00f5es que incluem a ideia de que caracter\u00edsticas espec\u00edficas (f\u00edsicas ou psicol\u00f3gicas) s\u00e3o herdadas. Os alunos tendem a mencionar a rela\u00e7\u00e3o entre pais e filhos e a heran\u00e7a de caracter\u00edsticas, mas ainda podem carecer de detalhes sobre os mecanismos gen\u00e9ticos envolvidos. Respostas nesta categoria mostram um entendimento que vai al\u00e9m do b\u00e1sico, mas n\u00e3o atinge uma explica\u00e7\u00e3o completa.",
+            "3": "Compreens\u00e3o avan\u00e7ada: As respostas com label 3 demonstram uma compreens\u00e3o s\u00f3lida e abrangente da transmiss\u00e3o de caracteres heredit\u00e1rios. Os alunos articulam claramente que caracter\u00edsticas s\u00e3o passadas atrav\u00e9s do DNA de pais para filhos e podem incluir a ideia de heran\u00e7a de caracter\u00edsticas ao longo das gera\u00e7\u00f5es. Exemplos incluem refer\u00eancias espec\u00edficas a como as caracter\u00edsticas s\u00e3o transmitidas e a inclus\u00e3o de conceitos como 'informa\u00e7\u00f5es gen\u00e9ticas'. Essas respostas s\u00e3o coerentes, bem estruturadas e mostram um n\u00edvel de conhecimento mais profundo."
+        }
+    },
+    "42": {
+        "question": "\u201cO que define o sexo na esp\u00e9cie humana s\u00e3o as caracter\u00edsticas sexuais prim\u00e1rias, ou seja, os \u00f3rg\u00e3os sexuais. Tanto os homens quanto as mulheres t\u00eam \u00f3rg\u00e3os sexuais externos e internos. Quais s\u00e3o e quais as fun\u00e7\u00f5es dos \u00f3rg\u00e3os sexuais internos do homem?",
+        "sample_solution": [
+            "A pr\u00f3stata \u00e9 uma gl\u00e2ndula que auxilia na nutri\u00e7\u00e3o dos espermatoz\u00f3ides.O epid\u00eddimo e o vasos deferentes s\u00e3o canais que auxiliam no transporte dos espermatoz\u00f3ides.E a uretra transporta a urina e o s\u00eamem para fora do organismo.",
+            "Os \u00f3rg\u00e3os internos servem para produzir e transportar os elementos necess\u00e1rios para a reprodu\u00e7\u00e3o.",
+            "S\u00e3o pr\u00f3stata, vasos deferentes , uretra e epid\u00eddimo. eles produzem, nutrem e transportam os espermatoz\u00f3ides.",
+            "Os \u00f3rg\u00e3os sexuais internos masculinos s\u00e3o: os test\u00edculos, os epid\u00eddimos, os ductos deferentes, a ves\u00edcula seminal, a pr\u00f3stata, as gl\u00e2ndulas bulbouretrais e a uretra.Ap\u00f3s a puberdade, os test\u00edculos, que s\u00e3o formados por t\u00fabulos semin\u00edferos enovelados, passam a produzir espermatozoides e testosterona. Ap\u00f3s serem formadas, essas c\u00e9lulas reprodutivas (espermatozoides) s\u00e3o dirigidas a um tubo \u00fanico, o epid\u00eddimo, onde ser\u00e3o maturados, armazenados e adquirir\u00e3o motilidade (pelo batimento flagelar) e o acrossomo (para penetrarem o ov\u00f3cito na fecunda\u00e7\u00e3o). Posteriormente, os espermatozoides ser\u00e3o transportados pelo ducto deferente onde ser\u00e3o depositados o liquido seminal e prost\u00e1tico, oriundos, respectivamente da ves\u00edcula seminal e da pr\u00f3stata. Quando este composto de l\u00edquidos e c\u00e9lulas chega a uretra, as gl\u00e2ndulas bulbouretrais secretam seus l\u00edquidos com o intuito de limpar o canal para a passagem do s\u00eamen, uma vez que por este mesmo canal tamb\u00e9m \u00e9 transportada a urina. Assim, a uretra encaminha o s\u00eamen para o meio externo do organismo.",
+            "Testiculos (produ\u00e7\u00e3o de hormonios e esperma), prostata, ur\u00e9tra e os dutos deferentes.",
+            "test\u00edculos: s\u00e3o respons\u00e1veis pela produ\u00e7\u00e3o do espermatoz\u00f3ide; pr\u00f3stata: produz o l\u00edquido que junto ao espermatoz\u00f3ide constituem o s\u00eamen e ajuda na locomo\u00e7\u00e3o do espermatoz\u00f3ide no canal vaginal; uretra: canal por onde \u00e9 expelido o s\u00eamen e a urina",
+            "test\u00edculos - s\u00e3o respons\u00e1veis pela produ\u00e7\u00e3o do espermatoz\u00f3ide. pr\u00f3stata - produz o l\u00edquido que junto ao espermatoz\u00f3ide constitui o s\u00eamen, e ajuda na locomo\u00e7\u00e3o desta c\u00e9lula. uretra - canal por onde \u00e9 expelido s\u00eamen e a urina",
+            "Test\u00edculos produzem os espermatoz\u00f3ides e passam para os epid\u00eddimos para amadurecer, j\u00e1 maduros eles ficam nos canais deferentes. Durante a excita\u00e7\u00e3o, s\u00e3o levados para a uretra e de l\u00e1 s\u00e3o ejaculados. No processo recebe l\u00edquidos das gl\u00e2ndulas vesicosas e da pr\u00f3stata."
+        ],
+        "number_of_levels": 4,
+        "labels": [
+            0,
+            1,
+            2,
+            3
+        ],
+        "concepts": [
+            "epid\u00eddimo",
+            "uretra",
+            "pr\u00f3stata",
+            "vasos deferentes",
+            "Espermatog\u00eanese",
+            "Espermiog\u00eanese",
+            "Aparelho Reprodutor Masculino",
+            "Gl\u00e2ndulas Anexas do Aparelho Reprodutor Masculino"
+        ],
+        "rubrics": {
+            "0": "Sem compreens\u00e3o: As respostas com a etiqueta 0 demonstram uma falta significativa de compreens\u00e3o sobre os \u00f3rg\u00e3os sexuais internos masculinos. Os alunos frequentemente fornecem informa\u00e7\u00f5es irrelevantes, incompletas ou at\u00e9 mesmo confusas, sem mencionar os \u00f3rg\u00e3os sexuais internos ou suas fun\u00e7\u00f5es. Exemplos incluem respostas como 'n\u00e3o sei' ou listas de termos sem explica\u00e7\u00e3o.",
+            "1": "Compreens\u00e3o b\u00e1sica: As respostas com a etiqueta 1 mostram um entendimento limitado e fragmentado dos \u00f3rg\u00e3os sexuais internos. Os alunos conseguem identificar alguns \u00f3rg\u00e3os, mas as descri\u00e7\u00f5es s\u00e3o muito superficiais ou imprecisas, muitas vezes sem mencionar fun\u00e7\u00f5es espec\u00edficas. Exemplos incluem respostas que citam \u00f3rg\u00e3os, mas falham em explicar como eles contribuem para a reprodu\u00e7\u00e3o.",
+            "2": "Compreens\u00e3o intermedi\u00e1ria: As respostas com a etiqueta 2 indicam um conhecimento b\u00e1sico e uma compreens\u00e3o funcional dos \u00f3rg\u00e3os sexuais internos masculinos. Os alunos conseguem listar v\u00e1rios \u00f3rg\u00e3os e dar descri\u00e7\u00f5es simples de suas fun\u00e7\u00f5es, mas podem faltar detalhes ou conex\u00f5es entre os \u00f3rg\u00e3os. Exemplos incluem descri\u00e7\u00f5es que identificam os \u00f3rg\u00e3os e suas fun\u00e7\u00f5es de forma clara, mas sem profundidade.",
+            "3": "Compreens\u00e3o avan\u00e7ada: As respostas com a etiqueta 3 demonstram um entendimento abrangente e detalhado dos \u00f3rg\u00e3os sexuais internos masculinos. Os alunos n\u00e3o apenas listam os \u00f3rg\u00e3os, mas tamb\u00e9m explicam suas fun\u00e7\u00f5es de maneira precisa e conectam os processos envolvidos na produ\u00e7\u00e3o e transporte do espermatozoide. Exemplos incluem descri\u00e7\u00f5es completas que mostram conhecimento sobre a anatomia e a fisiologia do sistema reprodutor masculino."
+        }
+    },
+    "43": {
+        "question": "Explique o mecanismo de inspira\u00e7\u00e3o e de expira\u00e7\u00e3o do ar no corpo humano:",
+        "sample_solution": [
+            "O ar entra pelas fossas nasais, passando pelos pulm\u00f5es e sai por meio da contra\u00e7\u00e3o do diafragma. Na expira\u00e7\u00e3o o diafragma e os musculos intercostais relaxam  e empurram para fora o ar usado.",
+            "Inspira\u00e7\u00e3o \u00e9 o conjunto de movimentos que permite a entrada de ar nos pulm\u00f5es. Expira\u00e7\u00e3o \u00e9 o conjunto de movimentos que resulta na retirada do ar do interior das vias respirat\u00f3rias. Nesse caso, ocorre o relaxamento dos m\u00fasculos intercostais e do diafragma.",
+            "inspira\u00e7\u00e3o: diafragma desce; intercostais contraem; caixa toraxica sobe; aumenta volume; diminui a press\u00e3o. expira\u00e7\u00e3o: diafragma sobe; intercostais relaxa; caixa toraxica desce; diminui volume; aumenta press\u00e3o",
+            "Na inspira\u00e7\u00e3o, os m\u00fasculos intercostais e o diafragma se contraem, aumentando o volume da caixa tor\u00e1cica, diminuindo a press\u00e3o interna e possibilitando a entrada do ar. Na expira\u00e7\u00e3o, os m\u00fasculos intercostais e o diafragma relaxam, diminuem o volume tor\u00e1cico, aumenta a press\u00e3o interna e expulsando o ar.",
+            "INSPIRA\u00c7\u00c3O: O ar entra pelas fossas nasais, passando pelos pulm\u00f5es e sai por meio da contra\u00e7\u00e3o do diafragma. Ao se contrair, o diafragma se abaixa, o que com o movimento dos musculos intercostais, aumenta o volume da caixa toraxica, fazendo a press\u00e3o interna diminuir e se tornar menos que a press\u00e3o atmosf\u00e9rica. Com isso o ar penetra pelos pulm\u00f5es.\u00a0EXPIRA\u00c7\u00c3O: O diafragma e os musculos intercostais relaxam-se o que reduz o volume toraxico e empurra para fora o ar usado.",
+            "Na inspira\u00e7\u00e3o os m\u00fasculos intercostais e o diafragma contraem diminuindo a press\u00e3o interna fazendo com que o ar entre. Na expira\u00e7\u00e3o eles relaxam aumentando a press\u00e3o e fazendo o ar sair.",
+            "Inspira\u00e7\u00e3o: O ar entra pela fossas nasais, passando pelos pulm\u00f5es e sai por meio da contra\u00e7\u00e3o do diafragma. Ao se contrair, o diafragma se abaixa e com o movimento dos m\u00fasculos intercostais, aumenta o volume da caixa toraxica, fazendo press\u00e3o atmosferica. Com isso o ar penetra nos pulm\u00f5es. Expira\u00e7\u00e3o: O diafragma e os m\u00fasculos intercostais relaxam-se o que reduz o volume toracico e impurra para fora o ar utilizado.",
+            "Inspira\u00e7\u00e3o. O ar entra pelas fossas nasais, passando pelo pulm\u00e3o e sai por meio de contra\u00e7\u00e3o do diafragma. Expira\u00e7\u00e3o. O diafragma e os m\u00fasculos relaxam o que reduz o volume toraxito e empurra para fora o ar usado."
+        ],
+        "number_of_levels": 4,
+        "labels": [
+            0,
+            1,
+            2,
+            3
+        ],
+        "concepts": [
+            "contra\u00e7\u00e3o diafragma",
+            "relaxamento dos m\u00fasculos",
+            "entrada e sa\u00edda de ar"
+        ],
+        "rubrics": {
+            "0": "Sem compreens\u00e3o: Os alunos nesta categoria demonstram uma compreens\u00e3o muito limitada do mecanismo de inspira\u00e7\u00e3o e expira\u00e7\u00e3o, frequentemente fornecendo respostas irrelevantes ou incompletas. As respostas, como 'n\u00e3o sei' ou informa\u00e7\u00f5es vagas sobre respira\u00e7\u00e3o, indicam uma falta de conhecimento b\u00e1sico sobre o tema.",
+            "1": "Compreens\u00e3o b\u00e1sica: As respostas nesta categoria mostram uma compreens\u00e3o inicial do processo de respira\u00e7\u00e3o, mas carecem de detalhes e precis\u00e3o. Os alunos mencionam conceitos como 'inspirar' e 'expirar', mas suas defini\u00e7\u00f5es s\u00e3o imprecisas e n\u00e3o incluem os mecanismos musculares envolvidos, resultando em uma explica\u00e7\u00e3o superficial que n\u00e3o demonstra uma compreens\u00e3o clara do funcionamento do sistema respirat\u00f3rio.",
+            "2": "Compreens\u00e3o intermedi\u00e1ria: Os alunos nesta categoria apresentam uma compreens\u00e3o adequada dos mecanismos de inspira\u00e7\u00e3o e expira\u00e7\u00e3o, descrevendo corretamente o papel do diafragma e dos m\u00fasculos intercostais. No entanto, as respostas podem conter erros de digita\u00e7\u00e3o ou imprecis\u00f5es menores, e a estrutura das explica\u00e7\u00f5es pode ser inconsistente. Eles conseguem identificar os processos principais, mas podem carecer de clareza na rela\u00e7\u00e3o entre press\u00e3o e volume.",
+            "3": "Compreens\u00e3o avan\u00e7ada: As respostas nesta categoria demonstram uma compreens\u00e3o s\u00f3lida e detalhada dos mecanismos de inspira\u00e7\u00e3o e expira\u00e7\u00e3o. Os alunos articulam claramente o papel dos m\u00fasculos intercostais e do diafragma, bem como as mudan\u00e7as de press\u00e3o e volume que ocorrem durante a respira\u00e7\u00e3o. As respostas s\u00e3o bem estruturadas e refletem uma capacidade de conectar os conceitos de forma coesa e l\u00f3gica."
+        }
+    },
+    "44": {
+        "question": "Em condi\u00e7\u00f5es normais e estando acordada uma pessoa pode suspender a respira\u00e7\u00e3o temporariamente ou acelerar o ritmo respirat\u00f3rio na hora em que desejar faz\u00ea-lo. Mas uma pessoa n\u00e3o consegue mesmo que queira, provocar a falta total de g\u00e1s oxig\u00eanio no organismo simplesmente parando de respirar. Por qu\u00ea?",
+        "sample_solution": [
+            "Porque ao suspender a respira\u00e7\u00e3o a concentra\u00e7\u00e3o de g\u00e1s carb\u00f4nico aumenta no sangue. Ap\u00f3s determinado n\u00edvel  o sistema nervoso volta a comandar a respira\u00e7\u00e3o e a pessoa reinicia o processo de inspira\u00e7\u00e3o e expira\u00e7\u00e3o.",
+            "Existe um \u00f3rg\u00e3o chamado bulbo raquidiano que controla (involuntariamente) a sua taxa de g\u00e1s carb\u00f4nico no sangue. quando se para de respirar este \u00f3rg\u00e3o for\u00e7a o retorno como uma forma de prote\u00e7\u00e3o do organismo.",
+            "Por que o c\u00e9rebro reconhece o excesso de g\u00e1s carb\u00f4nico e nos for\u00e7a a voltar a respirar.",
+            "Nesse per\u00edodo sem respirar, ainda h\u00e1 sangue arterial sendo transportado, rico em O2, mas, aos poucos, a quantidade de CO2 aumenta, diminuindo o pH do sangue e induzindo o bulbo a estimular a volta da respira\u00e7\u00e3o.",
+            "Por causa que o nosso corpo tem rea\u00e7\u00f5es,  e nos obriga a respirar",
+            "Existe um \u00f3rg\u00e3o chamado bulbo requidiano que controla a sua taxa de g\u00e1s carb\u00f4nico no sangue. Ao trancar a respira\u00e7\u00e3o, a quantidade de CO2 no sangue aumenta e, ao chegar em certo limite, o bulbo for\u00e7a a respira\u00e7\u00e3o.",
+            "pois nosso c\u00e9rebro n\u00e3o permite que nos fa\u00e7amos isso por se tratar de uma a\u00e7\u00e3o involunt\u00e1ria",
+            "a quantidade de CO2 no sangue aumentar\u00e1 e ao chegar em certo limite, o bulbo te forcar\u00e1 a respirar."
+        ],
+        "number_of_levels": 4,
+        "labels": [
+            0,
+            1,
+            2,
+            3
+        ],
+        "concepts": [
+            "sistema nervoso",
+            "g\u00e1s carb\u00f4nico",
+            "controle involunt\u00e1rio"
+        ],
+        "rubrics": {
+            "0": "Sem compreens\u00e3o: Os alunos nesta categoria demonstram uma compreens\u00e3o muito limitada do conceito de respira\u00e7\u00e3o e suas implica\u00e7\u00f5es. As respostas frequentemente cont\u00eam informa\u00e7\u00f5es irrelevantes ou confusas, como a ideia de que o corpo humano simplesmente n\u00e3o pode parar de respirar por causa de um 'limite de expandir' ou uma falta de compreens\u00e3o clara do papel do sistema nervoso. Muitos alunos nesta categoria n\u00e3o conseguem fornecer uma explica\u00e7\u00e3o coerente ou l\u00f3gica.",
+            "1": "Compreens\u00e3o b\u00e1sica: Os alunos nesta categoria demonstram uma compreens\u00e3o b\u00e1sica de que a respira\u00e7\u00e3o \u00e9 involunt\u00e1ria e que o corpo possui mecanismos que regulam esse processo. As respostas frequentemente mencionam o bulbo raquidiano ou o sistema nervoso, mas carecem de detalhes espec\u00edficos sobre como esses mecanismos operam. Embora reconhe\u00e7am que a respira\u00e7\u00e3o \u00e9 involunt\u00e1ria, muitos alunos falham em explicar o papel do di\u00f3xido de carbono e suas consequ\u00eancias.",
+            "2": "Compreens\u00e3o intermedi\u00e1ria: Os alunos nesta categoria mostram uma compreens\u00e3o clara do papel do bulbo raquidiano e do sistema nervoso na regula\u00e7\u00e3o da respira\u00e7\u00e3o. Suas respostas incluem conex\u00f5es entre a acumula\u00e7\u00e3o de di\u00f3xido de carbono e a necessidade de retomar a respira\u00e7\u00e3o, embora possam conter algumas imprecis\u00f5es ou falta de profundidade em suas explica\u00e7\u00f5es. Esses alunos conseguem articular como o corpo responde \u00e0 falta de oxig\u00eanio, mas podem n\u00e3o detalhar completamente o processo.",
+            "3": "Compreens\u00e3o avan\u00e7ada: Os alunos nesta categoria demonstram uma compreens\u00e3o avan\u00e7ada do processo respirat\u00f3rio e do papel do bulbo raquidiano. Eles fornecem explica\u00e7\u00f5es detalhadas sobre como o aumento do di\u00f3xido de carbono no sangue leva a um est\u00edmulo para respirar, e suas respostas frequentemente incluem uma descri\u00e7\u00e3o precisa dos mecanismos envolvidos. Os alunos apresentam um pensamento cr\u00edtico ao conectar a fisiologia com a fun\u00e7\u00e3o respirat\u00f3ria, evidenciando uma forte capacidade de an\u00e1lise."
+        }
+    },
+    "45": {
+        "question": "Os cromossomos humanos podem ser estudados em c\u00e9lulas extra\u00eddas do sangue. Em qual das c\u00e9lulas sangu\u00edneas deve ser feito este estudo. Por qu\u00ea?",
+        "sample_solution": [
+            "Deve ser feito nos leuc\u00f3citos porque nas hem\u00e1cias n\u00e3o tem n\u00facleo.",
+            "Os cromossomos se encontram no n\u00facleo das c\u00e9lulas e as hem\u00e1cias n\u00e3o tem n\u00facleo. ent\u00e3o este estudo deve ser feito nos leuc\u00f3citos",
+            "S\u00f3 nos leuc\u00f3citos porque quando as hem\u00e1cias amadurecem perdem o n\u00facleo ai n\u00e3o carregam mais cromosssomos.",
+            "Globulos brancos s\u00e3o as unicas celulas do sangue que cont\u00e9m nucleo, que pode transportar material genetico cromossomos",
+            "N\u00e3o, pois diferentes de uma hemacia, um leuc\u00f3cito possui n\u00facleo e como material gen\u00e9tico se encontra no n\u00facleo da c\u00e9lula.",
+            "Leuc\u00f3citos, pois s\u00e3o as c\u00e9lulas sangu\u00edneas que possuem n\u00facleo e cromossomos.",
+            "N\u00e3o, pois diferentemente de uma hem\u00e1cia, um leuc\u00f3cito possui n\u00facleo. E como o material gen\u00e9tico se encontra no n\u00facleo da c\u00e9lula, n\u00e3o \u00e9 poss\u00edvel se fazer um estudo dos cromossomos usando hem\u00e1cias.",
+            "Nas c\u00e9lulas leuc\u00f3citas porque elas possuem um n\u00facleo. E como o material gen\u00e9tico \u00e9 encontrado no n\u00facleo da c\u00e9lula deve ser as leuc\u00f3citas pois as hem\u00e1cias n\u00e3o tem o n\u00facleo."
+        ],
+        "number_of_levels": 4,
+        "labels": [
+            0,
+            1,
+            2,
+            3
+        ],
+        "concepts": [
+            "leuc\u00f3citos",
+            "cromossomos",
+            "n\u00facleo",
+            "hem\u00e1cias"
+        ],
+        "rubrics": {
+            "0": "Sem compreens\u00e3o: As respostas no n\u00edvel 0 demonstram uma compreens\u00e3o m\u00ednima ou confusa sobre a quest\u00e3o. Os alunos frequentemente mencionam conceitos irrelevantes ou incorretos, como c\u00e9lulas que n\u00e3o s\u00e3o leuc\u00f3citos, e n\u00e3o conseguem explicar a rela\u00e7\u00e3o entre n\u00facleo, cromossomos e c\u00e9lulas sangu\u00edneas. Erros comuns incluem respostas que n\u00e3o se conectam \u00e0 pergunta ou s\u00e3o incoerentes.",
+            "1": "Compreens\u00e3o b\u00e1sica: As respostas no n\u00edvel 1 mostram um reconhecimento b\u00e1sico de que gl\u00f3bulos brancos (leuc\u00f3citos) s\u00e3o importantes, mas carecem de explica\u00e7\u00f5es adequadas. Os alunos podem nomear as c\u00e9lulas corretas, mas n\u00e3o fornecem justificativas claras sobre por que os leuc\u00f3citos devem ser estudados. As respostas tendem a ser muito superficiais e n\u00e3o demonstram compreens\u00e3o profunda do tema.",
+            "2": "Compreens\u00e3o intermedi\u00e1ria: No n\u00edvel 2, os alunos demonstram uma compreens\u00e3o mais s\u00f3lida, explicando que os leuc\u00f3citos possuem n\u00facleo e, portanto, cont\u00eam DNA, que \u00e9 necess\u00e1rio para o estudo dos cromossomos. Embora as respostas sejam mais informativas, ainda podem apresentar algumas imprecis\u00f5es ou falta de clareza em suas justificativas. A maioria das respostas mostra uma conex\u00e3o entre o n\u00facleo, o DNA e a necessidade de estudar leuc\u00f3citos.",
+            "3": "Compreens\u00e3o avan\u00e7ada: As respostas no n\u00edvel 3 refletem uma compreens\u00e3o completa e detalhada do tema. Os alunos articulam claramente por que os leuc\u00f3citos s\u00e3o as c\u00e9lulas adequadas para o estudo dos cromossomos, enfatizando a presen\u00e7a do n\u00facleo e a aus\u00eancia dele nas hem\u00e1cias. As respostas s\u00e3o bem estruturadas, demonstrando um racioc\u00ednio l\u00f3gico e uma forte conex\u00e3o entre os conceitos apresentados."
+        }
+    },
+    "46": {
+        "question": "Quais s\u00e3o as diferen\u00e7as entre veias e art\u00e9rias?",
+        "sample_solution": [
+            "As art\u00e9rias saem do cora\u00e7\u00e3o e tornam-se cada vez mais finas \u00e0 medida que se ramificam. Esses vasos apresentam como fun\u00e7\u00e3o principal levar o sangue e, consequentemente, nutrientes e oxig\u00eanio do cora\u00e7\u00e3o para os tecidos.As veias  levam sangue do corpo para o cora\u00e7\u00e3o para que ele possa ser bombeado novamente para o corpo.",
+            "Quando o cora\u00e7\u00e3o bombeia o sangue, ele bombeia este sangue diretamente nas art\u00e9rias com grande press\u00e3o, para que as art\u00e9rias possam conduzir o sangue na dire\u00e7\u00e3o dos tecidos. as veias s\u00e3o respons\u00e1veis por conduzir o sangue de volta ao cora\u00e7\u00e3o e removem as toxinas dos tecidos para elas sejam eliminadas.",
+            "As arterias s\u00e3o vasos sanguineos, responsaveis por conduzir o sangue para fora do cora\u00e7\u00e3o, carregando sangue artereal, rico em O2. As veias s\u00e3o responsaveis por conduzir o sangue proveniente dos tecidos para o cora\u00e7\u00e3o, onde \u00e9 rico em CO2 e carrega sangue venoso.",
+            "Arterias: S\u00e3o mais resistentes, el\u00e1sticas para suportarem a press\u00e3o sangu\u00ednea, ja que se localizam ap\u00f3s o cora\u00e7\u00e3o, levando sangue para o corpo.Veias: N\u00e3o s\u00e3o t\u00e3o resistentes quanto as art\u00e9rias, pois n\u00e3o recebem sangue com tanta press\u00e3o, apenas o levam de volta para o cora\u00e7\u00e3o, elas tamb\u00e9m possuem v\u00e1lvulas para impedir que o sangue volte no sentido contr\u00e1rio.",
+            "veias: vasos de calibre nao muito grosso, levam sangue de volta para o cora\u00e7\u00e3o, e por terem baixa pre\u00e7\u00e3o tem v\u00e1lvulas que impedem que o sangue volte. arterias: vasos de calibre grosso pois tem uma grande press\u00e3o sanguinea levando o sangue que sai do cora\u00e7\u00e3o",
+            "As art\u00e9rias transportam o sangue que \u00e9 rico em oxig\u00eanio e as veias transportam sangue rico em g\u00e1s carbonico, para o cora\u00e7\u00e3o.",
+            "As art\u00e9rias s\u00e3o vasos que saem do cora\u00e7\u00e3o, e s\u00e3o espessas, pois possuem uma press\u00e3o sangu\u00ednea muito alta. J\u00e1 a veia \u00e9 o vaso que chega ao cora\u00e7\u00e3o, e possuem v\u00e1lvulas que impedem o refluxo sangu\u00edneo.",
+            "As art\u00e9rias transportam o sangue rico em oxig\u00eanio para todo o corpo e as veias transportam o sangue rico em CO2 para o cora\u00e7\u00e3o."
+        ],
+        "number_of_levels": 4,
+        "labels": [
+            0,
+            1,
+            2,
+            3
+        ],
+        "concepts": [
+            "oxig\u00eanio",
+            "g\u00e1s carb\u00f4nico",
+            "cora\u00e7\u00e3o para o corpo",
+            "corpo para o cora\u00e7\u00e3o"
+        ],
+        "rubrics": {
+            "0": "Sem compreens\u00e3o: Os alunos neste n\u00edvel demonstram uma compreens\u00e3o muito limitada das diferen\u00e7as entre veias e art\u00e9rias, frequentemente apresentando informa\u00e7\u00f5es incorretas ou confusas. As respostas cont\u00eam erros factuais significativos, como atribuir fun\u00e7\u00f5es erradas aos vasos sangu\u00edneos ou mostrar falta de conhecimento sobre conceitos b\u00e1sicos. Exemplos incluem confundir fun\u00e7\u00f5es e caracter\u00edsticas dos vasos, como afirmar que veias transportam oxig\u00eanio.",
+            "1": "Compreens\u00e3o b\u00e1sica: Os alunos neste n\u00edvel conseguem identificar algumas diferen\u00e7as entre veias e art\u00e9rias, mas suas respostas est\u00e3o incompletas ou imprecisas. Eles podem mencionar fun\u00e7\u00f5es b\u00e1sicas, mas frequentemente n\u00e3o conseguem descrever com precis\u00e3o as caracter\u00edsticas e a estrutura dos vasos sangu\u00edneos. As respostas podem ter erros, como confundir os tipos de sangue que cada vaso transporta ou n\u00e3o discutir adequadamente a press\u00e3o sangu\u00ednea.",
+            "2": "Compreens\u00e3o intermedi\u00e1ria: Os alunos neste n\u00edvel demonstram uma compreens\u00e3o clara das fun\u00e7\u00f5es e caracter\u00edsticas das veias e art\u00e9rias. Eles conseguem descrever corretamente que as art\u00e9rias transportam sangue oxigenado do cora\u00e7\u00e3o para o corpo e que as veias levam sangue desoxigenado de volta ao cora\u00e7\u00e3o. As respostas geralmente est\u00e3o organizadas, mas podem carecer de detalhes mais profundos sobre a estrutura dos vasos ou a press\u00e3o sangu\u00ednea.",
+            "3": "Compreens\u00e3o avan\u00e7ada: Os alunos neste n\u00edvel apresentam uma compreens\u00e3o abrangente e precisa das diferen\u00e7as entre veias e art\u00e9rias. Eles detalham as fun\u00e7\u00f5es, caracter\u00edsticas estruturais e a press\u00e3o sangu\u00ednea associada a cada tipo de vaso, al\u00e9m de incluir informa\u00e7\u00f5es adicionais relevantes, como a presen\u00e7a de v\u00e1lvulas nas veias. As respostas s\u00e3o bem articuladas e mostram um conhecimento s\u00f3lido sobre o sistema circulat\u00f3rio."
+        }
+    },
+    "47": {
+        "question": "Qual \u00e9 a fun\u00e7\u00e3o do f\u00edgado no processo digestivo?",
+        "sample_solution": [
+            "O f\u00edgado \u00e9 um dos \u00f3rg\u00e3os do sistema digest\u00f3rio mais importantes para a digest\u00e3o porque ele tem a fun\u00e7\u00e3o de metabolizar e armazenar nutrientes, que s\u00f3 ficam prontos para serem absorvidos e utilizados pelo organismo ap\u00f3s passarem por ele.",
+            "Algumas das fun\u00e7\u00f5es do f\u00edgado na digest\u00e3o humana s\u00e3o: produ\u00e7\u00e3o da bile, armazenamento de glicose, produ\u00e7\u00e3o de glicose, transforma\u00e7\u00e3o de subst\u00e2ncias ...",
+            "Al\u00e9m da libera\u00e7\u00e3o da bile, o f\u00edgado funciona como um laborat\u00f3rio transformando quase todas as subst\u00e2ncias que passam por ele.",
+            "Ele tem a fun\u00e7\u00e3o de metabolizar e armazenar nutrientes, que s\u00f3 ficam prontos para serem absorvidos e utilizados pelo organismo ap\u00f3s passarem por ele.",
+            "A produ\u00e7\u00e3o da Bile",
+            "Ele metabolisa e armazena nutrientes",
+            "Armazenar nutrientes.",
+            "Tem fun\u00e7\u00e3o de metabolizar e armazenar nutrientes, que s\u00f3 ficam prontos para serem absorvidos e utilizados pelo organismo ap\u00f3s passarem por ele."
+        ],
+        "number_of_levels": 4,
+        "labels": [
+            0,
+            1,
+            2,
+            3
+        ],
+        "concepts": [
+            "metabolismo",
+            "bile",
+            "transforma\u00e7\u00e3o de subst\u00e2ncias"
+        ],
+        "rubrics": {
+            "0": "Sem compreens\u00e3o: Os alunos nesta categoria demonstram uma compreens\u00e3o m\u00ednima ou nenhuma sobre a fun\u00e7\u00e3o do f\u00edgado no processo digestivo. As respostas frequentemente cont\u00eam informa\u00e7\u00f5es irrelevantes ou incoerentes, como a produ\u00e7\u00e3o de 'bil' ou a elimina\u00e7\u00e3o de fezes, sem conex\u00e3o clara com as fun\u00e7\u00f5es digestivas do f\u00edgado. Erros comuns incluem a falta de qualquer men\u00e7\u00e3o a processos digestivos relevantes.",
+            "1": "Compreens\u00e3o b\u00e1sica: Os alunos nesta categoria apresentam uma compreens\u00e3o b\u00e1sica das fun\u00e7\u00f5es do f\u00edgado, mencionando a\u00e7\u00f5es como 'quebra e s\u00edntese dos nutrientes' ou 'emitir um l\u00edquido g\u00e1strico'. Contudo, as respostas s\u00e3o geralmente incompletas e carecem de detalhes sobre os processos espec\u00edficos que o f\u00edgado realiza. A presen\u00e7a de erros conceituais, como a confus\u00e3o entre a fun\u00e7\u00e3o do f\u00edgado e \u00f3rg\u00e3os como o est\u00f4mago, \u00e9 comum.",
+            "2": "Compreens\u00e3o intermedi\u00e1ria: Os alunos que respondem nesta categoria demonstram uma compreens\u00e3o intermedi\u00e1ria da fun\u00e7\u00e3o do f\u00edgado, identificando v\u00e1rias de suas responsabilidades, como 'armazenar vitaminas' e 'filtrar o sangue'. As respostas s\u00e3o mais detalhadas e incluem algumas fun\u00e7\u00f5es espec\u00edficas, mas ainda podem carecer de profundidade ou conex\u00e3o clara entre as fun\u00e7\u00f5es mencionadas. Erros t\u00edpicos incluem a falta de explica\u00e7\u00f5es sobre como essas fun\u00e7\u00f5es impactam a digest\u00e3o.",
+            "3": "Compreens\u00e3o avan\u00e7ada: Os alunos nesta categoria mostram um entendimento avan\u00e7ado das fun\u00e7\u00f5es do f\u00edgado no processo digestivo, citando especificamente a produ\u00e7\u00e3o da bile, a metaboliza\u00e7\u00e3o e o armazenamento de nutrientes. As respostas s\u00e3o bem estruturadas e demonstram conhecimento claro e detalhado, com conex\u00f5es expl\u00edcitas entre as fun\u00e7\u00f5es do f\u00edgado e seus efeitos na digest\u00e3o. As respostas geralmente n\u00e3o cont\u00eam erros conceituais e refletem uma compreens\u00e3o s\u00f3lida do tema."
+        }
+    },
+    "48": {
+        "question": "Apesar do avan\u00e7o que a medicina vem apresentando no in\u00edcio do s\u00e9culo XXI, ainda nos deparamos com grandes desafios na \u00e1rea da medicina preventiva. Devemos  sempre ficar atentos ao calend\u00e1rio de vacinas e \u00e0s campanhas de vacina\u00e7\u00e3o.Quais s\u00e3o as fun\u00e7\u00f5es das vacinas no corpo humano?",
+        "sample_solution": [
+            "Ao ser introduzida no corpo do ser humano, a vacina provoca uma rea\u00e7\u00e3o (imuniza\u00e7\u00e3o) do sistema imunol\u00f3gico, promovendo a produ\u00e7\u00e3o de anticorpos (leuc\u00f3citos) contra aquela subst\u00e2ncia.",
+            "As vacinas estimulam a produ\u00e7\u00e3o de anticorpos pelo corpo, ficando a pessoa imunizada.",
+            "Elas protegem o corpo humano produzindo anticorpos.",
+            "Promove a produ\u00e7\u00e3o de anticorpos contra determinada subst\u00e2ncia, prepara o organismo para que, em caso de infec\u00e7\u00e3o por aquela subst\u00e2ncia, o sistema de defesa possa agir rapidamente.",
+            "Nas vacinas temos o virus morto ou quase morto, uma vez que esse corpo estranho entra em seu corpo, as celulas de defesa especificas para ele s\u00e3o produzidas e se voc\u00ea pegar esta doen\u00e7a seu corpo ja est\u00e1 preparado",
+            "A fun\u00e7\u00e3o das vacinas \u00e9 criar c\u00e9lulas de defesa atrav\u00e9s de pequenas doses do pr\u00f3prio morto v\u00edrus, imunizando as pessoas",
+            "As vacinas permitem que as c\u00e9lulas de defesa j\u00e1 tenham uma experi\u00eancia antecipadamente contra o agente invasor, assim quando for a doen\u00e7a realmente as c\u00e9lulas de defesa saber\u00e1 como se defender.",
+            "As vacinas s\u00e3o uma forma de imuniza\u00e7\u00e3o ativa; como cont\u00eam v\u00edrus mortos ou atenuados, elas induzem ao contato prim\u00e1rio com a doen\u00e7a, assim, o organismo produz anticorpos e com um segundo contato com o ant\u00edgeno estar\u00e1 'melhor protegido', uma vez que sua resposta ser\u00e1 mais r\u00e1pida e a quantidade de anticorpos maior."
+        ],
+        "number_of_levels": 4,
+        "labels": [
+            0,
+            1,
+            2,
+            3
+        ],
+        "concepts": [
+            "rea\u00e7\u00e3o",
+            "imuniza\u00e7\u00e3o",
+            "anticorpos"
+        ],
+        "rubrics": {
+            "0": "Sem compreens\u00e3o: Respostas nesta categoria demonstram uma compreens\u00e3o muito limitada ou confusa sobre as fun\u00e7\u00f5es das vacinas. As respostas podem ser irrelevantes, incoerentes ou n\u00e3o relacionadas ao tema, como erros de digita\u00e7\u00e3o ou declara\u00e7\u00f5es que n\u00e3o abordam o conceito de vacina\u00e7\u00e3o. Exemplos incluem respostas vazias, gibberish ou afirma\u00e7\u00f5es sem base cient\u00edfica.",
+            "1": "Compreens\u00e3o b\u00e1sica: Alunos nesta categoria mostram uma compreens\u00e3o b\u00e1sica e superficial das fun\u00e7\u00f5es das vacinas, focando principalmente em termos gerais como 'proteger' ou 'evitar doen\u00e7as'. As respostas tendem a ser vagas e carecem de detalhes sobre o funcionamento das vacinas, frequentemente utilizando linguagem simplista e imprecisa. Embora algumas respostas mencionem a preven\u00e7\u00e3o, elas n\u00e3o explicam adequadamente como as vacinas atuam no sistema imunol\u00f3gico.",
+            "2": "Compreens\u00e3o intermedi\u00e1ria: Os estudantes no n\u00edvel 2 apresentam uma compreens\u00e3o mais clara das fun\u00e7\u00f5es das vacinas, incluindo a produ\u00e7\u00e3o de anticorpos e a preven\u00e7\u00e3o de doen\u00e7as. As respostas s\u00e3o mais elaboradas e incluem refer\u00eancias a componentes das vacinas, como v\u00edrus mortos ou enfraquecidos. No entanto, ainda faltam detalhes suficientes ou explica\u00e7\u00f5es completas sobre o mecanismo imunol\u00f3gico ou a import\u00e2ncia da mem\u00f3ria imunol\u00f3gica.",
+            "3": "Compreens\u00e3o avan\u00e7ada: Respostas nesta categoria mostram uma compreens\u00e3o avan\u00e7ada e detalhada do funcionamento das vacinas, incluindo a descri\u00e7\u00e3o precisa de como elas induzem a produ\u00e7\u00e3o de anticorpos e preparam o sistema imunol\u00f3gico para infec\u00e7\u00f5es futuras. Os alunos utilizam terminologia cient\u00edfica apropriada e explicam claramente a rela\u00e7\u00e3o entre vacinas e a resposta imunol\u00f3gica, demonstrando uma vis\u00e3o abrangente sobre a imuniza\u00e7\u00e3o ativa."
+        }
+    },
+    "49": {
+        "question": "Por que \u00e9 necess\u00e1rio comer v\u00e1rios tipos diferentes de alimentos?",
+        "sample_solution": [
+            "Porque os alimentos tem diferentes fun\u00e7\u00f5es no nosso corpo. Eles protegem, d\u00e3o energia e ajudam no crescimento.",
+            "Porque os alimentos se dividem entre grupos diferentes: reguladores, energ\u00e9ticos e construtores.",
+            "Porque uma alimenta\u00e7\u00e3o equilibrada com alimentos de diferentes fun\u00e7\u00f5es proporcionam sa\u00fade ao nosso corpo.",
+            "porque possuem diferente tipos de nutrientes",
+            "Cada alimento possui nutrientes essenciais para que o ser humano viva bem.",
+            "Cada alimento possui um nutriente espec\u00edfico. E o corpo humano precisa de todas elas para ter um bom funcionamento. Por exemplo, no leite temos c\u00e1lcio, na carne a prote\u00edna.",
+            "porque cada alimento tem vitaminas, minerais, carboidratos, nutrientes diferentes, e comendo de tudo um pouco teremos uma alimenta\u00e7\u00e3o saud\u00e1vel",
+            "o nosso corpo precisa de diferentes nutrientes que um unico alimento n\u00e3o oferece"
+        ],
+        "number_of_levels": 4,
+        "labels": [
+            0,
+            1,
+            2,
+            3
+        ],
+        "concepts": [
+            "nutri\u00e7\u00e3o",
+            "reguladores",
+            "energ\u00e9ticos",
+            "construtores"
+        ],
+        "rubrics": {
+            "0": "Sem compreens\u00e3o: As respostas nesse n\u00edvel demonstram uma compreens\u00e3o muito limitada do tema, com informa\u00e7\u00f5es irrelevantes ou incompletas. Os alunos frequentemente fazem afirma\u00e7\u00f5es que n\u00e3o est\u00e3o conectadas ao conceito de diversidade alimentar ou apresentam erros de l\u00f3gica, como mencionar paladares ou fun\u00e7\u00f5es vagamente relacionadas. Erros comuns incluem falta de clareza e confus\u00e3o no entendimento das fun\u00e7\u00f5es dos alimentos.",
+            "1": "Compreens\u00e3o b\u00e1sica: Neste n\u00edvel, os alunos apresentam uma compreens\u00e3o b\u00e1sica sobre a import\u00e2ncia de diferentes alimentos, mas suas respostas s\u00e3o muitas vezes superficiais e carecem de detalhes. Eles mencionam nutrientes e vitaminas, mas n\u00e3o explicam claramente como esses elementos se relacionam com a sa\u00fade ou o funcionamento do corpo. As respostas podem incluir algumas informa\u00e7\u00f5es corretas, mas frequentemente falham em conectar esses pontos de forma coesa.",
+            "2": "Compreens\u00e3o intermedi\u00e1ria: As respostas aqui mostram uma compreens\u00e3o mais s\u00f3lida do assunto, com os alunos reconhecendo que diferentes alimentos cont\u00eam variados nutrientes essenciais. Eles articulam a necessidade de uma dieta balanceada e mencionam a preven\u00e7\u00e3o de defici\u00eancias nutricionais, embora suas explica\u00e7\u00f5es ainda possam carecer de profundidade ou exemplos concretos. Os alunos come\u00e7am a fazer conex\u00f5es entre os alimentos e suas fun\u00e7\u00f5es no corpo, mas ainda n\u00e3o desenvolvem completamente os conceitos.",
+            "3": "Compreens\u00e3o avan\u00e7ada: Neste n\u00edvel, os alunos demonstram uma compreens\u00e3o abrangente da import\u00e2ncia de consumir uma variedade de alimentos para garantir a ingest\u00e3o de todos os nutrientes necess\u00e1rios. Eles articulam claramente como cada tipo de alimento contribui para a sa\u00fade e o funcionamento do corpo, usando exemplos espec\u00edficos e explica\u00e7\u00f5es coerentes. As respostas s\u00e3o bem estruturadas e refletem um entendimento profundo das intera\u00e7\u00f5es entre a dieta e a sa\u00fade."
+        }
+    },
+    "50": {
+        "question": "O que a hemodi\u00e1lise faz no corpo humano?",
+        "sample_solution": [
+            "Hemodi\u00e1lise \u00e9 um procedimento onde  uma m\u00e1quina limpa e filtra o sangue, ou seja, faz parte do trabalho que o rim doente n\u00e3o pode fazer.",
+            "\u00c9 o processo de filtragem e depura\u00e7\u00e3o de subst\u00e2ncias indesej\u00e1veis do sangue. Ela faz o papel dos rins.",
+            "Quando os rins deixam de funcionar, a hemodi\u00e1lise surge como uma op\u00e7\u00e3o de tratamento que permite remover as toxinas e o excesso de \u00e1gua do seu organismo.",
+            "A hemodi\u00e1lise faz a fun\u00e7\u00e3o do rim, de filtrar o sangue e retirando as subst\u00e2ncias impuras",
+            "Ela faz o trabalho do rim, filtra o sangue tirando suas impurezas",
+            "Ela filtra o sangue de uma pessoa que o rim est\u00e1 ruim, exercendo a fun\u00e7\u00e3o do rim",
+            "Filtrar o sangue quando o rim n\u00e3o funciona",
+            "filtra o sangue quando o rim para de funcionar"
+        ],
+        "number_of_levels": 4,
+        "labels": [
+            0,
+            1,
+            2,
+            3
+        ],
+        "concepts": [
+            "filtro",
+            "rins",
+            "limpeza"
+        ],
+        "rubrics": {
+            "0": "Sem compreens\u00e3o: Os alunos nesta categoria demonstram uma falta de compreens\u00e3o sobre a hemodi\u00e1lise. As respostas incluem informa\u00e7\u00f5es irrelevantes ou incorretas, como 'n\u00e3o sei' ou confus\u00f5es sobre fun\u00e7\u00f5es do corpo que n\u00e3o est\u00e3o relacionadas, como a troca gasosa ou a produ\u00e7\u00e3o de urina. N\u00e3o h\u00e1 evid\u00eancia de que o aluno entende o que a hemodi\u00e1lise faz.",
+            "1": "Compreens\u00e3o b\u00e1sica: Os alunos nesta categoria t\u00eam uma compreens\u00e3o muito b\u00e1sica da hemodi\u00e1lise, mencionando que \u00e9 um procedimento que ajuda a filtrar o sangue. No entanto, as respostas s\u00e3o vagas e carecem de detalhes, e frequentemente n\u00e3o explicam como isso acontece ou em que circunst\u00e2ncias. A maioria das respostas revela apenas uma no\u00e7\u00e3o superficial do tema.",
+            "2": "Compreens\u00e3o intermedi\u00e1ria: Os alunos nesta categoria demonstram uma compreens\u00e3o adequada da hemodi\u00e1lise, explicando que \u00e9 um processo de filtra\u00e7\u00e3o do sangue, especialmente quando os rins n\u00e3o funcionam corretamente. As respostas incluem algumas informa\u00e7\u00f5es corretas sobre o papel da hemodi\u00e1lise como substituta da fun\u00e7\u00e3o renal, embora possam faltar detalhes em rela\u00e7\u00e3o aos benef\u00edcios ou processos espec\u00edficos. A maioria dos alunos nesta categoria apresenta um entendimento mais estruturado do tema.",
+            "3": "Compreens\u00e3o avan\u00e7ada: Os alunos nesta categoria apresentam uma compreens\u00e3o profunda da hemodi\u00e1lise. Eles explicam n\u00e3o apenas o que \u00e9 a hemodi\u00e1lise, mas tamb\u00e9m como ela funciona, seus benef\u00edcios e a import\u00e2ncia de eliminar res\u00edduos prejudiciais do corpo. As respostas s\u00e3o detalhadas e bem estruturadas, abordando aspectos como controle da press\u00e3o arterial e equil\u00edbrio dos eletr\u00f3litos, mostrando um conhecimento abrangente do tema."
+        }
+    }
+}

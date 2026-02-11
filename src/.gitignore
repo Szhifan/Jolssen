@@ -1,0 +1,16 @@
+results* 
+wandb/*
+move.sh
+__pycache__/
+*.DS_Store
+wandb*
+test.py
+*.log
+*.ipynb
+alice_data/
+*png
+get_stats.py
+*.pyc  
+.DS_Store
+*.sh
+post_analysis/*

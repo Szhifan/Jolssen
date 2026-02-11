@@ -1,0 +1,38 @@
+{
+    "dataset_info": {
+        "type_of_response": "Source Dependent Response",
+        "grade_level": 10,
+        "subject": "Science",
+        "training_set_size": 1278,
+        "final_evaluation_set_size": 426,
+        "average_length_of_responses": 50,
+        "scoring_measures": ["Score1", "Score2"],
+        "final_score_basis": "Score1",
+        "inter_rater_reliability_score": "Score2",
+        "rubric_range": [0, 3]
+    },
+    "rubrics": {
+        "3": "The response draws a valid conclusion supported by the student’s data and describes two ways the student could have improved the experimental design and/or the validity of the results.",
+        "2": "The response draws a valid conclusion supported by the student’s data and describes one way the student could have improved the experimental design and/or the validity of the results. -or- The response describes two ways the student could have improved the experimental design and/or the validity of the results but fails to draw or incorrectly draws a conclusion from the student’s data.",
+        "1": "The response draws a valid conclusion supported by the student’s data but fails to describe, or incorrectly describes, how the student could have improved the experimental design and/or the validity of the results. -or- The response describes one way the student could have improved the experimental design and/or the validity of the results but fails to draw or incorrectly draws a conclusion from the student’s data.",
+        "0": "The response provides little or no correct information from the polymer investigation."
+    },
+    "polymer_investigation_rubrics": {
+        "possible_conclusions": [
+            "Plastic sample B has more stretchability than the other polymer plastics.",
+            "Plastic sample A has the least amount of stretchability compared to the other polymer plastics.",
+            "Not all polymer plastics have the same stretchability.",
+            "Different polymer plastics have different stretchability (and are therefore suited for different applications).",
+            "A reasonable conclusion cannot be drawn due to procedural errors.",
+            "Other reasonable conclusions"
+        ],
+        "possible_design_improvements": [
+            "Provide the before and after measurements for length (Did the samples all start out the same size?).",
+            "Make sure the samples are all of the same thickness. Variations in thickness could have caused variations in stretchability.",
+            "Perform additional trials. Some samples have similar stretchability; two trials may not be enough to be conclusive.",
+            "Indicate how many weights were added to the clamps (Was it the same number for each sample?).",
+            "Other acceptable responses"
+        ]
+    }, 
+    "question": "a. Draw a conclusion based on the student’s data. b. Describe two ways the student could have improved the experimental design and/or validity of the results."
+}

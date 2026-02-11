@@ -1,0 +1,20 @@
+{
+  "rubrics": {
+    "2": "Proficient: The response fulfills all the requirements of the task. The information given is text-based and relevant to the task.",
+    "1": "Partially Proficient: The response fulfills some of the requirements of the task, but some of the information may be too general, too simplistic, or not supported by the text.",
+    "0": "Not Proficient: The response does not fulfill the requirements of the task because it contains information that is inaccurate, incomplete, and/or missing altogether."
+  },
+  "dataset_info": {
+    "type_of_response": "Source Dependent Response",
+    "grade_level": 10,
+    "subject": "English",
+    "training_set_size": 1799,
+    "final_evaluation_set_size": 601,
+    "average_length_of_responses": 50,
+    "scoring_measures": ["Score1", "Score2"],
+    "final_score_basis": "Score1",
+    "inter_rater_reliability_score": "Score2",
+    "rubric_range": [0, 2]
+  },
+  "question": "During the story, the reader gets background information about Mr. Leonard. Explain the effect that background information has on Paul. Support your response with details from the story."
+}

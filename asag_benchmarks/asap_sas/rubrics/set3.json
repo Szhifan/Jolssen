@@ -1,0 +1,20 @@
+{
+  "dataset_info": {
+    "type_of_response": "Source Dependent Response",
+    "grade_level": 10,
+    "subject": "English Language Arts",
+    "training_set_size": 1891,
+    "final_evaluation_set_size": 631,
+    "average_length_of_responses": 50,
+    "scoring_measures": ["Score1", "Score2"],
+    "final_score_basis": "Score1",
+    "inter_rater_reliability_score": "Score2",
+    "rubric_range": [0, 2]
+  },
+  "rubrics": {
+    "2": "The response demonstrates an exploration or development of the ideas presented in the text; a strong conceptual understanding by the inclusion of specific relevant information from the text; an extension of ideas that may include extensive and/or insightful inferences, connections between ideas in the text, and references to prior knowledge and/or experiences.",
+    "1": "The response demonstrates some exploration or development of ideas presented in the text; a fundamental understanding by the inclusion of some relevant information from the text; an extension of ideas that lacks depth, although may include some inferences, connections between ideas in the text, or references to prior knowledge and/or experiences.",
+    "0": "The response demonstrates limited or no exploration or development of ideas presented in the text; limited or no understanding of the text, may be illogical, vague, or irrelevant; possible incomplete or limited inferences, connections between ideas in the text, or references to prior knowledge and/or experiences."
+  }, 
+  "question": "Explain how pandas in China are similar to koalas in Australia and how they both are different from pythons. Support your response with information from the article."
+}

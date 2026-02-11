@@ -1,0 +1,20 @@
+{
+  "rubrics": {
+    "2": "The response uses the results from the experiment to describe the best paint color for the doghouse by choosing a color and: (1) describing how that color might affect the inside of the doghouse, and (2) using results from the experiment to support the description.",
+    "1": "The response chooses a color and describes how that color might affect the inside of the doghouse BUT the results from the experiment are missing —OR— the response chooses a color and includes results from the experiment BUT the description of how that color might affect the inside of the doghouse is missing.",
+    "0": "The response demonstrates little or no understanding of the Content Standard."
+  },
+  "dataset_info": {
+    "type_of_response": "Source Dependent Response",
+    "grade_level": 8,
+    "subject": "Science",
+    "training_set_size": 1640,
+    "final_evaluation_set_size": 548,
+    "average_length_of_responses": 60,
+    "scoring_measures": ["Score1", "Score2"],
+    "final_score_basis": "Score1",
+    "inter_rater_reliability_score": "Score2",
+    "rubric_range": [0, 2]
+  },
+  "question": "What is the effect of different lid colors on the air temperature inside a glass jar exposed to a lamp?"
+}

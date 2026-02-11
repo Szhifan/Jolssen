@@ -1,0 +1,889 @@
+{
+  "FF.Q1": {
+    "question_text": "Explain why you got a voltage reading of 1.5 for terminal 1 and the positive terminal.",
+    "sample_solution": "Terminal 1 and the positive terminal are separated by the gap",
+    "answers": [
+      "Terminal 1 measures 1.5 volts due to its connection to the positive terminal of the battery.",
+      "The reading of 1.5 volts at terminal 1 indicates a direct link to the positive terminal.",
+      "A voltage of 1.5 at terminal 1 arises from the fact that it is linked to the positive terminal.",
+      "The 1.5 voltage reading for terminal 1 is because it is isolated from the negative terminal and connected to the positive terminal.",
+      "The voltage of 1.5 volts reflects the potential difference between terminal 1 and the positive terminal.",
+      "Terminal 1 shows 1.5 volts because it shares a connection with the positive terminal rather than the negative one.",
+      "The reading of 1.5 volts at terminal 1 is due to its proximity to the positive terminal without any intervening resistance.",
+      "A voltage of 1.5 volts at terminal 1 results from it being connected directly to the positive battery terminal.",
+      "The voltage reading of 1.5 indicates that terminal 1 is effectively linked to the positive terminal's electric potential.",
+      "The measurement of 1.5 volts at terminal 1 can be explained by its relationship with the positive terminal, which provides that potential difference."
+    ]
+  },
+  "FF.Q10": {
+    "question_text": "Why do you think the other terminals are being held in a different electrical state than that of the negative terminal?",
+    "sample_solution": "Terminals 4, 5 and 6 are not connected to the negative battery terminal",
+    "answers": [
+      "Terminals 4, 5, and 6 are connected to the positive terminal, creating a different electrical state.",
+      "The other terminals are not linked to the negative terminal, which affects their electrical state.",
+      "Due to their connection to the positive terminal, terminals 4, 5, and 6 have a higher potential.",
+      "The negative terminal has a different potential than terminals 4, 5, and 6 which are connected to the positive terminal.",
+      "The separation from the negative terminal results in differing electrical states for terminals 4, 5, and 6.",
+      "Terminals 4, 5, and 6 are in a different electrical state because they are linked exclusively to the positive terminal.",
+      "The electrical state difference arises from the lack of connection to the negative terminal.",
+      "Since terminals 4, 5, and 6 are not grounded to the negative terminal, they maintain a different voltage level.",
+      "The electrical states differ because the other terminals are only connected to the positive battery terminal.",
+      "Because the other terminals are solely connected to the positive terminal, they experience a different electrical potential."
+    ]
+  },
+  "FF.Q11": {
+    "question_text": "Why do you think those terminals and the negative battery terminal are in the same state?",
+    "sample_solution": "Terminals 1, 2 and 3 are connected to the negative battery terminal",
+    "answers": [
+      "The terminals share the same electrical potential as they are all connected to the negative battery terminal.",
+      "They are in the same state because they are linked directly to the negative terminal of the battery.",
+      "The uniform state of the terminals can be attributed to their connection to the negative battery terminal.",
+      "Since all terminals are grounded to the same negative terminal, they exhibit the same electrical characteristics.",
+      "They reflect identical electrical conditions due to their direct association with the negative battery terminal.",
+      "The reason for their similar state lies in their connection to the negative terminal.",
+      "Because they are all connected to the same negative battery terminal, their states are identical.",
+      "Their equal states arise from being wired to the negative terminal of the battery.",
+      "The connection to the negative battery terminal ensures that all terminals are in the same state.",
+      "They are in the same electrical state because they are all connected to the negative side of the battery."
+    ]
+  },
+  "FF.Q12": {
+    "question_text": "As you move the multimeter leads from one bulb terminal to the next, what does it mean when the voltage reading jumps from 0 to 1.5?",
+    "sample_solution": "the bulb is damaged",
+    "answers": [
+      "It indicates that there is a break or fault in the circuit at that point.",
+      "The bulb may be operational when connected to one terminal but not the other.",
+      "This suggests that the electrical connection is intermittent or unstable.",
+      "It could mean the bulb is functioning only intermittently, allowing voltage to appear at that moment.",
+      "The voltage jump may indicate a short circuit in the wiring leading to the bulb.",
+      "It reflects a change in the circuit components, such as a bad connection or a blown fuse.",
+      "This shows that the current is only able to flow when the circuit is completed at that specific terminal.",
+      "The reading indicates that one terminal is receiving voltage while the other is not connected properly.",
+      "It suggests that there is a temporary connection at that moment, allowing voltage to be detected.",
+      "The increase in voltage reading indicates a functional discrepancy between the two terminals."
+    ]
+  },
+  "FF.Q13": {
+    "question_text": "What is voltage?",
+    "sample_solution": "Voltage is the difference in electrical states between two terminals",
+    "answers": [
+      "Voltage is a measure of the potential energy difference per unit charge between two points in an electric field.",
+      "It represents the electrical pressure that pushes electric current through a circuit.",
+      "Voltage is defined as the work done to move a unit charge from one terminal to another against an electric field.",
+      "It can be thought of as the force that drives electrons through a conductor.",
+      "Voltage is the scalar quantity that indicates the electric potential difference between two points.",
+      "In electrical terms, voltage is the potential energy difference that can cause current to flow in a circuit.",
+      "Voltage quantifies the energy available to move charges between two points in an electric circuit.",
+      "It is the difference in electric potential energy per unit charge between two locations in an electrical system.",
+      "Voltage is often referred to as electric potential difference, essential for the flow of electric current.",
+      "It is the measure of the energy required to move a charge between two points, influencing how much current can flow."
+    ]
+  },
+  "FF.Q14": {
+    "question_text": "What does a voltage reading of 0 tell you about the connection between a bulb terminal and a battery terminal?",
+    "sample_solution": "the terminals are connected",
+    "answers": [
+      "There is no current flow between the bulb terminal and the battery terminal.",
+      "The terminals are electrically isolated from each other.",
+      "It indicates an open circuit between the bulb and the battery.",
+      "The absence of voltage suggests that the bulb is not receiving power.",
+      "The bulb terminal is not connected to the battery terminal.",
+      "The zero voltage reading means the circuit is incomplete.",
+      "It shows that there is no connection allowing current to pass.",
+      "The terminals do not establish a conductive path.",
+      "The lack of voltage indicates a disconnection or fault in the circuit.",
+      "It means the battery terminal and bulb terminal are not linked."
+    ]
+  },
+  "FF.Q15": {
+    "question_text": "What does a voltage reading of 1.5 tell you about the connection between a bulb terminal and a battery terminal?",
+    "sample_solution": "the terminals are not connected",
+    "answers": [
+      "The voltage reading indicates there is some connection between the terminals, but it is not sufficient to power the bulb.",
+      "A voltage of 1.5 suggests a partial or weak connection, possibly with high resistance.",
+      "The reading of 1.5 volts implies that the terminals are likely connected, but not fully functional.",
+      "This voltage indicates there is a connection, but it may not be complete or effective for the bulb.",
+      "A reading of 1.5 volts shows that the terminals are connected in some way, although the circuit may not be closed.",
+      "This value suggests that the terminals are connected, but the current may be insufficient to operate the bulb.",
+      "The presence of 1.5 volts indicates a connection exists, but it may not be adequate for full operation.",
+      "A voltage of 1.5 indicates the terminals are connected, but potentially with poor contact or high resistance.",
+      "The 1.5 voltage reading implies there is a link between the bulb and battery, though not strong enough to illuminate it.",
+      "This voltage suggests a connection exists, but it may not be ideal for the bulb's requirements."
+    ]
+  },
+  "FF.Q17": {
+    "question_text": "Explain why you got a voltage reading of 1.5 for terminal 1 and the positive terminal.",
+    "sample_solution": "Terminal 1 and the positive terminal are separated by the gap",
+    "answers": [
+      "The voltage reading of 1.5 at terminal 1 indicates it is connected to the positive terminal.",
+      "Because terminal 1 measures the potential difference relative to the positive terminal, I obtained a reading of 1.5 volts.",
+      "The reading of 1.5 volts at terminal 1 occurs because it is effectively linked to the positive terminal.",
+      "A voltage of 1.5 is recorded for terminal 1 as it is in proximity to the positive terminal.",
+      "Terminal 1 shows a voltage of 1.5 due to its electrical connection with the positive terminal.",
+      "The 1.5 voltage reading indicates that terminal 1 is referencing the positive battery terminal.",
+      "This reading of 1.5 volts is due to terminal 1 being influenced by the positive terminal's potential.",
+      "The measurement of 1.5 volts at terminal 1 signifies a direct relation to the positive terminal's voltage.",
+      "Terminal 1 reads 1.5 volts because it is not isolated from the positive terminal.",
+      "The voltage of 1.5 at terminal 1 occurs as it interacts with the positive battery terminal."
+    ]
+  },
+  "FF.Q19": {
+    "question_text": "Explain why you got a voltage reading of 1.5 for terminal 3 and the positive terminal.",
+    "sample_solution": "Terminal 3 and the positive terminal are separated by the gap",
+    "answers": [
+      "Terminal 3 is at a different electrical potential compared to the positive terminal.",
+      "The measured voltage of 1.5 indicates a potential difference between terminal 3 and the positive terminal.",
+      "There is a voltage reading of 1.5 because terminal 3 is isolated from the positive terminal.",
+      "The gap between terminal 3 and the positive terminal results in a 1.5 voltage reading.",
+      "Since terminal 3 is not connected to the negative terminal, a voltage of 1.5 is observed with respect to the positive terminal.",
+      "The voltage of 1.5 occurs due to the separation between terminal 3 and the positive battery terminal.",
+      "Terminal 3 shows a reading of 1.5 volts due to the lack of connection to the positive terminal.",
+      "The voltage reading reflects the difference in potential energy between terminal 3 and the positive terminal.",
+      "The presence of a gap allows for a voltage measurement of 1.5 between the two terminals.",
+      "A voltage of 1.5 is recorded as terminal 3 has a distinct electrical state from the positive terminal."
+    ]
+  },
+  "FF.Q2": {
+    "question_text": "Explain why you got a voltage reading of 1.5 for terminal 2 and the positive terminal.",
+    "sample_solution": "Terminal 2 and the positive terminal are separated by the gap",
+    "answers": [
+      "The voltage reading of 1.5 volts indicates a potential difference between terminal 2 and the positive terminal.",
+      "Terminal 2 measures a voltage of 1.5 because it is directly connected to the positive terminal.",
+      "The presence of a voltage reading of 1.5 suggests that terminal 2 is influenced by the potential of the positive terminal.",
+      "A reading of 1.5 volts at terminal 2 occurs due to its connection with the positive terminal, creating a voltage difference.",
+      "The voltage of 1.5 indicates that terminal 2 is at a higher potential compared to the negative terminal.",
+      "The 1.5 voltage reading arises from the electrical potential established between terminal 2 and the positive terminal.",
+      "The measurement of 1.5 volts is due to the proximity and connection of terminal 2 to the positive terminal.",
+      "Terminal 2 reflects a voltage of 1.5 because it is not isolated from the positive terminal.",
+      "The reading of 1.5 volts indicates that terminal 2 has a potential linked to the positive terminal's charge.",
+      "The voltage at terminal 2 is 1.5 because it measures the difference from the reference point of the positive terminal."
+    ]
+  },
+  "FF.Q20": {
+    "question_text": "Explain why you got a voltage reading of 0 for terminal 4 and the positive terminal.",
+    "sample_solution": "Terminal 4 and the positive terminal are connected",
+    "answers": [
+      "Terminal 4 has no electrical connection to the positive terminal.",
+      "There is an open circuit preventing a voltage reading at terminal 4 and the positive terminal.",
+      "Terminal 4 is isolated from the positive terminal, resulting in a reading of 0 volts.",
+      "A lack of continuity between terminal 4 and the positive terminal yields a zero voltage reading.",
+      "The absence of a connection between terminal 4 and the positive terminal explains the zero voltage.",
+      "Terminal 4 does not receive power from the positive terminal, leading to a voltage reading of 0.",
+      "Since terminal 4 is not linked to the positive terminal, the voltage measured is zero.",
+      "The voltage reading of 0 at terminal 4 indicates it is not connected to the positive terminal.",
+      "Terminal 4 is electrically disconnected from the positive terminal, resulting in no voltage.",
+      "There is no electrical path from terminal 4 to the positive terminal, hence the zero reading."
+    ]
+  },
+  "FF.Q21": {
+    "question_text": "Explain why you got a voltage reading of 0 for terminal 5 and the positive terminal.",
+    "sample_solution": "Terminal 5 and the positive terminal are connected",
+    "answers": [
+      "Terminal 5 and the positive terminal are not in contact.",
+      "There is no electrical connection between terminal 5 and the positive terminal.",
+      "A gap exists between terminal 5 and the positive terminal, resulting in a 0 voltage reading.",
+      "Because terminal 5 is isolated from the positive terminal, no voltage is detected.",
+      "The lack of continuity between terminal 5 and the positive terminal gives a voltage reading of 0.",
+      "Terminal 5 does not share a direct connection with the positive terminal.",
+      "The absence of connection between terminal 5 and the positive terminal leads to a reading of 0 volts.",
+      "A separation exists between terminal 5 and the positive terminal, preventing any voltage measurement.",
+      "The circuit configuration does not allow terminal 5 to connect with the positive terminal.",
+      "Because terminal 5 is disconnected from the positive terminal, it shows a voltage of 0."
+    ]
+  },
+  "FF.Q22": {
+    "question_text": "Explain why you got a voltage reading of 0 for terminal 6 and the positive terminal.",
+    "sample_solution": "Terminal 6 and the positive terminal are connected",
+    "answers": [
+      "{\"answers\": [\"Terminal 6 is isolated from the positive terminal, resulting in a 0 voltage reading.\", \"There is no electrical connection between terminal 6 and the positive terminal.\", \"The lack of continuity between terminal 6 and the positive terminal leads to a voltage reading of 0.\", \"Since terminal 6 is not linked to the positive terminal, the voltage is read as 0.\", \"The absence of a conductive path between terminal 6 and the positive terminal accounts for the zero voltage reading.\", \"Terminal 6 does not have a direct connection to the positive terminal, causing the voltage to be 0.\", \"The voltage reading is 0 because terminal 6 is completely disconnected from the positive terminal.\", \"There is a break in the circuit between terminal 6 and the positive terminal, resulting in a 0 voltage.\", \"Since terminal 6 and the positive terminal are not electrically joined, the voltage remains at 0.\", \"Terminal 6 does not share a common connection with the positive terminal, leading to a reading of 0 volts.\"]"
+    ]
+  },
+  "FF.Q23": {
+    "question_text": "Why?",
+    "sample_solution": "A battery uses a chemical reaction to maintain different electrical states at the terminals",
+    "answers": [
+      "A battery operates by converting stored chemical energy into electrical energy through a reaction.",
+      "The terminals are distinct because they serve different functions in the battery's electrical circuit.",
+      "The separation of terminals allows for the buildup of positive and negative charges necessary for voltage.",
+      "Electrons flow between terminals due to the chemical potential difference created in the battery.",
+      "The terminals are configured to maintain a voltage difference, which is essential for circuit operation.",
+      "A battery generates power by facilitating a chemical reaction that creates an imbalance of charges at the terminals.",
+      "The positive terminal's connection to the external circuit creates a path for current when needed.",
+      "The functioning of a battery relies on the distinct charge states at its terminals, allowing for energy release.",
+      "A gap exists between terminals to prevent short-circuits and to allow voltage to be established.",
+      "The difference in charge between the terminals drives the flow of electricity in the connected circuit."
+    ]
+  },
+  "FF.Q4": {
+    "question_text": "Explain why you got a voltage reading of 0 for terminal 6 and the positive terminal.",
+    "sample_solution": "Terminal 6 and the positive terminal are connected",
+    "answers": [
+      "Terminal 6 has no electrical connection to the positive terminal.",
+      "There is no conductive path between terminal 6 and the positive terminal.",
+      "The voltage reading is zero because terminal 6 is isolated from the positive terminal.",
+      "Terminal 6 does not receive any voltage from the positive terminal due to a lack of connection.",
+      "The absence of continuity between terminal 6 and the positive terminal results in a zero voltage reading.",
+      "Because terminal 6 is not linked to the positive terminal, the voltage reading is zero.",
+      "The voltage is measured by the difference in potential, which is absent here due to disconnection.",
+      "Terminal 6 is electrically disconnected from the positive terminal, leading to a reading of zero.",
+      "A gap exists between terminal 6 and the positive terminal, hence no voltage is detected.",
+      "The reading of zero volts indicates that terminal 6 is not connected to the positive terminal."
+    ]
+  },
+  "FF.Q5": {
+    "question_text": "Explain why you got a voltage reading of 0 for terminal 1 and terminal 2.",
+    "sample_solution": "Terminals 1 and 2 are connected",
+    "answers": [
+      "Terminal 1 and terminal 2 are not properly connected to the circuit.",
+      "The multimeter leads may not be making contact with the terminals.",
+      "There could be an open circuit preventing current flow between the terminals.",
+      "Terminal 1 and terminal 2 are both at the same potential, resulting in zero voltage difference.",
+      "The battery may be depleted or disconnected, leading to no voltage reading.",
+      "There might be a fault in the wiring between terminal 1 and terminal 2.",
+      "The terminals could be shorted together, causing no voltage differential.",
+      "A break in the circuit between the terminals is likely causing the zero reading.",
+      "Both terminals may be connected to ground, resulting in a zero voltage measurement.",
+      "If terminal 1 and terminal 2 are both isolated from the power source, they will read zero volts."
+    ]
+  },
+  "FF.Q6": {
+    "question_text": "Explain why you got a voltage reading of 0 for terminal 1 and terminal 4.",
+    "sample_solution": "Terminals 1 and 4 are connected",
+    "answers": [
+      "There is no electrical connection between terminal 1 and terminal 4.",
+      "Both terminals are isolated from the positive and negative battery terminals.",
+      "Terminal 1 and terminal 4 are not linked to any voltage source.",
+      "The voltage reading is zero because there is a break in the circuit at both terminals.",
+      "Without a direct connection to either terminal of the battery, both read zero volts.",
+      "The absence of voltage at terminals 1 and 4 indicates they are not part of a complete circuit.",
+      "Terminal 1 and terminal 4 are open circuits, resulting in a voltage reading of zero.",
+      "The lack of connectivity to the power supply results in no voltage at these terminals.",
+      "Since both terminals are disconnected from any voltage source, they read zero volts.",
+      "The terminals do not have any electrical potential difference, leading to a reading of zero."
+    ]
+  },
+  "FF.Q7": {
+    "question_text": "Explain why you got a voltage reading of 1.5 for terminal 1 and terminal 6.",
+    "sample_solution": "Terminals 1 and 6 are separated by the gap",
+    "answers": [
+      "The voltage reading of 1.5 at terminals 1 and 6 indicates they are linked to the same positive voltage source.",
+      "Terminal 1 and terminal 6 are both connected to the positive side of the circuit, resulting in a 1.5 voltage measurement.",
+      "The 1.5 voltage reading occurs because there is no connection to ground or negative terminals from terminal 1 and terminal 6.",
+      "Since terminals 1 and 6 are not linked to any other terminals besides the positive source, they show a consistent voltage of 1.5.",
+      "The consistent reading of 1.5 volts suggests that both terminals are receiving power from the same positive terminal.",
+      "The gap between the terminals prevents any interference from the negative terminal, allowing a clear 1.5 voltage reading.",
+      "Terminal 1 and terminal 6 are effectively isolated from negative connections, leading to a voltage of 1.5.",
+      "The 1.5 voltage reading is due to both terminals being directly connected to the same power source without any negative terminal involvement.",
+      "Because terminals 1 and 6 are not grounded, they maintain a voltage of 1.5 volts from the connected positive terminal.",
+      "The voltage difference measured at terminals 1 and 6 reflects their direct association with the positive battery terminal."
+    ]
+  },
+  "FF.Q8": {
+    "question_text": "Why does measuring voltage help you locate a burned out bulb? Try to answer in terms of electrical states, connections and/ or a gap.",
+    "sample_solution": "Measuring voltage indicates the place where the electrical state changes due to a damaged bulb.",
+    "answers": [
+      "Measuring voltage reveals where the electrical continuity is interrupted by the burned-out bulb.",
+      "A burned-out bulb creates an open circuit, which is evident when voltage readings show no potential difference.",
+      "By measuring voltage across the circuit, you can identify the point where the electrical flow is disrupted due to the bulb failure.",
+      "When voltage is absent at a bulb location, it indicates a gap in the circuit caused by the burned-out bulb.",
+      "Checking for voltage helps determine if the circuit is complete, highlighting the location of the burned-out bulb.",
+      "The absence of voltage at the bulb suggests that the circuit is broken, pinpointing the faulty component.",
+      "Voltage measurement helps locate the burned-out bulb by showing where the electrical connection is faulty.",
+      "An open circuit caused by a burned-out bulb will show a voltage drop across it, aiding in diagnosis.",
+      "Identifying an area with zero voltage helps locate a burned-out bulb by indicating where the electrical connection fails.",
+      "Voltage readings can indicate a lack of current flow, which helps to locate the burned-out bulb in the circuit."
+    ]
+  },
+  "PC.Q1": {
+    "question_text": "Explain your reasoning.",
+    "sample_solution": "bulbs B and C are still in closed paths with the battery",
+    "answers": [
+      "Because the terminals are not linked to form a complete circuit.",
+      "The circuit remains open as there is a break in the connection.",
+      "They are isolated from the positive terminal, preventing current flow.",
+      "The lack of continuity between the terminals means no current can pass.",
+      "Because the terminals do not create a closed loop with the battery.",
+      "The separation between terminals indicates they cannot conduct electricity.",
+      "They are not part of a closed circuit, which halts current flow.",
+      "The absence of a connection to the battery's positive terminal results in no power.",
+      "Because there is no path for the current to travel through.",
+      "The disconnection prevents any electrical energy from moving through the circuit."
+    ]
+  },
+  "PC.Q10": {
+    "question_text": "Explain your reasoning.",
+    "sample_solution": "If C burns out, then A and B are still in a closed path with the battery.",
+    "answers": [
+      "The circuit remains closed because components A and B can still receive current from the battery.",
+      "Since element C is non-functional, A and B continue to complete the circuit with the battery.",
+      "The absence of a connection at C does not interrupt the current flow to A and B.",
+      "As long as A and B are connected to the battery, they will still operate independently of C.",
+      "The failure of C does not affect the electrical connection between A, B, and the battery.",
+      "Because A and B are still linked to the power source, the circuit remains closed despite C's burnout.",
+      "The electrical pathway is intact for A and B, allowing them to function even when C is out of order.",
+      "A and B are still connected to the positive terminal of the battery, ensuring they receive power.",
+      "The separation caused by C's failure does not disrupt the connection between A, B, and the battery.",
+      "A and B maintain a complete circuit with the battery, independent of C's operational status."
+    ]
+  },
+  "PC.Q12": {
+    "question_text": "Why do both bulbs A and B stay on when bulb C is burned out?",
+    "sample_solution": "If C burns out then A and B are still in a closed path with the battery",
+    "answers": [
+      "A and B are still part of a complete circuit, allowing them to remain lit.",
+      "The circuit involving bulbs A and B is independent of bulb C, so they continue to function.",
+      "Since A and B are not in series with C, their operation is unaffected when C fails.",
+      "The remaining bulbs A and B maintain their connection to the power source despite C being burned out.",
+      "C's failure doesn't disrupt the flow of electricity to bulbs A and B, keeping them illuminated.",
+      "A and B are still connected to the power supply, which allows them to stay on.",
+      "Bulbs A and B are energized through a different pathway even when bulb C is out.",
+      "The electrical circuit for bulbs A and B remains intact, hence they stay lit.",
+      "The failure of C does not alter the current path leading to A and B, allowing them to shine.",
+      "As A and B are still connected to the battery, their functionality remains intact regardless of C's condition."
+    ]
+  },
+  "PC.Q13": {
+    "question_text": "Under what circumstances will a damaged/ burned out bulb affect another bulb?",
+    "sample_solution": "If they are in the same path the burned out bulb affects the other bulb.",
+    "answers": [
+      "If the burned-out bulb is in a series circuit, it will break the circuit, preventing current from reaching the other bulb.",
+      "When bulbs are connected in parallel, a burned-out bulb will not affect the operation of the other bulb.",
+      "In a series connection, the failure of one bulb can lead to the failure of others in the same path due to interrupted current flow.",
+      "If both bulbs share the same power source and one bulb is damaged, it may cause voltage irregularities that affect the other bulb.",
+      "A burned-out bulb can impact another bulb if they are part of the same circuit configuration and share the same electrical path.",
+      "In a circuit with multiple bulbs, a damaged bulb can create an open circuit, stopping current flow to all bulbs in that series.",
+      "When bulbs are wired in parallel, a burned-out bulb typically does not affect the functionality of others, as they have independent paths.",
+      "If the damaged bulb causes a short circuit, it can lead to excessive current that might subsequently damage other bulbs.",
+      "If bulbs are wired in series, the failure of one bulb will prevent any current from reaching the others, causing them all to go out.",
+      "In a series circuit, the burnout of one bulb disrupts the entire circuit, while in a parallel configuration, only the burnt bulb is affected."
+    ]
+  },
+  "PC.Q14": {
+    "question_text": "Why not?",
+    "sample_solution": "there is still a closed path containing Switch Z, Switch X, Bulbs A and C and the battery",
+    "answers": [
+      "The components do not create a complete circuit.",
+      "There is no direct connection between the terminals involved.",
+      "The circuit is incomplete due to missing connections.",
+      "The arrangement does not allow for electrical flow.",
+      "The terminals cannot supply power without a closed loop.",
+      "A gap in the circuit prevents current from flowing.",
+      "They are not linked to form a continuous path.",
+      "The absence of a connection inhibits function.",
+      "The circuit lacks the necessary connections to operate.",
+      "A break in the pathway stops the flow of electricity."
+    ]
+  },
+  "PC.Q15": {
+    "question_text": "Describe the paths in this diagram and explain how those paths account for the results.",
+    "sample_solution": "Bulb A is in a path which does not contain B and C, so bulbs B and C don't affect it. Bulbs B and C are in the same path. They affect each other, but Bulb A doesn't affect them.",
+    "answers": [
+      "Path A includes Bulb A, which operates independently since it is isolated from paths containing Bulbs B and C.",
+      "Bulbs B and C are linked in the same electrical path, meaning their functionality is interdependent.",
+      "Since Bulb A is connected solely to the positive terminal, its performance is unaffected by the other bulbs.",
+      "The absence of a direct connection between Bulb A and the circuit containing Bulbs B and C allows it to function autonomously.",
+      "Because Bulbs B and C share a circuit, their operation influences each other while leaving Bulb A unaffected.",
+      "The separate circuit configuration ensures Bulb A can light up without interference from the other bulbs.",
+      "In this setup, Bulb A operates independently due to its lack of connection to the shared circuit of Bulbs B and C.",
+      "Bulbs B and C are interconnected, which means they will influence each other's outputs, unlike Bulb A.",
+      "The isolation of Bulb A from the paths of Bulbs B and C ensures its results are solely based on its own circuit.",
+      "The circuit arrangement allows Bulb A to function without the impact of Bulbs B and C due to their shared path."
+    ]
+  },
+  "PC.Q16": {
+    "question_text": "Why was bulb A on when switch Y was open and switch Z was closed?",
+    "sample_solution": "Bulb A is still contained in a closed path with the battery.",
+    "answers": [
+      "Bulb A lights up because it is connected to a complete circuit despite switch Y being open.",
+      "The circuit can still allow current to flow to bulb A as it remains closed through other pathways.",
+      "Since switch Y is open, bulb A must be receiving power through an alternate route via switch Z.",
+      "Bulb A is illuminated because it is part of a circuit that includes switch Z, which is closed.",
+      "The configuration of the circuit allows for continuity to bulb A even with switch Y in the open position.",
+      "Even with switch Y open, the current can still travel through switch Z to power bulb A.",
+      "Bulb A is on as it is connected to the battery through switch Z, which completes the circuit.",
+      "Despite switch Y being open, bulb A can receive electricity because the circuit is closed due to switch Z.",
+      "Switch Y being open does not affect bulb A since it remains connected to a battery through the closed switch Z.",
+      "Bulb A is lit because it is still included in a closed circuit with the battery via switch Z."
+    ]
+  },
+  "PC.Q17": {
+    "question_text": "Why was bulb C off when switch Z was open?",
+    "sample_solution": "Bulb C was no longer in a closed path with the battery",
+    "answers": [
+      "Bulb C was disconnected from the circuit when switch Z was open.",
+      "The circuit was incomplete due to switch Z being open.",
+      "When switch Z was open, there was no flow of electricity through bulb C.",
+      "The open switch Z prevented current from reaching bulb C.",
+      "Bulb C was off because there was no closed loop for current to circulate.",
+      "With switch Z open, the electrical path to bulb C was interrupted.",
+      "The absence of a complete circuit caused bulb C to be off.",
+      "Switch Z being open created a break in the circuit, keeping bulb C off.",
+      "Bulb C was off as it was not part of a complete electrical loop.",
+      "The opening of switch Z isolated bulb C from the power source."
+    ]
+  },
+  "PC.Q18": {
+    "question_text": "What role does the path play in determining whether or not a switch affects a bulb?",
+    "sample_solution": "If a bulb and a switch are in the same path the switch affects the bulb",
+    "answers": [
+      "If the switch is in the same circuit path as the bulb, then it will control whether the bulb receives power.",
+      "The switch must be part of the electrical path for it to influence the bulb's illumination.",
+      "A switch affects a bulb only if they are connected within the same electrical circuit.",
+      "The impact of the switch on the bulb hinges on whether they share a continuous path for electricity.",
+      "For a switch to affect a bulb, both must be in a closed loop within the electrical circuit.",
+      "The connection of the switch within the same path determines its ability to control the power to the bulb.",
+      "If the switch interrupts the path to the bulb, it will prevent the bulb from lighting up.",
+      "The functionality of the switch regarding the bulb is contingent upon their shared electrical connection.",
+      "A switch can only influence a bulb if there is an unbroken path allowing current to flow to it.",
+      "The role of the path is critical, as it dictates whether the current can reach the bulb when the switch is toggled."
+    ]
+  },
+  "PC.Q19": {
+    "question_text": "When switch X was closed and switch Y was open, why was bulb A on?",
+    "sample_solution": "Bulb A was still contained in the same closed path with the battery.",
+    "answers": [
+      "Bulb A was lit because it was part of the closed circuit created by switch X.",
+      "The current was able to flow through bulb A due to the closure of switch X.",
+      "Since switch X completed the circuit for bulb A, it remained illuminated even with switch Y open.",
+      "The circuit was completed when switch X was closed, allowing electricity to power bulb A.",
+      "Bulb A received power since it was in a closed loop with the battery through switch X.",
+      "The presence of a closed circuit via switch X allowed bulb A to light up.",
+      "Bulb A was on because it remained connected to the power source despite switch Y being open.",
+      "Closing switch X effectively connected bulb A directly to the voltage source.",
+      "The electrical path for bulb A was intact because switch X was closed.",
+      "Switch Y being open did not affect bulb A because the circuit was completed by switch X."
+    ]
+  },
+  "PC.Q2": {
+    "question_text": "Explain your reasoning.",
+    "sample_solution": "Bulbs A and C are still in closed paths with the battery",
+    "answers": [
+      "Bulb A and C remain part of a continuous circuit with the battery.",
+      "The gap between terminal 1 and the positive battery terminal prevents current flow.",
+      "The absence of connections to the negative terminal limits the circuit's functionality.",
+      "The electrical connection of terminals 4, 5, and 6 to the positive terminal is crucial for operation.",
+      "Because the terminals are isolated from each other, they cannot complete the circuit.",
+      "The separation from the positive battery terminal indicates no current can pass through terminal 1.",
+      "The continuity of the circuit is maintained by the intact connections to the positive terminal.",
+      "The voltage difference between terminals indicates their separate electrical states.",
+      "The unconnected terminals fail to form a closed loop necessary for current to flow.",
+      "As terminals 4, 5, and 6 link directly to the positive terminal, they are active in the circuit."
+    ]
+  },
+  "PC.Q20": {
+    "question_text": "When switch X was open and switch Y was closed, why were bulbs B and C on?",
+    "sample_solution": "Bulb B and Bulb C were still contained in the same closed path with the battery.",
+    "answers": [
+      "Bulb B and Bulb C were part of a complete circuit that included the closed switch Y.",
+      "Since switch Y was closed, the circuit was completed, allowing current to flow through bulbs B and C.",
+      "Both bulbs B and C received power because they were connected in a loop with the battery despite switch X being open.",
+      "Bulb B and Bulb C remained lit due to their connection to the power source through the closed switch Y.",
+      "The closed switch Y provided a path for electricity, which powered both bulbs B and C.",
+      "Because switch Y was closed, it created a closed circuit that kept both bulbs B and C illuminated.",
+      "Even with switch X open, bulbs B and C were still receiving current through the circuit created by switch Y being closed.",
+      "The electric current flowed through the closed switch Y, keeping bulbs B and C operational.",
+      "Bulbs B and C were illuminated because the circuit was still complete through the closed switch Y.",
+      "They remained lit because switch Y allowed for continuous current flow to both bulbs B and C."
+    ]
+  },
+  "PC.Q21": {
+    "question_text": "Under what circumstances will a switch affect a bulb?",
+    "sample_solution": "When the switch and the bulb are contained in the same path",
+    "answers": [
+      "The switch will affect the bulb when it completes the circuit, allowing current to flow.",
+      "If the switch is closed, the electricity can reach the bulb, causing it to light up.",
+      "A bulb will only light when the switch is in the 'on' position, thus connecting it within the circuit.",
+      "When the switch is opened, it breaks the circuit and prevents the bulb from receiving power.",
+      "The bulb's illumination depends on the switch being in the correct position to allow electrical flow.",
+      "The switch impacts the bulb when it connects or disconnects the electrical supply to it.",
+      "If the circuit is interrupted by the switch, the bulb will not illuminate.",
+      "The bulb is affected by the switch when the circuit is completed through the switch's mechanism.",
+      "When the switch is toggled, it can either allow or stop the flow of electricity to the bulb.",
+      "The bulb will only function if the switch is correctly aligned to complete the circuit."
+    ]
+  },
+  "PC.Q3": {
+    "question_text": "Explain your reasoning.",
+    "sample_solution": "bulbs A and B are still in closed paths with the battery",
+    "answers": [
+      "The circuit is incomplete due to the gap between the terminals.",
+      "The gap prevents current from flowing between terminal 1 and the positive battery terminal.",
+      "Because there is no connection between the terminals and the battery, current cannot pass.",
+      "The separation of terminal 1 from the positive terminal means there is no power supplied.",
+      "The absence of a direct link restricts electrical flow from the battery to the terminals.",
+      "Without a connection to the positive terminal, the circuit remains open.",
+      "The break in the circuit at the terminals stops the flow of electricity.",
+      "Since the terminals are not linked to the battery, there is no voltage present.",
+      "The lack of connectivity ensures that the terminals cannot complete the circuit.",
+      "There is no electrical potential difference due to the disconnection from the battery."
+    ]
+  },
+  "PC.Q4": {
+    "question_text": "Why didn^t bulbs A and C go out after bulb B burned out?",
+    "sample_solution": "Bulbs A and C are still contained in closed paths with the battery",
+    "answers": [
+      "Bulbs A and C remain lit because they are wired in parallel with the power source.",
+      "The circuit for bulbs A and C is intact, allowing them to continue receiving power.",
+      "Since bulbs A and C are on separate paths from bulb B, they are unaffected by its failure.",
+      "Bulbs A and C have a direct connection to the battery, which keeps them operational.",
+      "The electrical circuit involving bulbs A and C doesn't include bulb B, so they stay on.",
+      "As long as the connections to the battery for bulbs A and C are unbroken, they will stay lit.",
+      "Bulb B's burnout does not interrupt the current flowing through bulbs A and C.",
+      "Because A and C are part of a different circuit than bulb B, they do not go out.",
+      "The failure of bulb B does not impact the power to bulbs A and C because of their independent connections.",
+      "Bulbs A and C are still connected to the positive terminal of the battery, which keeps them functioning."
+    ]
+  },
+  "PC.Q5": {
+    "question_text": "Explain your reasoning.",
+    "sample_solution": "A and C are in different paths with the battery",
+    "answers": [
+      "Terminal 1 is disconnected, resulting in a break in the circuit.",
+      "The gap between terminal 1 and the battery prevents current flow.",
+      "There is no connection between terminal 1 and the battery's positive terminal.",
+      "Because terminal 1 has no link to the positive side of the battery.",
+      "A circuit is incomplete when terminal 1 is not connected to the positive battery terminal.",
+      "The separation of terminal 1 from the battery causes it to have no electrical continuity.",
+      "The absence of a connection to the positive terminal means terminal 1 cannot complete the circuit.",
+      "Current cannot flow through terminal 1 due to the gap from the positive terminal.",
+      "Since terminal 1 is isolated from the battery, it cannot facilitate electrical flow.",
+      "There is no electrical connection between terminal 1 and the battery's positive terminal, resulting in no current."
+    ]
+  },
+  "PC.Q6": {
+    "question_text": "Explain your reasoning.",
+    "sample_solution": "B and C are in the same path with the battery",
+    "answers": [
+      "Terminals B and C are connected directly to the same power source.",
+      "The connection to the battery allows current to flow through terminals B and C.",
+      "Because both terminals B and C share a common point with the battery, they are in the same circuit.",
+      "B and C are linked to the positive side of the battery, completing the circuit.",
+      "The circuit is completed by the connections of terminals B and C to the battery.",
+      "Since both terminals B and C are wired to the same battery terminal, they form a parallel circuit.",
+      "B and C are in a sequential path from the battery, allowing current to pass through.",
+      "Because terminal B connects to the battery and is in line with terminal C, they function together.",
+      "Both terminals are part of the same electrical pathway originating from the battery.",
+      "The battery connects both terminals B and C directly, facilitating the flow of electricity."
+    ]
+  },
+  "PC.Q7": {
+    "question_text": "Explain your reasoning.",
+    "sample_solution": "A and C are in different paths with the battery",
+    "answers": [
+      "Terminal 1 is not connected to the battery, creating a disconnection.",
+      "The absence of a connection to the positive terminal explains the lack of current flow.",
+      "Since terminal 1 does not link to the positive battery, it cannot transmit energy.",
+      "The gap between terminal 1 and the battery prevents any electrical circuit completion.",
+      "As there is no direct connection to the positive terminal, energy cannot pass through.",
+      "Without a connection to the positive terminal, terminal 1 remains inactive.",
+      "The lack of connectivity to the positive terminal results in no voltage reading.",
+      "The separation from the battery's positive terminal means terminal 1 cannot function.",
+      "Because terminal 1 is isolated from the positive terminal, it cannot facilitate power.",
+      "The disconnection from the positive battery terminal signifies a break in the circuit."
+    ]
+  },
+  "PC.Q8": {
+    "question_text": "Explain your reasoning.",
+    "sample_solution": "If bulb A burns out, B and C are no longer in a closed path with the battery",
+    "answers": [
+      "The circuit is incomplete due to the interruption at bulb A.",
+      "Because the current cannot flow through A, bulbs B and C are isolated.",
+      "When A fails, the electrical path to B and C is disrupted.",
+      "Bulb A's failure breaks the continuity required for B and C to operate.",
+      "The disconnection caused by A's burnout prevents B and C from receiving power.",
+      "Due to A being non-functional, B and C lack a complete circuit to the battery.",
+      "The failure of bulb A creates an open circuit affecting B and C.",
+      "Bulb A's burnout results in no current flow to B and C, rendering them inactive.",
+      "With A inoperative, the circuit cannot provide electricity to B and C.",
+      "The absence of a closed circuit through bulb A means B and C will not light up."
+    ]
+  },
+  "SC.Q10": {
+    "question_text": "Explain why circuit 5 is a short circuit.",
+    "sample_solution": "the battery is contained in a path in which there is no bulb",
+    "answers": [
+      "Circuit 5 is a short circuit because there is an unbroken path that allows current to flow directly from the positive to the negative terminal.",
+      "The absence of any load device, like a bulb, means that the current bypasses resistive elements, resulting in a short circuit.",
+      "Due to the direct connection between the battery terminals without any intermediary components, circuit 5 constitutes a short circuit.",
+      "Circuit 5 creates a short circuit because it connects the positive and negative terminals directly, leading to excessive current flow.",
+      "There is a direct conductive path between the battery's terminals in circuit 5, indicating it is a short circuit.",
+      "The configuration of circuit 5 allows current to flow without resistance, which defines it as a short circuit.",
+      "In circuit 5, the terminals are linked in such a way that they facilitate a short circuit, preventing proper functioning of any connected devices.",
+      "Circuit 5 is classified as a short circuit because it connects the terminals in a way that bypasses the intended load.",
+      "The design of circuit 5 shows a direct link between the battery's positive and negative terminals, resulting in a short circuit.",
+      "Circuit 5 represents a short circuit as it lacks any components that would normally limit the flow of electricity."
+    ]
+  },
+  "SC.Q11": {
+    "question_text": "What do you think the red X means?",
+    "sample_solution": "the battery is damaged",
+    "answers": [
+      "The red X indicates a malfunction or fault in the system.",
+      "It signifies that there is an error that needs attention.",
+      "The presence of the red X suggests that the item is not functioning correctly.",
+      "It could mean that the component has a critical failure.",
+      "The red X likely represents a warning about a potential issue.",
+      "It may denote that the device is inoperable or disabled.",
+      "The symbol indicates that there is a significant problem that requires troubleshooting.",
+      "The red X is often used to signify that something is not working as intended.",
+      "It suggests that the monitored system has encountered an error condition.",
+      "The red X implies that a connection or component is compromised."
+    ]
+  },
+  "SC.Q12": {
+    "question_text": "Why does an open switch impact a circuit?",
+    "sample_solution": "the open switch creates a gap",
+    "answers": [
+      "An open switch interrupts the flow of current in a circuit.",
+      "When a switch is open, it breaks the electrical connection, preventing current from passing through.",
+      "An open switch prevents electrons from moving through the circuit, halting operation.",
+      "The circuit remains incomplete due to the open switch, resulting in no current flow.",
+      "An open switch creates an open circuit, which cannot conduct electricity.",
+      "Without a closed switch, the components in the circuit cannot receive power.",
+      "The gap created by the open switch stops the electrical circuit from functioning.",
+      "An open switch means there is no conductive path for the electrical current.",
+      "With an open switch, the circuit is unable to operate as intended.",
+      "The interruption caused by the open switch leaves the circuit inactive."
+    ]
+  },
+  "SC.Q3": {
+    "question_text": "What are the conditions that are required to make a bulb light up?",
+    "sample_solution": "there is a closed path containing both the bulb and a battery",
+    "answers": [
+      "The circuit must be complete, connecting the bulb to both terminals of the power source.",
+      "There must be a source of voltage, such as a battery, to provide the necessary energy.",
+      "The bulb must be properly installed in the circuit for it to function.",
+      "All components, including wires and the bulb, must be intact without any breaks or damage.",
+      "The terminals of the battery need to be connected to the corresponding terminals of the bulb.",
+      "There should be a conductive path allowing electricity to flow through the bulb.",
+      "The circuit should not include any open gaps that would interrupt the flow of current.",
+      "The resistance of the bulb must be suitable for the voltage supplied by the battery.",
+      "The connections must be secure to prevent any disconnections during operation.",
+      "The power source must be turned on to allow for current to flow through the circuit."
+    ]
+  },
+  "SC.Q4": {
+    "question_text": "Explain your reasoning.",
+    "sample_solution": "bulb B creates a gap",
+    "answers": [
+      "The positive battery terminal is not in contact with terminal 1.",
+      "There is no connection between terminal 1 and the positive battery terminal.",
+      "The terminals are isolated from the positive battery terminal.",
+      "A gap exists between the positive battery terminal and terminal 1.",
+      "The lack of connection to the positive terminal leads to the absence of current flow.",
+      "Only terminals 4, 5, and 6 link to the positive battery terminal.",
+      "Terminal 1 is separated from the positive battery terminal by an open circuit.",
+      "The absence of direct contact prevents the flow of electricity.",
+      "The electrical pathway is interrupted by the gap.",
+      "Current cannot flow because terminal 1 is not linked to the positive battery."
+    ]
+  },
+  "SC.Q5": {
+    "question_text": "Why does a damaged bulb impact a circuit?",
+    "sample_solution": "a damaged bulb creates a gap",
+    "answers": [
+      "A damaged bulb interrupts the flow of electricity in the circuit.",
+      "When a bulb is damaged, it can create an open circuit, preventing current from flowing.",
+      "A faulty bulb can break the continuity needed for the circuit to function properly.",
+      "If a bulb is damaged, it acts as a barrier, stopping electrical current from passing through.",
+      "The damage to a bulb can result in a short circuit or an open circuit scenario.",
+      "In a circuit, a damaged bulb alters the path of current, which can lead to circuit failure.",
+      "When the bulb is damaged, it prevents the circuit from completing the loop necessary for electrical flow.",
+      "A broken bulb stops the circuit from operating by failing to allow current to pass.",
+      "The damaged bulb disrupts the intended electrical pathway, leading to malfunction.",
+      "When a bulb fails, it can cause a break in the circuit, hindering electrical connectivity."
+    ]
+  },
+  "SC.Q7": {
+    "question_text": "Explain your reasoning.",
+    "sample_solution": "A and C are in the same closed path",
+    "answers": [
+      "A and B are part of a continuous circuit.",
+      "The terminals are isolated, preventing any current flow.",
+      "Terminal 3 is linked to the power source, unlike terminal 2.",
+      "There is no conductive pathway between these terminals.",
+      "A and C share a common connection point that completes the circuit.",
+      "The absence of a connection to ground means they cannot interact.",
+      "Only terminal 1 is linked to the positive side of the battery.",
+      "Current can only flow through terminals that form a closed loop.",
+      "The terminals lack any interconnectivity that would allow current to pass.",
+      "Terminal 5 is directly connected to the ground, while 6 is not."
+    ]
+  },
+  "SC.Q8": {
+    "question_text": "Explain why circuit 2 is not a short circuit.",
+    "sample_solution": "The battery in 2 is not in a closed path",
+    "answers": [
+      "The components in circuit 2 do not form a complete loop for current to flow.",
+      "The current has no continuous path to return to the battery's negative terminal.",
+      "There is an interruption in the circuit that prevents it from being a short circuit.",
+      "Terminal connections in circuit 2 do not allow for direct contact between positive and negative terminals.",
+      "The circuit includes a break that stops electrical flow between the terminals.",
+      "In circuit 2, the connections are not sufficient to create a short circuit condition.",
+      "The circuit configuration requires all terminals to be interconnected, which is not the case here.",
+      "A break in the pathway means there is no short circuit present.",
+      "The absence of a direct link between the battery terminals means circuit 2 cannot be a short circuit.",
+      "The layout of circuit 2 does not facilitate a direct connection between the terminals."
+    ]
+  },
+  "SC.Q9": {
+    "question_text": "Explain why circuit 4 is not a short circuit.",
+    "sample_solution": "Circuit 4 has no closed paths",
+    "answers": [
+      "Circuit 4 has breaks in the connections preventing current flow.",
+      "The components in Circuit 4 are not directly linked to complete the circuit loop.",
+      "There is an open circuit condition due to a disconnection in the pathway.",
+      "The battery terminals are disconnected from each other in Circuit 4.",
+      "Circuit 4 does not allow current to flow continuously because of the gaps.",
+      "There are no conductive paths that allow for a short circuit in this configuration.",
+      "The terminals are not wired together, which results in an open circuit.",
+      "The circuit lacks a direct connection between the positive and negative terminals.",
+      "There is a clear separation between conductors that prevents shorting.",
+      "Circuit 4 does not create a complete loop for current to travel through."
+    ]
+  },
+  "FF.Q16": {
+    "question_text": "What is the relationship between the voltage reading between two terminals and their electrical states?",
+    "sample_solution": "Voltage is the difference in electrical states between two terminals",
+    "answers": [
+      "Voltage represents the potential difference in electrical energy between two terminals.",
+      "The electrical states of two terminals are defined by their voltage difference, indicating energy availability.",
+      "A higher voltage reading indicates a greater disparity in electrical potential between the two terminals.",
+      "The voltage reading reflects how much work can be done by the electric charge moving between the terminals.",
+      "When terminals are at the same electrical state, the voltage reading is zero, indicating no potential difference.",
+      "Voltage is the measure of the electrical potential difference created by the separation of charges at the terminals.",
+      "The relationship between voltage and electrical states shows how energy is transferred through the circuit.",
+      "Voltage can be understood as the driving force that pushes electrons from one terminal to another.",
+      "The difference in electrical states corresponds directly to the voltage reading, which quantifies that difference.",
+      "If two terminals are not connected, the voltage is determined solely by the potential of each terminal."
+    ]
+  },
+  "FF.Q18": {
+    "question_text": "Explain why you got a voltage reading of 1.5 for terminal 2 and the positive terminal.",
+    "sample_solution": "Terminal 2 and the positive terminal are separated by the gap",
+    "answers": [
+      "The voltage reading of 1.5 at terminal 2 and the positive terminal occurs due to the potential difference that exists between them.",
+      "Terminal 2 measures a voltage of 1.5 volts relative to the positive terminal because they are not electrically connected to the same point.",
+      "The reading of 1.5 indicates that terminal 2 has a different electrical potential compared to the positive terminal.",
+      "The voltage of 1.5 volts at terminal 2 results from its direct connection to the positive terminal of the battery.",
+      "This voltage reading indicates that terminal 2 is linked only to the positive terminal, not to any other terminals.",
+      "The measurement of 1.5 volts suggests that there is a voltage drop between terminal 2 and the positive terminal.",
+      "A voltage of 1.5 at terminal 2 signifies that it is positively charged relative to the common ground.",
+      "The potential difference measured is due to the isolation of terminal 2 from other terminals connected to the positive battery terminal.",
+      "The reading of 1.5 volts implies that terminal 2 is experiencing a voltage due to its direct path to the positive terminal.",
+      "This value shows that terminal 2 has a potential that is specifically influenced by its connection to the positive terminal."
+    ]
+  },
+  "FF.Q3": {
+    "question_text": "Explain why you got a voltage reading of 1.5 for terminal 4 and the positive terminal.",
+    "sample_solution": "Terminal 4 and the positive terminal are separated by the gap",
+    "answers": [
+      "The voltage reading of 1.5 at terminal 4 indicates a connection to the positive terminal due to the potential difference.",
+      "Terminal 4 is linked to the positive terminal, resulting in the observed voltage of 1.5.",
+      "The reading of 1.5 volts at terminal 4 is a direct result of its proximity to the positive terminal.",
+      "A voltage of 1.5 at terminal 4 suggests it is receiving power from the positive terminal.",
+      "The positive terminal's influence creates a voltage of 1.5 across terminal 4.",
+      "The 1.5 reading at terminal 4 reflects its connection to the positive terminal of the circuit.",
+      "Since terminal 4 is near the positive terminal, it shows a voltage of 1.5.",
+      "The measurement of 1.5 volts at terminal 4 indicates it is effectively connected to the positive terminal.",
+      "The presence of a voltage reading of 1.5 signifies that terminal 4 is linked to the positive source.",
+      "Terminal 4 displays a voltage of 1.5 because it is associated with the positive terminal's electrical potential."
+    ]
+  },
+  "FF.Q9": {
+    "question_text": "Finally, consider finding a burned out light bulb in a long string of lights. One approach would be to place one lead of the multimeter on a battery terminal and then move the other lead systematically, one light bulb terminal at a time. How would you know when you have found the burned out bulb?",
+    "sample_solution": "When there is a change in voltage you have found the damaged bulb",
+    "answers": [
+      "You will know you've found the burned-out bulb when the multimeter shows zero voltage across that bulb's terminals.",
+      "A burned-out bulb will prevent the multimeter from registering any voltage, indicating a break in the circuit.",
+      "When the voltage reading on the multimeter drops to zero, it signifies that the corresponding bulb is not functioning.",
+      "You can identify the burned-out bulb when the multimeter fails to show continuity or voltage across its terminals.",
+      "If you observe a significant drop in voltage while testing, it indicates that the bulb in question has burned out.",
+      "Finding a bulb that does not register a voltage change will confirm it is the faulty one in the string of lights.",
+      "The absence of voltage across a particular bulb's terminals will reveal that it is the one that has burned out.",
+      "When the multimeter indicates that there is no potential difference across the bulb terminals, that bulb is defective.",
+      "A reading of zero volts while testing a bulb's terminals shows that it is burned out and needs to be replaced.",
+      "You can conclude that a bulb is burned out when the multimeter indicates a break in the circuit at that bulb."
+    ]
+  },
+  "PC.Q11": {
+    "question_text": "Why do both bulbs B and C go out when bulb A is burned out?",
+    "sample_solution": "If bulb A burns out, B and C are no longer in a closed path with the battery",
+    "answers": [
+      "When bulb A burns out, it breaks the circuit, causing bulbs B and C to lose their power supply.",
+      "The failure of bulb A interrupts the electrical flow, so bulbs B and C cannot function anymore.",
+      "Bulbs B and C are part of the same circuit as bulb A, and when A fails, the entire circuit is open.",
+      "If bulb A is burned out, it creates an open circuit for bulbs B and C, preventing them from lighting up.",
+      "Bulb A is essential for maintaining the circuit continuity, and its failure results in bulbs B and C going dark.",
+      "The electrical path from the battery to bulbs B and C is disrupted by the failure of bulb A.",
+      "Since bulb A is part of the series circuit, its burn out means no current can flow to bulbs B and C.",
+      "Burning out bulb A removes the connection needed for bulbs B and C to receive electricity.",
+      "The circuit is incomplete without bulb A, which causes both bulbs B and C to go out when it fails.",
+      "The connection through bulb A is critical for powering bulbs B and C, so its burnout affects them both."
+    ]
+  },
+  "PC.Q9": {
+    "question_text": "Explain your reasoning.",
+    "sample_solution": "If B burns out, then there is still a closed path with the battery that contains A and C.",
+    "answers": [
+      "There is an open circuit due to the gap between terminal 1 and the positive battery terminal.",
+      "The absence of a connection prevents current from flowing to terminal 1.",
+      "Since terminal 1 is not linked to the positive terminal, it cannot complete the circuit.",
+      "The gap creates a break in the path, isolating terminal 1 from the battery.",
+      "Current cannot reach terminal 1 because it is not directly connected to the positive battery terminal.",
+      "The terminals do not connect to the positive terminal, causing a lack of voltage.",
+      "Because terminal 1 is separated from the positive terminal, it cannot draw power.",
+      "Without a direct link to the positive terminal, terminal 1 remains inactive.",
+      "The electrical connection is interrupted by the gap, halting current flow to terminal 1.",
+      "As terminal 1 lacks connectivity to the positive terminal, it remains non-functional."
+    ]
+  },
+  "SC.Q1": {
+    "question_text": "Why did it happen?",
+    "sample_solution": "damaged bulb A creates a gap",
+    "answers": [
+      "The electrical circuit is incomplete due to a broken connection.",
+      "A malfunction in the wiring resulted in a loss of continuity.",
+      "A fault in the component caused a disconnection in the circuit.",
+      "The circuit failed because one of the connections was loose.",
+      "An interruption in the power supply led to the failure.",
+      "The resistor was damaged, causing an open circuit.",
+      "The wires are not properly linked, resulting in a gap.",
+      "One of the terminals is open, preventing current flow.",
+      "An open circuit was created by a disconnected wire.",
+      "The failure occurred because the circuit was not closed."
+    ]
+  },
+  "SC.Q2": {
+    "question_text": "Explain your reasoning.",
+    "sample_solution": "In both circuits there is a closed path containing both the a and a battery",
+    "answers": [
+      "Because there is a complete circuit connecting the battery to the terminals.",
+      "The terminals are linked to the positive side of the battery, allowing current to flow.",
+      "There is continuity between the battery and the terminals, enabling electrical flow.",
+      "The configuration of the circuit allows for a path from the battery to the terminals.",
+      "Since the terminals are not isolated from the battery, current can pass through them.",
+      "The presence of a conductive path between the terminals and the battery facilitates the flow of electricity.",
+      "The terminals are part of a circuit that includes the battery, thus completing the path.",
+      "The electrical connection established by the terminals and the battery allows current to travel.",
+      "The terminals are directly connected to the battery, which maintains a flow of current.",
+      "The circuit is intact as it provides a route for electrical current from the battery to the terminals."
+    ]
+  },
+  "SC.Q6": {
+    "question_text": "How does a damaged bulb compare to an open switch?",
+    "sample_solution": "A damaged bulb and an open switch both create a gap and cause bulbs to go out",
+    "answers": [
+      "A damaged bulb interrupts the flow of electricity similar to how an open switch prevents current from passing through the circuit.",
+      "Both a damaged bulb and an open switch result in an incomplete circuit, causing devices not to operate.",
+      "An open switch and a damaged bulb both stop the flow of electric current, leading to non-functionality in the circuit.",
+      "Whereas a damaged bulb fails to emit light due to internal failure, an open switch simply does not allow current to flow.",
+      "The primary similarity between a damaged bulb and an open switch is that both create circuit interruptions, preventing electrical devices from working.",
+      "A damaged bulb fails to complete the circuit like an open switch does, leading to no current flow.",
+      "In essence, both a damaged bulb and an open switch act as barriers to electrical current, causing the connected devices to not function.",
+      "The effect of a damaged bulb is akin to that of an open switch, as both prevent the completion of an electrical circuit.",
+      "An open switch and a damaged bulb both result in no light or power output by disrupting the circuit continuity.",
+      "While a damaged bulb may no longer conduct electricity, an open switch does not allow current to pass, both leading to a non-functional circuit."
+    ]
+  }
+}
