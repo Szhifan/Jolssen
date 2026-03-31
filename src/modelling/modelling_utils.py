@@ -97,10 +97,18 @@ class BackwardSupportedArguments:
     span_fuse_type: Optional[str] = field(
         default="p-concat",
         metadata={"help": "Type of span fuser to use. Options: attention, bilinear"}
-    ),
+    )
+    use_proj: bool = field(
+        default=False,
+        metadata={"help": "Whether to use projection layers for span embeddings."}
+    )
     num_labels: int = field(
         default=3,
         metadata={"help": "Number of labels for classification. Only used for p-only."}
+    )
+    cl_weight: float = field(
+        default=0.0,
+        metadata={"help": "Weight for rubric contrastive loss. 0 means no contrastive loss."}
     )
 
 
@@ -110,9 +118,16 @@ class BackwardSupportedArguments:
         if self.pool_type not in ("avg", "weightedavg", "cls", "last"):
             self.pool_type = "last"
             print(f"Invalid pool_type {self.pool_type}, using default 'avg' pooling.")
-        assert self.fuse_type in ("avg", "weighted"), "fuse_type must be one of ('avg', 'weighted')"
+        if self.span_pool_type not in ("mean", "last"):
+            raise ValueError("span_pool_type must be one of ('mean', 'last').")
+        if self.num_labels < 1:
+            raise ValueError("num_labels must be >= 1.")
+        if self.cl_weight < 0.0:
+            raise ValueError("cl_weight must be >= 0.")
+
     def to_dict(self):
-        return asdict(self)
+        """Convert to dictionary using vars() to avoid deepcopy issues."""
+        return {k: v for k, v in vars(self).items()}
 
 
 def get_noncausal_attention_mask(self, attention_mask, input_shape, device=None, dtype=None):
@@ -407,12 +422,18 @@ class BaseAsagModel(PreTrainedModel):
         """Disable gradient checkpointing"""
         self.encoder.gradient_checkpointing_disable()
 
+    def freeze_encoder(self):
+        """Freeze all encoder parameters, including adapter parameters if present."""
+        for param in self.encoder.parameters():
+            param.requires_grad = False
+
     def listwise_loss(
         self,
         logits: torch.Tensor,          # [B, R]
         rubric_mask: torch.Tensor,     # [B, R] in {0,1}
         pos_idx: torch.Tensor,         # [B] index of correct rubric
-        tau: float = 1.0
+        tau: float = 1.0,
+        label_smoothing: float = 0.0,
     ) -> torch.Tensor:
         """
         Shared listwise loss for ranking rubrics.
@@ -428,7 +449,7 @@ class BaseAsagModel(PreTrainedModel):
         pos_mask = rubric_mask.gather(1, pos_idx.view(-1, 1)).squeeze(1)
         assert (pos_idx == -1).any() or (pos_mask == 1).all(), "pos_idx must refer to valid rubrics or be -1."
 
-        return CrossEntropyLoss()(scaled_logits, pos_idx)
+        return CrossEntropyLoss(label_smoothing=label_smoothing)(scaled_logits, pos_idx)
 
     
 
@@ -442,3 +463,81 @@ class BaseAsagModel(PreTrainedModel):
             inputs["token_type_ids"] = token_type_ids
             
         return self.encoder(**inputs)
+
+
+    def pairwise_ranking_loss(
+        self,
+        rubric_embs: torch.Tensor,     # [B, R, H]
+        rubric_mask: torch.Tensor,     # [B, R] in {0,1}
+        pos_idx: torch.Tensor,         # [B] index of correct rubric
+        temperature: float = 0.07,
+        margin: float = 0.2,
+        scale_margin: bool = True,
+        rank_gold_only: bool = False
+    ) -> torch.Tensor:
+        """
+        Embedding-based pairwise ranking loss that enforces gold rubric embedding
+        to be closer to rubrics near it, and farther from distant rubrics.
+        
+        This loss operates in embedding space using cosine similarity.
+        
+        Args:
+            rubric_embs: [B, R, H] - embeddings for each rubric
+            rubric_mask: [B, R] - mask for valid rubrics
+            pos_idx: [B] - gold label indices (which rubric is correct)
+            temperature: temperature for scaling similarities
+            margin: minimum margin between closer and farther rubrics
+            scale_margin: whether to scale margin based on distance
+            rank_gold_only: if True, only compare the gold rubric against others
+        """
+        import torch.nn.functional as F
+        
+        B, R, H = rubric_embs.shape
+        
+        # Normalize embeddings for cosine similarity
+        rubric_embs_norm = F.normalize(rubric_embs, p=2, dim=-1)  # [B, R, H]
+        
+        pair_loss = 0.0
+        num_pairs = 0
+        
+        for b in range(B):
+            gold_idx = int(pos_idx[b])
+            gold_emb = rubric_embs_norm[b, gold_idx]  # [H]
+            
+            # Compute cosine similarities between gold and all rubrics
+            similarities = torch.matmul(rubric_embs_norm[b], gold_emb)  # [R]
+            scaled_sims = similarities / temperature
+            
+            # For all pairs (i, j), enforce ranking based on distance to gold
+            for i in range(R):
+                for j in range(R):
+                    if rank_gold_only and i != gold_idx:
+                        continue
+                    if rubric_mask[b, i] == 0 or rubric_mask[b, j] == 0:
+                        continue
+                    if i != j:
+                        dist_i = abs(i - gold_idx)
+                        dist_j = abs(j - gold_idx)
+                        
+                        if dist_i == dist_j:
+                            # Same distance to gold, no ranking constraint needed
+                            continue
+                        
+                        scale = 1.0 if not scale_margin else (dist_j - dist_i)
+                        sim_diff = scaled_sims[i] - scaled_sims[j]
+                        
+                        if dist_i < dist_j:
+                            # i is closer to gold than j, so sim[i] should be > sim[j]
+                            pair_loss += F.relu(margin * scale - sim_diff)
+                            num_pairs += 1
+                        elif dist_i > dist_j:
+                            # j is closer to gold than i, so sim[j] should be > sim[i]
+                            pair_loss += F.relu(margin * scale + sim_diff)
+                            num_pairs += 1
+    
+        if num_pairs > 0:
+            pair_loss = pair_loss / num_pairs
+        else:
+            pair_loss = torch.tensor(0.0, device=rubric_embs.device, dtype=rubric_embs.dtype)
+        
+        return pair_loss

@@ -24,11 +24,13 @@ DEFAULT_DEVICE = "cuda" if torch.cuda.is_available() else "mps" if torch.backend
 # logger = logging.getLogger(__name__)
 print("Using device:", DEFAULT_DEVICE)
 
-accuracy = evaluate.load("accuracy")
+# f1 = evaluate.load("f1")
+acc = evaluate.load("accuracy")
 def compute_metrics(eval_pred):
     predictions, labels = eval_pred
     predictions = np.argmax(predictions, axis=1)
-    return accuracy.compute(predictions=predictions, references=labels)
+    # return f1.compute(predictions=predictions, references=labels, average="macro")
+    return acc.compute(predictions=predictions, references=labels)
 
 @dataclass
 class AsagTrainingArguments:
@@ -36,7 +38,9 @@ class AsagTrainingArguments:
     batch_size: int = field(default=16, metadata={"help": "maximum number of sentences in a batch"})
     max_epoch: int = field(default=3, metadata={"help": "force stop training at specified epoch"})
     clip_norm: float = field(default=1.0, metadata={"help": "clip threshold of gradients"})
-    lr: float = field(default=5e-5, metadata={"help": "learning rate"})
+    lr: float = field(default=None, metadata={"help": "global learning rate shortcut; if set, overrides lr1"})
+    lr1: float = field(default=2e-5, metadata={"help": "learning rate for base model parameters (encoder.*)"})
+    lr2: float = field(default=5e-5, metadata={"help": "learning rate for non-main modules (classification head, fusion layers, etc.)"})
     patience: int = field(default=3, metadata={"help": "number of epochs without improvement on validation set before early stopping"})
     gradient_accumulation_steps: int = field(default=1, metadata={"help": "number of updates steps to accumulate before performing a backward/update pass"})
     weight_decay: float = field(default=0.01, metadata={"help": "weight decay for Adam"})
@@ -59,8 +63,12 @@ class AsagTrainingArguments:
     def __post_init__(self):
         """Validation checks after initialization"""
         assert self.batch_size > 0, "batch_size must be positive"
-        assert self.max_epoch > 0, "max_epoch must be positive" 
-        assert self.lr > 0, "learning rate must be positive"
+        assert self.max_epoch > 0, "max_epoch must be positive"
+        if self.lr is not None:
+            self.lr1 = self.lr
+            self.lr2 = self.lr
+        assert self.lr1 > 0, "lr1 must be positive"
+        assert self.lr2 > 0, "lr2 must be positive"
         assert self.patience >= 0, "patience must be non-negative"
         assert self.gradient_accumulation_steps > 0, "gradient_accumulation_steps must be positive"
         assert 0 <= self.dropout <= 1, "dropout must be between 0 and 1"
@@ -112,7 +120,7 @@ class ModelLoader:
         # Determine task type for LoRA config
         lora_task_type = None
         if hasattr(task_args, 'model_class'):
-            if task_args.model_class in ["xnet", "xnet-pwr", "xnet-contrastive"]:
+            if task_args.model_class == "xnet":
                 lora_task_type = "SEQ_CLS"
         
         self.lora_config = LoraConfig(
@@ -147,7 +155,10 @@ class ModelLoader:
         # Add num_labels from data pipeline if available
         if self.data_pipeline is not None:
             config.num_labels = self.data_pipeline.num_labels
-            
+
+        # Random rubric drop is applied in model-side listwise masking.
+        config.random_drop_rub = float(getattr(self.task_args, "random_drop_rub", 0.0))
+
         return config
     def _init_model(self, use_lora=False, use_bnb=False, config=None):
         """
@@ -161,17 +172,12 @@ class ModelLoader:
         model_class = getattr(self.task_args, 'model_class', 'span')
         
         # Import the appropriate model class
-        if model_class in ["xnet", "xnet-pwr", "xnet-contrastive"]:
+        if model_class == "xnet":
             from modelling.modelling_xnet import AsagXnet
             
             # Set model-specific config
             config.model_class = model_class
             config.pool_type = getattr(self.custom_model_args, 'pool_type', 'avg') if self.custom_model_args else 'avg'
-            
-            # Set loss type and pairwise margin for xnet-pwr
-            if model_class == "xnet-pwr":
-                config.loss_type = "pairwise_ranking"
-                config.pairwise_margin = getattr(self.task_args, 'pairwise_margin', 0.1)
             
             model = AsagXnet(config,
                             lora_config=self.lora_config if use_lora else None,
@@ -228,6 +234,7 @@ class ModelLoader:
         os.makedirs(self.train_args.save_dir, exist_ok=True)
         model.config.save_pretrained(self.train_args.save_dir)
         model = self._init_peft_model(model)
+        model = self._apply_freeze_policy(model)
         return model
             
     def _init_peft_model_from_cp(self, cp_path: str):
@@ -300,6 +307,22 @@ class ModelLoader:
         print_trainable_parameters(model, use_4bit=self.train_args.use_bnb)
         return model
 
+    def _apply_freeze_policy(self, model):
+        """Apply encoder-freezing policy after optional LoRA wrapping."""
+        freeze_base = bool(getattr(self.custom_model_args, 'freeze_base_encoder', False))
+        if not freeze_base:
+            return model
+
+        if hasattr(model, 'freeze_encoder'):
+            model.freeze_encoder()
+        elif hasattr(model, 'encoder'):
+            for param in model.encoder.parameters():
+                param.requires_grad = False
+
+        print("freeze_base_encoder=True: froze all encoder parameters (including LoRA adapters if present).")
+        print_trainable_parameters(model, use_4bit=self.train_args.use_bnb)
+        return model
+
     def load_model(self, cp_path: str, use_lora=False):
         """
         Load a model from a checkpoint path, with or without LoRA (PEFT).
@@ -310,13 +333,93 @@ class ModelLoader:
         cp_path = str(cp_path)
         config = AutoConfig.from_pretrained(cp_path)
         bnb_config = self.bnb_config if self.train_args.use_bnb else None
-        model = SpanAlignmentModel.from_pretrained(
-            cp_path,
-            config=config,
-            lora_config=self.lora_config if use_lora else None,
-            bnb_config=bnb_config
-        )
+        model_class = getattr(self.task_args, 'model_class', 'span')
+        if model_class == "xnet":
+            from modelling.modelling_xnet import AsagXnet
+            model = AsagXnet.from_pretrained(
+                cp_path,
+                config=config,
+                lora_config=self.lora_config if use_lora else None,
+                bnb_config=bnb_config
+            )
+        else:
+            model = SpanAlignmentModel.from_pretrained(
+                cp_path,
+                config=config,
+                lora_config=self.lora_config if use_lora else None,
+                bnb_config=bnb_config
+            )
+        model = self._apply_freeze_policy(model)
         return model
+
+class SplitLRTrainer(Trainer):
+    """Trainer with separate learning rates for main model (encoder.*) and other trainable modules."""
+
+    def __init__(self, *args, lr_main=None, lr_other=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.lr_main = lr_main
+        self.lr_other = lr_other
+
+    @staticmethod
+    def _is_main_model_param(name: str) -> bool:
+        return name.startswith("encoder.")
+
+    def _build_split_lr_param_groups(self):
+        decay_parameters = self.get_decay_parameter_names(self.model)
+
+        groups = {
+            "main_decay": {"params": [], "lr": self.lr_main, "weight_decay": self.args.weight_decay},
+            "main_no_decay": {"params": [], "lr": self.lr_main, "weight_decay": 0.0},
+            "other_decay": {"params": [], "lr": self.lr_other, "weight_decay": self.args.weight_decay},
+            "other_no_decay": {"params": [], "lr": self.lr_other, "weight_decay": 0.0},
+        }
+
+        for name, param in self.model.named_parameters():
+            if not param.requires_grad:
+                continue
+            is_main = self._is_main_model_param(name)
+            use_decay = name in decay_parameters
+
+            if is_main and use_decay:
+                groups["main_decay"]["params"].append(param)
+            elif is_main and not use_decay:
+                groups["main_no_decay"]["params"].append(param)
+            elif (not is_main) and use_decay:
+                groups["other_decay"]["params"].append(param)
+            else:
+                groups["other_no_decay"]["params"].append(param)
+
+        final_groups = [g for g in groups.values() if g["params"]]
+
+        main_count = sum(p.numel() for p in groups["main_decay"]["params"] + groups["main_no_decay"]["params"])
+        other_count = sum(p.numel() for p in groups["other_decay"]["params"] + groups["other_no_decay"]["params"])
+        print(
+            f"Split LR groups: main_params={main_count:,d} (lr={self.lr_main}), "
+            f"other_params={other_count:,d} (lr={self.lr_other})"
+        )
+        return final_groups
+
+    def create_optimizer(self):
+        if self.optimizer is not None:
+            return self.optimizer
+
+        use_split_lr = (
+            self.lr_main is not None
+            and self.lr_other is not None
+            and abs(self.lr_main - self.lr_other) > 0.0
+        )
+
+        if not use_split_lr:
+            return super().create_optimizer()
+
+        optimizer_grouped_parameters = self._build_split_lr_param_groups()
+        if not optimizer_grouped_parameters:
+            return super().create_optimizer()
+
+        optimizer_cls, optimizer_kwargs = Trainer.get_optimizer_cls_and_kwargs(self.args, self.model)
+        self.optimizer = optimizer_cls(optimizer_grouped_parameters, **optimizer_kwargs)
+        return self.optimizer
+
 
 class AsagTrainer:
     """
@@ -358,12 +461,16 @@ class AsagTrainer:
         
     def train(self):
         print("Starting training...")
+        effective_lr_main = self.train_args.lr1
+        effective_lr_other = self.train_args.lr2
+        print(f"Using split learning rates: lr1(base encoder)={effective_lr_main}, lr2(other modules)={effective_lr_other}")
+
         train_args = TrainingArguments(
             # optimization parameters
             num_train_epochs=self.train_args.max_epoch,
             per_device_train_batch_size=self.train_args.batch_size,
             gradient_accumulation_steps=self.train_args.gradient_accumulation_steps,
-            learning_rate=self.train_args.lr,
+            learning_rate=effective_lr_main,
             weight_decay=self.train_args.weight_decay,
             max_grad_norm=self.train_args.clip_norm,
             warmup_ratio=self.train_args.warmup_ratio,
@@ -383,16 +490,19 @@ class AsagTrainer:
             logging_steps=10,
             save_strategy="best",
             eval_strategy="epoch",
-            save_total_limit=1,
+            save_total_limit=2,
             output_dir=self.train_args.save_dir,
         )
-        trainer = Trainer(
+
+        trainer = SplitLRTrainer(
             model=self.model,
             args=train_args,
             train_dataset=self.train_dataset,
             eval_dataset=self.validation_dataset,
             data_collator=self.collate_fn,
             compute_metrics=compute_metrics,
+            lr_main=effective_lr_main,
+            lr_other=effective_lr_other,
         )
         trainer.train()
         trainer.save_model(self.train_args.save_dir)

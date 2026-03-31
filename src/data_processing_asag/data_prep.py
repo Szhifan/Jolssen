@@ -1,45 +1,47 @@
 import torch
 from typing import Literal, Callable, Optional
 from functools import partial
+from datasets import Dataset, concatenate_datasets
 from data_processing_asag.benchmark_meta import BENCHMARK_DESCRIPTIONS
 from transformers import AutoTokenizer
 
 
 # LLM model identifiers
 LLM_IDENTIFIERS = ("llama", "mistral", "gpt", "qwen", "phi")
+XNET_MODEL_CLASSES = {"xnet"}
+
+
+def dedupe_keep_order(items):
+    seen = set()
+    deduped = []
+    for item in items:
+        if item not in seen:
+            seen.add(item)
+            deduped.append(item)
+    return deduped
+
 
 def is_llm_model(model_name: str) -> bool:
     """Check if model is an LLM based on model name."""
     return any(identifier in model_name.lower() for identifier in LLM_IDENTIFIERS)
 
+
 def get_tokenizer(base_model: str) -> AutoTokenizer:
     """Get tokenizer for the base model with proper configuration."""
     tokenizer = AutoTokenizer.from_pretrained(base_model)
     if "llama" in base_model.lower() or "mistral" in base_model.lower():
-        tokenizer.padding_side = "right"  
-        tokenizer.pad_token = tokenizer.eos_token  # Ensure pad_token is set
-    tokenizer.sep_token = tokenizer.sep_token or tokenizer.eos_token  # Ensure sep_token is set
+        tokenizer.padding_side = "right"
+        tokenizer.pad_token = tokenizer.eos_token
+    tokenizer.sep_token = tokenizer.sep_token or tokenizer.eos_token
     return tokenizer
+
 
 class DataPipeline:
     """
     Configuration class for selecting encoding functions and collate functions
     based on model class and model type (LLM vs MLM).
-    
-    Usage:
-        config = DataPipeline(
-            base_model="bert-base-uncased",
-            benchmark="alice",
-            train_frac=1.0,
-            add_context=True,
-            add_suffix=False,
-            random_suffix=False
-        )
-        train_ds, val_ds, test_ds = config.get_datasets()
-        enc_fn = config.get_encode_fn()
-        collate_fn = config.get_collate_fn()
     """
-    
+
     def __init__(
         self,
         base_model: str,
@@ -50,8 +52,8 @@ class DataPipeline:
         random_suffix: bool = False,
         random_solution: bool = False,
         use_translated_prompts: bool = False,
-        drop_rubric: bool = False,
         model_class: str = "span",
+        random_drop_rub: float = 0.0,
     ):
         self.base_model = base_model
         self.benchmark = benchmark
@@ -63,186 +65,167 @@ class DataPipeline:
             self.benchmark_meta = BENCHMARK_DESCRIPTIONS[benchmark]
         except KeyError:
             raise ValueError(f"Benchmark {benchmark} not found in BENCHMARK_DESCRIPTIONS")
-        self.num_labels = self.benchmark_meta.get("num_labels", 3)  # Default to 3 if not specified
+        self.num_labels = self.benchmark_meta.get("num_labels", 3)
         self.add_context = add_context
         self.add_suffix = add_suffix
         self.random_suffix = random_suffix
         self.random_solution = random_solution
         self.use_translated_prompts = use_translated_prompts
-        self.drop_rubric = drop_rubric
-        
-        # Validate drop_rubric usage
-        if drop_rubric and model_class != "span":
-            raise ValueError("drop_rubric option is only available for model_class='span'")
-        
+        self.random_drop_rub = random_drop_rub
+
         self.is_llm = is_llm_model(base_model)
         self.tokenizer = get_tokenizer(base_model)
         self.pad_token_id = self.tokenizer.pad_token_id
-        
-        # Initialize data loader
+
         self._init_data_loader()
-    
+
     def _init_data_loader(self):
         """Initialize the appropriate data loader based on benchmark."""
         if "alice" in self.benchmark:
             from data_processing_asag.alice_asag_loader import Alice_Loader
-            # Extract task_type from benchmark name if it contains suffix (e.g., "alice_lp")
             task_type = self.benchmark.split("_")[-1] if "_" in self.benchmark else "lp"
             self.data_loader = Alice_Loader(train_frac=self.train_frac, task_type=task_type)
         else:
             from data_processing_asag.general_asag_loader import ASAG_Data_Loader
             self.data_loader = ASAG_Data_Loader(
                 benchmark=self.benchmark,
-                train_frac=self.train_frac
+                train_frac=self.train_frac,
             )
-    
+
     def get_datasets(self, test_only=True):
         """
         Get train, validation, and test datasets.
-        
-        Args:
-            test_only: If True, only encode the test datasets.
-            
-        Returns:
-            tuple: (train_dataset, val_dataset, test_datasets)
-                   test_datasets can be a dict or single dataset
         """
         if test_only:
-            # Only encode test datasets
             enc_fn = self.get_encode_fn()
             if isinstance(self.data_loader.test, dict):
                 test_ds = {}
                 for key, dataset in self.data_loader.test.items():
+                    if self.needs_grouping():
+                        dataset = self.expand_rubrics(dataset)
                     encoded_ds = dataset.map(lambda x: enc_fn(x))
                     if self.needs_grouping():
                         encoded_ds = self.group_by_id(encoded_ds)
                     test_ds[key] = encoded_ds
             else:
-                test_ds = self.data_loader.test.map(lambda x: enc_fn(x))
+                if self.needs_grouping():
+                    test_ds_raw = self.expand_rubrics(self.data_loader.test)
+                else:
+                    test_ds_raw = self.data_loader.test
+                test_ds = test_ds_raw.map(lambda x: enc_fn(x))
                 if self.needs_grouping():
                     test_ds = self.group_by_id(test_ds)
             train_ds, val_ds = self.data_loader.train, self.data_loader.val
         else:
-            # Encode train, validation, and test datasets
             enc_fn = self.get_encode_fn()
-            train_ds = self.data_loader.train.map(lambda x: enc_fn(x))
-            val_ds = self.data_loader.val.map(lambda x: enc_fn(x))
-            
-            # For xnet models, group by ID after encoding
+            if self.needs_grouping():
+                train_raw = self.expand_rubrics(self.data_loader.train)
+                val_raw = self.expand_rubrics(self.data_loader.val)
+            else:
+                train_raw = self.data_loader.train
+                val_raw = self.data_loader.val
+            train_ds = train_raw.map(lambda x: enc_fn(x))
+            val_ds = val_raw.map(lambda x: enc_fn(x))
+
             if self.needs_grouping():
                 train_ds = self.group_by_id(train_ds)
                 val_ds = self.group_by_id(val_ds)
-            
-            input_id = train_ds[0]["input_ids"]
-            rubric_span = train_ds[0].get("rubric_spans", None)
-            answer_span = train_ds[0].get("answer_span", None)
-            sub_tokens = self.tokenizer.convert_ids_to_tokens(input_id)
-            print(f"Sample decoded text: {self.tokenizer.decode(input_id)}")
-            print("answer_span:", sub_tokens[answer_span[0]:answer_span[1]] if answer_span else None)
-            for i, span in enumerate(rubric_span if rubric_span else []):
-                print(f"rubric_span {i}:", sub_tokens[span[0]:span[1]])
-            
-            # Handle test datasets (can be dict or single dataset)
+
+            if not self.needs_grouping():
+                input_id = train_ds[0]["input_ids"]
+                rubric_span = train_ds[0].get("rubric_spans", None)
+                answer_span = train_ds[0].get("answer_span", None)
+                sub_tokens = self.tokenizer.convert_ids_to_tokens(input_id)
+                print(f"Sample decoded text: {self.tokenizer.decode(input_id)}")
+                print("answer_span:", sub_tokens[answer_span[0]:answer_span[1]] if answer_span else None)
+                for i, span in enumerate(rubric_span if rubric_span else []):
+                    print(f"rubric_span {i}:", sub_tokens[span[0]:span[1]])
+
             if isinstance(self.data_loader.test, dict):
                 test_ds = {}
                 for key, dataset in self.data_loader.test.items():
+                    if self.needs_grouping():
+                        dataset = self.expand_rubrics(dataset)
                     encoded_ds = dataset.map(lambda x: enc_fn(x))
                     if self.needs_grouping():
                         encoded_ds = self.group_by_id(encoded_ds)
                     test_ds[key] = encoded_ds
             else:
-                test_ds = self.data_loader.test.map(lambda x: enc_fn(x))
+                if self.needs_grouping():
+                    test_ds_raw = self.expand_rubrics(self.data_loader.test)
+                else:
+                    test_ds_raw = self.data_loader.test
+                test_ds = test_ds_raw.map(lambda x: enc_fn(x))
                 if self.needs_grouping():
                     test_ds = self.group_by_id(test_ds)
-        
+
         return train_ds, val_ds, test_ds
-    
+
     def get_encode_fn(self) -> Callable:
-        """
-        Get the appropriate encoding function based on model class and type.
-        
-        Returns:
-            Callable: Encoding function that takes (example) and returns encoded example
-        """
-        # For xnet models, use xnet encoding
-        if self.model_class in ["xnet", "xnet-pwr", "xnet-contrastive"]:
+        if self.model_class in XNET_MODEL_CLASSES:
             if self.is_llm:
                 return partial(self.encode_xnet_llm)
-            else:
-                return partial(self.encode_xnet_bert)
-        # Default to span encoding
-        else:
-            if self.is_llm:
-                return partial(self.encode_spans_llm)
-            else:
-                return partial(self.encode_spans_bert)
-    
+            return partial(self.encode_xnet_bert)
+        if self.is_llm:
+            return partial(self.encode_spans_llm)
+        return partial(self.encode_spans_bert)
+
     def get_collate_fn(self) -> Callable:
-        """
-        Get the collate function for batching.
-        
-        Returns:
-            Callable: Collate function
-        """
-        if self.model_class in ["xnet", "xnet-pwr", "xnet-contrastive"]:
+        if self.model_class in XNET_MODEL_CLASSES:
             return partial(self.xnet_collate_fn)
-        else:
-            return partial(self.span_collate_fn)
-    
+        return partial(self.span_collate_fn)
+
     def needs_grouping(self) -> bool:
-        """Check if the dataset needs to be grouped by ID for xnet models."""
-        return self.model_class in ["xnet", "xnet-pwr", "xnet-contrastive"]
-    
+        return self.model_class in XNET_MODEL_CLASSES
+
+    def expand_rubrics(self, dataset):
+        """
+        Explode each row (which has a list of rubrics) into one row per rubric.
+        Sets 'rubric' to a single rubric string and 'rubric_level' to its index.
+        The answer-level label (= index of the correct rubric) is preserved unchanged.
+        """
+        from datasets import Dataset
+        expanded = []
+        label_semantics = self.benchmark_meta["label_semantics"]
+        for example in dataset:
+            rubric_list = example[label_semantics]
+            if not isinstance(rubric_list, list):
+                rubric_list = [rubric_list]
+            for idx, rubric_text in enumerate(rubric_list):
+                row = dict(example)
+                row[label_semantics] = rubric_text
+                row["rubric_level"] = idx
+                expanded.append(row)
+        return Dataset.from_list(expanded)
+
     def group_by_id(self, dataset):
-        """
-        Group dataset examples by ID for xnet models.
-        Each answer can have multiple rubrics, so we group them together.
-        
-        Returns a dataset where each example contains:
-        - input_ids: list of input_ids for each rubric [R, S]
-        - attention_mask: list of attention_masks for each rubric [R, S]
-        - labels: the correct rubric index
-        - num_rubrics: number of rubrics for this answer
-        - id, level, question_id, rubric_level: metadata
-        """
         from collections import defaultdict
-        
-        # Group by ID
+
         grouped = defaultdict(list)
         for example in dataset:
             example_id = example.get("id", None)
             if example_id is None:
-                # If no ID, use question_id as fallback
                 example_id = example.get("question_id", "unknown")
             grouped[example_id].append(example)
-        
-        # Create new dataset with grouped examples
+
         grouped_examples = []
-        for group_id, examples in grouped.items():
-            # All examples in a group should have the same answer but different rubrics
-            # The label indicates which rubric is correct (index in the group)
-            
+        for _, examples in grouped.items():
             grouped_example = {
                 "input_ids": [ex["input_ids"] for ex in examples],
                 "attention_mask": [ex["attention_mask"] for ex in examples],
-                "labels": examples[0]["labels"],  # Use the label from first example
+                "labels": examples[0]["labels"],
                 "num_rubrics": len(examples),
                 "id": examples[0].get("id", None),
                 "level": examples[0].get("level", None),
                 "question_id": examples[0].get("question_id", None),
                 "rubric_level": [ex.get("rubric_level", None) for ex in examples],
             }
-            
-            # Handle token_type_ids if present
             if "token_type_ids" in examples[0] and examples[0]["token_type_ids"] is not None:
                 grouped_example["token_type_ids"] = [ex["token_type_ids"] for ex in examples]
-            
             grouped_examples.append(grouped_example)
-        
-        # Convert back to HuggingFace dataset format
-        from datasets import Dataset
+
         return Dataset.from_list(grouped_examples)
-    
+
     def encode_spans_bert(self, example):
         """
         Encode example with span information for BERT-like models.
@@ -294,9 +277,8 @@ class DataPipeline:
         new_str = self.tokenizer.sep_token.join(input_parts)
         answer_end_char = len(new_str)
         
-        # Add rubrics with span tracking (unless drop_rubric is True)
-        if not self.drop_rubric:
-            for rubric in rubrics:
+        # Add rubrics with span tracking
+        for rubric in rubrics:
                 current_str = self.tokenizer.sep_token.join(input_parts)
                 start_char = len(current_str) + (len(self.tokenizer.sep_token) if input_parts else 0)
                 
@@ -422,9 +404,8 @@ class DataPipeline:
         
         input_parts.append(answer_tagged)
         
-        # Add rubrics with span tracking and column-specific tags (unless drop_rubric is True)
-        if not self.drop_rubric:
-            for rubric in rubrics:
+        # Add rubrics with span tracking and column-specific tags
+        for rubric in rubrics:
                 current_str = "\n".join(input_parts)
                 rubric_content = str(rubric)
                 rubric_tagged = f"<{label_semantics}> {rubric_content} </{label_semantics}>"
@@ -812,6 +793,149 @@ class DataPipeline:
         if return_meta:
             return batch, meta
         return batch
+
+
+class MultiTaskDataPipeline(DataPipeline):
+    """Compose multiple ASAG pipelines into one train/eval interface."""
+
+    def __init__(
+        self,
+        base_model: str,
+        train_tasks: list[str],
+        eval_tasks: Optional[list[str]] = None,
+        test_tasks: Optional[list[str]] = None,
+        train_frac: float = 1.0,
+        add_context: bool = True,
+        add_suffix: bool = False,
+        random_suffix: bool = False,
+        random_solution: bool = False,
+        use_translated_prompts: bool = False,
+        model_class: str = "span",
+        random_drop_rub: float = 0.0,
+    ):
+        self.train_tasks = dedupe_keep_order(train_tasks)
+        self.eval_tasks = dedupe_keep_order(eval_tasks) if eval_tasks else list(self.train_tasks)
+        self.test_tasks = dedupe_keep_order(test_tasks) if test_tasks else list(self.train_tasks)
+        if not self.train_tasks:
+            raise ValueError("train_tasks must contain at least one benchmark.")
+        if not self.eval_tasks:
+            raise ValueError("eval_tasks must contain at least one benchmark.")
+        if not self.test_tasks:
+            raise ValueError("test_tasks must contain at least one benchmark.")
+
+        exemplar_task = self.train_tasks[0]
+        super().__init__(
+            base_model=base_model,
+            benchmark=exemplar_task,
+            train_frac=train_frac,
+            add_context=add_context,
+            add_suffix=add_suffix,
+            random_suffix=random_suffix,
+            random_solution=random_solution,
+            use_translated_prompts=use_translated_prompts,
+            model_class=model_class,
+            random_drop_rub=random_drop_rub,
+        )
+
+        self.task_pipelines = {
+            task: DataPipeline(
+                base_model=base_model,
+                benchmark=task,
+                train_frac=train_frac,
+                add_context=add_context,
+                add_suffix=add_suffix,
+                random_suffix=random_suffix,
+                random_solution=random_solution,
+                use_translated_prompts=use_translated_prompts,
+                model_class=model_class,
+                random_drop_rub=random_drop_rub,
+            )
+            for task in dedupe_keep_order(self.train_tasks + self.eval_tasks + self.test_tasks)
+        }
+
+        exemplar_pipeline = self.task_pipelines[exemplar_task]
+        self.tokenizer = exemplar_pipeline.tokenizer
+        self.pad_token_id = exemplar_pipeline.pad_token_id
+        self.is_llm = exemplar_pipeline.is_llm
+        self.num_labels = max(pipeline.num_labels for pipeline in self.task_pipelines.values())
+
+        self.train_sizes = {}
+        self.val_sizes = {}
+        self.test_sizes = {}
+        self.eval_split_map = {}
+        self.test_split_map = {}
+
+    def _training_columns(self):
+        if self.needs_grouping():
+            return ["input_ids", "attention_mask", "labels", "num_rubrics", "token_type_ids"]
+        return ["input_ids", "attention_mask", "rubric_spans", "answer_span", "labels"]
+
+    def _trim_for_training(self, dataset):
+        keep_columns = [col for col in self._training_columns() if col in dataset.column_names]
+        remove_columns = [col for col in dataset.column_names if col not in keep_columns]
+        if remove_columns:
+            dataset = dataset.remove_columns(remove_columns)
+        return dataset
+
+    def _concat(self, datasets):
+        if not datasets:
+            return Dataset.from_list([])
+        if len(datasets) == 1:
+            return datasets[0]
+        return concatenate_datasets(datasets)
+
+    def get_datasets(self, test_only=True):
+        train_datasets = []
+        val_datasets = []
+        cached_task_splits = {}
+
+        if not test_only:
+            self.train_sizes = {}
+            self.val_sizes = {}
+            all_tasks = dedupe_keep_order(self.train_tasks + self.eval_tasks + self.test_tasks)
+
+            for task in all_tasks:
+                train_ds, val_ds, test_ds = self.task_pipelines[task].get_datasets(test_only=False)
+                cached_task_splits[task] = {"train": train_ds, "val": val_ds, "test": test_ds}
+
+                if task in self.train_tasks:
+                    self.train_sizes[task] = len(train_ds)
+                    train_datasets.append(self._trim_for_training(train_ds))
+                if task in self.eval_tasks:
+                    self.val_sizes[task] = len(val_ds)
+                    val_datasets.append(self._trim_for_training(val_ds))
+
+            train_dataset = self._concat(train_datasets)
+            val_dataset = self._concat(val_datasets)
+        else:
+            train_dataset = Dataset.from_list([])
+            val_dataset = Dataset.from_list([])
+            self.train_sizes = {}
+            self.val_sizes = {}
+
+        self.test_sizes = {}
+        self.eval_split_map = {}
+        self.test_split_map = {}
+        test_datasets = {}
+
+        for task in self.test_tasks:
+            task_splits = cached_task_splits.get(task)
+            task_test_ds = task_splits["test"] if task_splits is not None else None
+            if task_test_ds is None:
+                _, _, task_test_ds = self.task_pipelines[task].get_datasets(test_only=True)
+
+            task_test_ds = task_test_ds if isinstance(task_test_ds, dict) else {"test": task_test_ds}
+            self.test_sizes[task] = {}
+
+            for split_name, split_dataset in task_test_ds.items():
+                dataset_key = f"{task}_{split_name}"
+                split_info = {"task": task, "split": split_name}
+                self.eval_split_map[dataset_key] = split_info
+                self.test_split_map[dataset_key] = split_info
+                self.test_sizes[task][split_name] = len(split_dataset)
+                test_datasets[dataset_key] = split_dataset
+
+        return train_dataset, val_dataset, test_datasets
 
 if __name__ == "__main__":
     # Example usage

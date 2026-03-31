@@ -89,16 +89,6 @@ BENCHMARK_DESCRIPTIONS = {
             "Pick the stance label that aligns with the comment's intent."
         ],
         "suffixes_by_lang": {
-            "en": [
-                "Determine whether the comment supports or opposes the question.",
-                "Classify the stance expressed in the comment toward the question.",
-                "Decide if the comment is in favor of or against the claim in the question.",
-                "Identify whether the comment agrees or disagrees with the question's proposition.",
-                "Choose the stance that best matches the comment's position.",
-                "Select whether the comment expresses support or opposition.",
-                "Assess the comment's stance toward the question.",
-                "Pick the stance label that aligns with the comment's intent."
-            ],
             "de": [
                 "Bestimmen Sie, ob der Kommentar die Frage unterstützt oder ablehnt.",
                 "Klassifizieren Sie die im Kommentar ausgedrückte Haltung zur Frage.",
@@ -139,6 +129,11 @@ BENCHMARK_DESCRIPTIONS = {
         "label_col": "label",
         "label_semantics": "options",
         "num_labels": 3,
+        "data_files": {
+            "train": "other_benchmarkts/semeval2016/trainingdata-all-annotations.txt",
+            "valid": "other_benchmarkts/semeval2016/trialdata-all-annotations.txt",
+            "test": "other_benchmarkts/semeval2016/testdata-taskA-all-annotations.txt",
+        },
         "label_tags": ["Against", "Favor", "None"],
         "suffixes": [
             "Determine whether the tweet supports, opposes, or is neutral toward the target.",
@@ -150,6 +145,58 @@ BENCHMARK_DESCRIPTIONS = {
             "Assess the tweet's stance toward the target.",
             "Pick the stance label that aligns with the tweet's intent."
         ],
+    },
+    "cstance": {
+        "lang": "zh",
+        "format_fn": "format_cstance",
+        "context_cols": ["target"],
+        "text_col": "text",
+        "label_col": "label",
+        "label_semantics": "options",
+        "num_labels": 3,
+        "data_files": {
+            "train": "other_benchmarks/cstance/raw_train_all_onecol.csv",
+            "valid": "other_benchmarks/cstance/raw_val_all_onecol.csv",
+            "test": "other_benchmarks/cstance/raw_test_all_onecol.csv",
+        },
+        "label_tags": {
+            "en": ["Against", "Favor", "None"],
+            "zh": ["反对", "支持", "中立"],
+        },
+        "label_semantics_by_lang": {
+            "en": [
+                "Against: The text expresses opposition or disagreement with the target.",
+                "Favor: The text expresses support or agreement with the target.",
+                "None: The text does not express a clear stance toward the target.",
+            ],
+            "zh": [
+                "反对：文本对目标表达反对或不同意。",
+                "支持：文本对目标表达支持或赞同。",
+                "中立：文本未对目标表达明确立场。",
+            ],
+        },
+        "suffixes": [
+            "Determine whether the text supports, opposes, or is neutral toward the target.",
+            "Classify the stance expressed in the text toward the target.",
+            "Decide if the text is in favor of, against, or neutral toward the target.",
+            "Identify whether the text agrees, disagrees, or takes no stance on the target.",
+            "Choose the stance label that best matches the text's position.",
+            "Select whether the text expresses support, opposition, or neutrality.",
+            "Assess the text's stance toward the target.",
+            "Pick the stance label that aligns with the text's intent."
+        ],
+        "suffixes_by_lang": {
+            "zh": [
+                "判断文本对目标是支持、反对还是中立。",
+                "分类文本中对目标的立场。",
+                "决定文本是支持、反对还是中立。",
+                "识别文本是同意、反对还是未表态。",
+                "选择最符合文本立场的标签。",
+                "判断文本表达的是支持、反对还是中立。",
+                "评估文本对目标的立场。",
+                "选择与文本意图一致的立场标签。"
+            ],
+        },
     },
     "fiqa": {
         "lang": "en",

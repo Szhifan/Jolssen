@@ -207,6 +207,49 @@ def format_semeval2016():
     }
     return ds
 
+
+def format_cstance():
+    def _read_csv(path: Path) -> pd.DataFrame:
+        return pd.read_csv(path)
+
+    label_map = {"反对": 0, "支持": 1, "中立": 2}
+    label_semantics_en = [
+        "Against: The text expresses opposition or disagreement with the target.",
+        "Favor: The text expresses support or agreement with the target.",
+        "None: The text does not express a clear stance toward the target.",
+    ]
+
+    def _process(df: pd.DataFrame) -> List[Dict[str, Any]]:
+        data = []
+        for idx, row in df.iterrows():
+            stance = str(row.get("Stance 1", "")).strip()
+            if stance not in label_map:
+                raise ValueError(f"Unexpected stance label in C-STANCE: {stance}")
+            example = {
+                "id": int(idx),
+                "language": "zh",
+                "text": str(row.get("Text", "")),
+                "target": str(row.get("Target 1", "")),
+                "type": str(row.get("Type", "")),
+                "label_text": stance,
+                "label": label_map[stance],
+                "options": label_semantics_en,
+            }
+            data.append(example)
+        return data
+
+    base = Path("other_benchmarks/cstance")
+    train_df = _read_csv(base / "raw_train_all_onecol.csv")
+    val_df = _read_csv(base / "raw_val_all_onecol.csv")
+    test_df = _read_csv(base / "raw_test_all_onecol.csv")
+
+    ds = {
+        "train": Dataset.from_pandas(pd.DataFrame(_process(train_df))),
+        "val": Dataset.from_pandas(pd.DataFrame(_process(val_df))),
+        "test": Dataset.from_pandas(pd.DataFrame(_process(test_df))),
+    }
+    return ds
+
 def format_figqa():
     def _process_split(split):
         data = []

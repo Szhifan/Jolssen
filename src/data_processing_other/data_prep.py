@@ -1,3 +1,4 @@
+import random
 import torch
 from typing import Callable
 from functools import partial
@@ -29,7 +30,10 @@ def get_tokenizer(base_model: str) -> AutoTokenizer:
 
 class OtherDataLoader:
     def __init__(self, benchmark: str, train_frac: float = 1.0):
-        assert train_frac <= 1 and train_frac > 0, "train_frac must be in (0, 1]"
+        assert train_frac > 0, "train_frac must be > 0"
+        assert train_frac <= 1 or float(train_frac).is_integer(), (
+            "train_frac > 1 must be an integer-valued exact number of training instances"
+        )
         self.benchmark = benchmark
         self.train_frac = train_frac
         self._load_datasets()
@@ -49,9 +53,18 @@ class OtherDataLoader:
 
         train_ds = ds["train"]
         if self.train_frac < 1:
-            train_ds = train_ds.shuffle(seed=42)
             n_keep = max(1, int(len(train_ds) * self.train_frac))
-            train_ds = train_ds.select(range(n_keep))
+            sampled_indices = random.sample(range(len(train_ds)), n_keep)
+            train_ds = train_ds.select(sampled_indices)
+        elif self.train_frac > 1:
+            n_keep = int(self.train_frac)
+            if n_keep > len(train_ds):
+                raise ValueError(
+                    f"train_frac={self.train_frac} requests {n_keep} training instances, "
+                    f"but only {len(train_ds)} are available for benchmark '{self.benchmark}'."
+                )
+            sampled_indices = random.sample(range(len(train_ds)), n_keep)
+            train_ds = train_ds.select(sampled_indices)
 
         self.train = train_ds
         self.val = ds["val"]

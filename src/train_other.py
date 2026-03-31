@@ -58,7 +58,15 @@ class TaskArguments:
     base_model: str = field(default="bert-base-uncased", metadata={"help": "base model to use"})
     model_class: str = field(default="span", metadata={"help": "model class to use: span"})
     seed: int = field(default=114514, metadata={"help": "random seed for reproducibility"})
-    train_frac: float = field(default=1.0, metadata={"help": "fraction of training data to use"})
+    train_frac: float = field(
+        default=1.0,
+        metadata={
+            "help": (
+                "fraction of training data to use when <= 1, "
+                "or exact number of training instances when > 1 (must be integer-valued)"
+            )
+        },
+    )
     benchmark: str = field(default="xstance", metadata={"help": "name of the benchmark"})
     dry_run: bool = field(default=False, metadata={"help": "whether to do a dry run for debugging"})
     pairwise_margin: float = field(default=0.1, metadata={"help": "margin for pairwise ranking loss (unused for other)"})
@@ -69,7 +77,10 @@ class TaskArguments:
     add_options: bool = field(default=True, metadata={"help": "include label options in the input (required for span model)"})
 
     def __post_init__(self):
-        assert 0 < self.train_frac <= 1.0, "train_frac must be between 0 and 1"
+        assert self.train_frac > 0, "train_frac must be > 0"
+        assert self.train_frac <= 1.0 or float(self.train_frac).is_integer(), (
+            "train_frac > 1 must be an integer-valued exact number of training instances"
+        )
         if not self.add_suffix:
             self.random_suffix = False
         if self.model_class != "span":

@@ -16,6 +16,7 @@ from utils import (
     per_qid_metrics
 )
 
+from alice_label_remap import remap_predictions_to_original_alice_labels
 from data_processing_asag.data_prep import DataPipeline
 from data_processing_asag.alice_asag_loader import Alice_Loader
 from modelling.modelling_utils import BackwardSupportedArguments
@@ -75,29 +76,37 @@ def load_args_from_checkpoint(cp_dir, current_train_args, current_task_args):
 class TaskArguments:
     """Task/experiment related arguments dataclass"""
     base_model: str = field(default='bert-base-uncased', metadata={"help": "base model to use"})
-    model_class: str = field(default="span", metadata={"help": "model class to use: span, xnet, xnet-pwr, xnet-contrastive"})
+    model_class: str = field(default="span", metadata={"help": "model class to use: span, xnet"})
     seed: int = field(default=114514, metadata={"help": "random seed for reproducibility"})
-    train_frac: float = field(default=1.0, metadata={"help": "fraction of training data to use"})
+    train_frac: float = field(
+        default=1.0,
+        metadata={
+            "help": (
+                "fraction of training data to use when <= 1, "
+                "or exact number of training instances when > 1 (must be integer-valued)"
+            )
+        },
+    )
     benchmark : str = field(default="alice_lp", metadata={"help": "name of the task (lp, ke, sk)"})
     dry_run: bool = field(default=False, metadata={"help": "whether to do a dry run for debugging"})
-    # ---- xnet-pwr model parameters ----
-    pairwise_margin: float = field(default=0.1, metadata={"help": "margin for pairwise ranking loss (xnet-pwr only)"})
     # ---- dataset parameters ----
     add_suffix: bool = field(default=False, metadata={"help": "whether to add suffix to the input"})
     add_context: bool = field(default=False, metadata={"help": "whether to add context columns to the input"})
     random_suffix: bool = field(default=False, metadata={"help": "whether to randomly select suffix when multiple are available"})
     use_translated_prompts: bool = field(default=False, metadata={"help": "whether to use translated prompts (e.g., German for Alice)"})
     random_solution: bool = field(default=False, metadata={"help": "whether to use random sample solution from other questions"})
-    drop_rubric: bool = field(default=False, metadata={"help": "whether to drop rubric information during training (only for span model with p-only fuse type)"})
+    random_drop_rub: float = field(default=0.0, metadata={"help": "probability of randomly dropping a rubric (other than correct) during training"})
     def __post_init__(self):
         """Validation checks after initialization"""
-        assert 0 < self.train_frac <= 1.0, "train_frac must be between 0 and 1"
+        assert self.train_frac > 0, "train_frac must be > 0"
+        assert self.train_frac <= 1.0 or float(self.train_frac).is_integer(), (
+            "train_frac > 1 must be an integer-valued exact number of training instances"
+        )
+        assert 0 <= self.random_drop_rub <= 1.0, "random_drop_rub must be between 0 and 1"
         if not self.add_suffix:
             self.random_suffix = False
-        valid_model_classes = ["span", "xnet", "xnet-pwr", "xnet-contrastive"]
+        valid_model_classes = ["span", "xnet"]
         assert self.model_class in valid_model_classes, f"model_class must be one of {valid_model_classes}"
-        if self.drop_rubric and self.model_class != "span":
-            raise ValueError("drop_rubric option is only available for model_class='span'")
 
 def main(task_args: TaskArguments, train_args: AsagTrainingArguments, custom_model_args: BackwardSupportedArguments):
     # If test_only mode and cp_dir is specified, load training args from checkpoint BEFORE anything else
@@ -135,8 +144,8 @@ def main(task_args: TaskArguments, train_args: AsagTrainingArguments, custom_mod
         random_suffix=task_args.random_suffix,
         use_translated_prompts=task_args.use_translated_prompts,
         random_solution=task_args.random_solution,
-        drop_rubric=task_args.drop_rubric,
         model_class=task_args.model_class,
+        random_drop_rub=task_args.random_drop_rub,
     )
     
     # Get datasets with encoding applied
@@ -197,6 +206,16 @@ def main(task_args: TaskArguments, train_args: AsagTrainingArguments, custom_mod
             test_predictions, test_loss = eval_results
             attention_weights = None
         
+        test_predictions, remap_summary = remap_predictions_to_original_alice_labels(
+            test_predictions,
+            benchmark=task_args.benchmark,
+        )
+        if remap_summary["changed_rows"] > 0:
+            print(
+                f"Applied ALICE label remap for {test_name}: "
+                f"rows={remap_summary['changed_rows']}, cells={remap_summary['changed_cells']}"
+            )
+
         # Save predictions
         pred_dir = os.path.join(train_args.save_dir, "predictions")
         if not os.path.exists(pred_dir):

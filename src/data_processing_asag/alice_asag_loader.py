@@ -29,7 +29,10 @@ class Alice_Loader(ASAG_Data_Loader):
     """
     
     def __init__(self, train_frac=1, task_type="lp", remap=True):
-        assert train_frac <= 1 and train_frac > 0, "train_frac must be in (0, 1]"
+        assert train_frac > 0, "train_frac must be > 0"
+        assert train_frac <= 1 or float(train_frac).is_integer(), (
+            "train_frac > 1 must be an integer-valued exact number of training instances"
+        )
         assert task_type in ["lp", "ke", "sk"], "task_type must be one of ['lp','ke','sk']"
         
         self.task_type = task_type
@@ -57,19 +60,27 @@ class Alice_Loader(ASAG_Data_Loader):
             test_uq_data = json.load(f)
         
         # Process datasets
-        train_data = self._process_data(train_data)
-        test_ua_data = self._process_data(test_ua_data)
-        test_uq_data = self._process_data(test_uq_data)
+        train_data = self._process_data(train_data, is_training=True)
+        test_ua_data = self._process_data(test_ua_data, is_training=False)
+        test_uq_data = self._process_data(test_uq_data, is_training=False)
         
-        # Sample a fraction of questions for training if needed
+        # Sample training data if needed
         if self.train_frac < 1:
             question_to_entries = defaultdict(list)
             for entry in train_data:
                 question_to_entries[entry["question_id"]].append(entry)
             all_qids = list(question_to_entries.keys())
-            n_sample = int(len(all_qids) * self.train_frac)
+            n_sample = max(1, int(len(all_qids) * self.train_frac))
             sampled_qids = set(random.sample(all_qids, n_sample))
             train_data = [e for qid in sampled_qids for e in question_to_entries[qid]]
+        elif self.train_frac > 1:
+            n_sample = int(self.train_frac)
+            if n_sample > len(train_data):
+                raise ValueError(
+                    f"train_frac={self.train_frac} requests {n_sample} training instances, "
+                    f"but only {len(train_data)} are available for Alice {self.task_type}."
+                )
+            train_data = random.sample(train_data, n_sample)
         
         # Create train/val split
         train_dataset = Dataset.from_list(train_data)
@@ -83,20 +94,20 @@ class Alice_Loader(ASAG_Data_Loader):
             "test_uq": Dataset.from_list(test_uq_data)
         }
 
-    def _process_data(self, data_list):
+    def _process_data(self, data_list, is_training=False):
         """Process raw data entries based on task type."""
         processed = []
         for entry in data_list:
             if self.task_type == "lp":
-                processed_entry = self._retrieve_meta_lp(entry)
+                processed_entry = self._retrieve_meta_lp(entry, is_training=is_training)
                 processed.append(processed_entry)
             else:
                 # For ke and sk, one entry may expand to multiple
-                expanded_entries = self._retrieve_meta_ke_sk(entry)
+                expanded_entries = self._retrieve_meta_ke_sk(entry, is_training=is_training)
                 processed.extend(expanded_entries)
         return processed
 
-    def _retrieve_meta_lp(self, entry: dict):
+    def _retrieve_meta_lp(self, entry: dict, is_training=False):
         """Retrieve metadata for learning_performance task type."""
         question_id = entry["question_id"]
         meta_info = question_meta.get(question_id, {})
@@ -105,13 +116,17 @@ class Alice_Loader(ASAG_Data_Loader):
         entry["sample_solution"] = meta_info["sample_solution"][:5]  
         
         rubric = meta_info.get("learning_performance", {})
-        entry["rubric"] = [v['rule'] for v in rubric.values()]
-        entry["level"] = int(next(iter(entry.get("learning_performance", {}).values()), 0))
-        entry["num_rubrics"] = len(rubric)
+        rubric_list = [v['rule'] for v in rubric.values()]
+        level = int(next(iter(entry.get("learning_performance", {}).values()), 0))
+        
+        
+        entry["rubric"] = rubric_list
+        entry["level"] = level
+        entry["num_rubrics"] = len(rubric_list)
         
         return entry
 
-    def _retrieve_meta_ke_sk(self, entry: dict):
+    def _retrieve_meta_ke_sk(self, entry: dict, is_training=False):
         """Retrieve metadata for knowledge_elements or skills task types. Returns list of entries."""
         question_id = entry["question_id"]
         meta_info = question_meta.get(question_id, {})
@@ -146,6 +161,7 @@ class Alice_Loader(ASAG_Data_Loader):
             
             # Format rubric
             item_rubric_list = [f"{item_key}: {v['description']}" for v in item_rubric.values()]
+            
             
             new_entry["rubric"] = item_rubric_list
             new_entry["level"] = level

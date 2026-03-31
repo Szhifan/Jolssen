@@ -7,11 +7,12 @@ import json
 
 
 class ASAG_Data_Loader:
-    def __init__(self, benchmark: str = None, train_frac=1, random_solution=False, random_drop_rub=0.0):
-        assert train_frac <= 1 and train_frac > 0, "train_frac must be in (0, 1]"
+    def __init__(self, benchmark: str = None, train_frac=1):
+        assert train_frac > 0, "train_frac must be > 0"
+        assert train_frac <= 1 or float(train_frac).is_integer(), (
+            "train_frac > 1 must be an integer-valued exact number of training instances"
+        )
         self.train_frac = train_frac
-        self.random_solution = random_solution
-        self.random_drop_rub = random_drop_rub
         self.benchmark = benchmark
         if benchmark:
             self.task_name = Path("asag_benchmarks", benchmark)
@@ -35,30 +36,39 @@ class ASAG_Data_Loader:
                 question_to_entries[str(row["question_id"])].append(row.to_dict())
 
             all_qids = list(question_to_entries.keys())
-            n_sample = int(len(all_qids) * self.train_frac)
+            n_sample = max(1, int(len(all_qids) * self.train_frac))
             sampled_qids = set(random.sample(all_qids, n_sample))
             train_df = pd.DataFrame(
                 [e for qid in sampled_qids for e in question_to_entries[qid]]
             )
+        elif self.train_frac > 1:
+            n_sample = int(self.train_frac)
+            if n_sample > len(train_df):
+                raise ValueError(
+                    f"train_frac={self.train_frac} requests {n_sample} training instances, "
+                    f"but only {len(train_df)} are available for benchmark '{self.benchmark}'."
+                )
+            sampled_indices = random.sample(range(len(train_df)), n_sample)
+            train_df = train_df.iloc[sampled_indices].reset_index(drop=True)
         # ----------- Sampling complete -----------
 
         val_path = self.task_name / "val.csv"
         if val_path.exists():
             val_df = pd.read_csv(val_path)
             train_dataset = Dataset.from_pandas(train_df)
-            self.train = train_dataset.map(lambda x: self._retrieve_meta(x))
-            self.val = Dataset.from_pandas(val_df).map(lambda x: self._retrieve_meta(x))
+            self.train = train_dataset.map(lambda x: self._retrieve_meta(x, is_training=True))
+            self.val = Dataset.from_pandas(val_df).map(lambda x: self._retrieve_meta(x, is_training=False))
         else:
             train_dataset = Dataset.from_pandas(train_df)
             split = train_dataset.train_test_split(test_size=0.1, seed=42)
-            self.train = split["train"].map(lambda x: self._retrieve_meta(x))
-            self.val = split["test"].map(lambda x: self._retrieve_meta(x))
+            self.train = split["train"].map(lambda x: self._retrieve_meta(x, is_training=True))
+            self.val = split["test"].map(lambda x: self._retrieve_meta(x, is_training=False))
         test_dfs = {}
         for path in sorted(self.task_name.glob("test*.csv")):
             if path.name == "train.csv":
                 continue
             test_dts = Dataset.from_pandas(pd.read_csv(path))
-            test_dts = test_dts.map(lambda x: self._retrieve_meta(x))
+            test_dts = test_dts.map(lambda x: self._retrieve_meta(x, is_training=False))
             test_dfs[path.stem] = test_dts
         if not test_dfs:
             raise ValueError(f"No test files found in {self.task_name}")
@@ -73,8 +83,7 @@ class ASAG_Data_Loader:
         with open(meta_path, "r") as f:
             meta = json.load(f)
         return {str(k): v for k, v in meta.items()}
-
-    def _retrieve_meta(self, example):
+    def _retrieve_meta(self, example, is_training=False):
         """Retrieve and enrich example with metadata. Can be overridden by subclasses."""
         meta = self.question_meta.get(str(example.get("question_id", "")), {})
 
@@ -91,8 +100,11 @@ class ASAG_Data_Loader:
         rubric_list = [
             v for _, v in sorted(rubrics.items(), key=lambda item: float(item[0]))
         ]
+        
+        level = int(example.get("level", example.get("score_level", 0)))
 
         example["rubric"] = rubric_list
+        example["level"] = level
         example["num_rubrics"] = len(rubric_list)
         return example
 
