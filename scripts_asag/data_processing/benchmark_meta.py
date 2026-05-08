@@ -110,6 +110,19 @@ BENCHMARK_DESCRIPTIONS = {
         "num_labels": 3,
         "suffixes": COMMON_SUFFIXES
     }, 
+    "scientsbank2": {
+        "lang": "en",
+        "loader_class": "ASAG_Data_Loader",
+        "context_cols": ["question", "sample_solution"],
+        "text_col": "answer",
+        "label_col": "level",
+        "label_semantics": "rubric",
+        "category": "asas",
+        "num_labels": 2,
+        "label_map": {"incorrect": 0, "correct": 1},
+        "rubric_meta_path": "generated_rubrics_feedback.json",
+        "suffixes": COMMON_SUFFIXES
+    },
     "beetle": {
         "lang": "en",
         "loader_class": "ASAG_Data_Loader",

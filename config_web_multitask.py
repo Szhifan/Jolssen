@@ -5,12 +5,12 @@ import time
 from dataclasses import dataclass, field
 from pathlib import Path
 
+from dotenv import load_dotenv
 from flask import Flask, jsonify, render_template_string, request
 
 
 WORKSPACE_ROOT = Path(__file__).resolve().parent
-LEGACY_WANDB_API_KEY = "REDACTED_WANDB_KEY"
-LEGACY_HF_TOKEN = "REDACTED_HF_TOKEN"
+load_dotenv(WORKSPACE_ROOT / ".env")
 
 ASAG_BENCHMARK_OPTIONS: list[tuple[str, str]] = [
     ("alice_lp", "ALICE LP"),
@@ -21,6 +21,7 @@ ASAG_BENCHMARK_OPTIONS: list[tuple[str, str]] = [
     ("istudio", "iStudio"),
     ("pt_asag", "PT ASAG"),
     ("scientsbank", "Scientsbank"),
+    ("scientsbank2", "Scientsbank2"),
 ]
 ASAG_BENCHMARK_SET = {value for value, _ in ASAG_BENCHMARK_OPTIONS}
 
@@ -33,6 +34,7 @@ MODEL_OPTIONS: list[tuple[str, str]] = [
     ("meta-llama/Llama-3.2-3B", "Llama 3.2 3B"),
     ("mistralai/Mistral-7B-v0.1", "Mistral 7B v0.1"),
     ("nvidia/NV-Embed-v2", "NVIDIA NV-Embed v2"),
+    ("meta-llama/Llama-3.1-8B-Instruct", "Llama 3.1 8B Instruct"),
 ]
 
 SPAN_FUSE_OPTIONS = [
@@ -58,6 +60,7 @@ MODEL_SHORTNAME = {
     "meta-llama/Llama-3.2-3B": "llama3.2-3B",
     "mistralai/Mistral-7B-v0.1": "mistral-7B-v0.1",
     "nvidia/NV-Embed-v2": "nv-embed-v2",
+    "meta-llama/Llama-3.1-8B-Instruct": "llama3.1-8B-instruct",
 }
 
 
@@ -152,7 +155,8 @@ class MultiExperimentConfig:
     lr: float = 2e-4
     max_epoch: int = 4
     seed: int = 114514
-    random_drop_rub: float = 0.0
+    test_drop_rub: float = 0.0
+    train_drop_rub: float = 0.0
 
     use_lora: bool = True
     use_bnb: bool = True
@@ -163,6 +167,8 @@ class MultiExperimentConfig:
     random_suffix: bool = True
     use_translated_prompts: bool = True
     random_solution: bool = False
+    rubric_independent_attn: bool = False
+    reindex_rub: bool = False
 
     exp_name: str = ""
 
@@ -176,16 +182,15 @@ class MultiExperimentConfig:
         )
         parts = [
             "multi",
-            _task_signature(self.train_tasks),
             short_model,
             self.span_fuse_type if self.model_class == "span" else self.model_class,
         ]
-        if self.eval_tasks != self.train_tasks:
-            parts.append(f"eval-{_task_signature(self.eval_tasks, max_items=2)}")
-        if self.test_tasks != self.train_tasks:
-            parts.append(f"test-{_task_signature(self.test_tasks, max_items=2)}")
         if self.random_solution:
             parts.append("randsolu")
+        if self.rubric_independent_attn:
+            parts.append("rub-ind")
+            if self.reindex_rub:
+                parts.append("reindex")
         return "-".join(parts)
 
 
@@ -240,7 +245,8 @@ def _normalize_config_dict(config_dict: dict) -> dict:
 
     out["train_frac"] = _coerce_float(out.get("train_frac"), 1.0)
     out["lr"] = _coerce_float(out.get("lr"), 2e-4)
-    out["random_drop_rub"] = _coerce_float(out.get("random_drop_rub"), 0.0)
+    out["test_drop_rub"] = _coerce_float(out.get("test_drop_rub"), 0.0)
+    out["train_drop_rub"] = _coerce_float(out.get("train_drop_rub"), 0.0)
 
     if out["batch_size"] <= 0:
         raise ValueError("batch_size must be > 0")
@@ -252,8 +258,10 @@ def _normalize_config_dict(config_dict: dict) -> dict:
         raise ValueError("train_frac must be > 0")
     if out["lr"] <= 0:
         raise ValueError("lr must be > 0")
-    if not (0.0 <= out["random_drop_rub"] <= 1.0):
-        raise ValueError("random_drop_rub must be in [0, 1]")
+    if not (0.0 <= out["test_drop_rub"] <= 1.0):
+        raise ValueError("test_drop_rub must be in [0, 1]")
+    if not (0.0 <= out["train_drop_rub"] <= 1.0):
+        raise ValueError("train_drop_rub must be in [0, 1]")
 
     out["pool_type"] = str(out.get("pool_type", "last")).strip() or "last"
     if out["pool_type"] not in {"avg", "weightedavg", "cls", "last"}:
@@ -275,6 +283,8 @@ def _normalize_config_dict(config_dict: dict) -> dict:
         "random_suffix",
         "use_translated_prompts",
         "random_solution",
+        "rubric_independent_attn",
+        "reindex_rub",
     ]
     defaults = {
         "use_lora": True,
@@ -286,7 +296,13 @@ def _normalize_config_dict(config_dict: dict) -> dict:
         "random_suffix": True,
         "use_translated_prompts": True,
         "random_solution": False,
+        "rubric_independent_attn": False,
+        "reindex_rub": False,
     }
+    if out["rubric_independent_attn"] and out.get("span_fuse_type") != "l-only":
+        raise ValueError("rubric_independent_attn is only compatible with span_fuse_type='l-only'.")
+    if out["reindex_rub"] and not out["rubric_independent_attn"]:
+        raise ValueError("reindex_rub requires rubric_independent_attn to be set.")
     for field_name in bool_fields:
         out[field_name] = _coerce_bool(out.get(field_name), defaults[field_name])
 
@@ -314,10 +330,6 @@ def _extract_api_tokens(payload: dict | None) -> tuple[str, str]:
     if not hf_token:
         hf_token = str(os.getenv("HF_TOKEN", "")).strip()
 
-    if not wandb_api_key:
-        wandb_api_key = LEGACY_WANDB_API_KEY
-    if not hf_token:
-        hf_token = LEGACY_HF_TOKEN
     return wandb_api_key, hf_token
 
 
@@ -333,7 +345,7 @@ def _write_api_token_exports(file_obj, wandb_api_key: str, hf_token: str):
 def _build_command_lines(config: MultiExperimentConfig, save_dir: str) -> list[str]:
     lines = [
         "accelerate launch \\",
-        "    src/train_multi.py \\",
+        "    scripts_asag/train_multi.py \\",
         f"    --save-dir {save_dir} \\",
         f"    --train-tasks {' '.join(config.train_tasks)} \\",
         f"    --eval-tasks {' '.join(config.eval_tasks)} \\",
@@ -352,6 +364,10 @@ def _build_command_lines(config: MultiExperimentConfig, save_dir: str) -> list[s
         lines.append(f"    --span-fuse-type {config.span_fuse_type} \\")
         if config.span_pool_type != "last":
             lines.append(f"    --span-pool-type {config.span_pool_type} \\")
+        if config.rubric_independent_attn:
+            lines.append("    --rubric-independent-attn \\")
+            if config.reindex_rub:
+                lines.append("    --reindex-rub \\")
 
     if config.num_bidir_layers > 0:
         lines.append(f"    --num-bidir-layers {config.num_bidir_layers} \\")
@@ -379,8 +395,10 @@ def _build_command_lines(config: MultiExperimentConfig, save_dir: str) -> list[s
         lines.append("    --random-suffix \\")
     if config.use_translated_prompts:
         lines.append("    --use_translated_prompts \\")
-    if config.random_drop_rub > 0:
-        lines.append(f"    --random-drop-rub {config.random_drop_rub} \\")
+    if config.test_drop_rub > 0:
+        lines.append(f"    --test-drop-rub {config.test_drop_rub} \\")
+    if config.train_drop_rub > 0:
+        lines.append(f"    --train-drop-rub {config.train_drop_rub} \\")
     if config.bf16:
         lines.append("    --bf16 \\")
     if config.log_wandb:
@@ -450,6 +468,11 @@ def _build_run_script(
     return run_script_path, results, command_blocks
 
 
+DEFAULT_TRAIN_TASKS = {"asap_sas", "beetle", "scientsbank"}
+DEFAULT_EVAL_TASKS = {"istudio"}
+DEFAULT_TEST_TASKS = {"alice_lp", "asap_sas", "beetle", "scientsbank", "istudio", "pt_asag"}
+
+
 def _build_template() -> str:
     def options(items: list[tuple[str, str]], selected: str | None = None) -> str:
         chunks = []
@@ -458,7 +481,16 @@ def _build_template() -> str:
             chunks.append(f'<option value="{value}"{is_selected}>{label}</option>')
         return "\n".join(chunks)
 
-    benchmark_options_html = options(ASAG_BENCHMARK_OPTIONS, selected="alice_lp")
+    def multi_options(items: list[tuple[str, str]], selected_set: set) -> str:
+        chunks = []
+        for value, label in items:
+            is_selected = " selected" if value in selected_set else ""
+            chunks.append(f'<option value="{value}"{is_selected}>{label}</option>')
+        return "\n".join(chunks)
+
+    train_benchmark_options_html = multi_options(ASAG_BENCHMARK_OPTIONS, DEFAULT_TRAIN_TASKS)
+    eval_benchmark_options_html = multi_options(ASAG_BENCHMARK_OPTIONS, DEFAULT_EVAL_TASKS)
+    test_benchmark_options_html = multi_options(ASAG_BENCHMARK_OPTIONS, DEFAULT_TEST_TASKS)
     model_options_html = options(MODEL_OPTIONS, selected="markussagen/xlm-roberta-longformer-base-4096")
     span_fuse_html = "\n".join(
         f'<option value="{name}"{" selected" if name == "p-concat" else ""}>{name}</option>'
@@ -470,7 +502,7 @@ def _build_template() -> str:
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ASAG train_multi.py Config</title>
+    <title>ASAG Multi-Task Config</title>
     <style>
         * {{ box-sizing: border-box; }}
         body {{
@@ -626,7 +658,7 @@ def _build_template() -> str:
     <div class="container">
         <div class="header">
             <h1>ASAG Multi-Task Configuration</h1>
-            <p>Standalone config page for <code>src/train_multi.py</code></p>
+            <p>Standalone config page for the ASAG multi-task runner.</p>
         </div>
         <div class="content">
             <form id="multiForm">
@@ -635,18 +667,18 @@ def _build_template() -> str:
                     <div class="grid">
                         <div class="form-group">
                             <label for="trainTasks">Train Benchmarks *</label>
-                            <select id="trainTasks" multiple class="select-tall">{benchmark_options_html}</select>
+                            <select id="trainTasks" multiple class="select-tall">{train_benchmark_options_html}</select>
                             <div class="help">Select one or more tasks for train.</div>
                         </div>
                         <div class="form-group">
                             <label for="evalTasks">Eval Benchmarks</label>
-                            <select id="evalTasks" multiple class="select-tall">{benchmark_options_html}</select>
+                            <select id="evalTasks" multiple class="select-tall">{eval_benchmark_options_html}</select>
                             <div class="help">If empty, eval uses train benchmarks.</div>
                         </div>
                     </div>
                     <div class="form-group">
                         <label for="testTasks">Test Benchmarks</label>
-                        <select id="testTasks" multiple class="select-tall">{benchmark_options_html}</select>
+                        <select id="testTasks" multiple class="select-tall">{test_benchmark_options_html}</select>
                         <div class="help">If empty, test uses train benchmarks.</div>
                     </div>
                 </div>
@@ -697,6 +729,22 @@ def _build_template() -> str:
                             </select>
                         </div>
                     </div>
+                    <div class="grid" id="rubIndWrap">
+                        <div class="form-group">
+                            <label class="checkbox-item" style="font-weight:700;font-size:14px;color:#444;">
+                                <input type="checkbox" id="rubricIndependentAttn">
+                                rubric_independent_attn
+                            </label>
+                            <div class="help">Block-sparse attention: each rubric only attends to context + itself.</div>
+                        </div>
+                        <div class="form-group" id="reindexWrap">
+                            <label class="checkbox-item" style="font-weight:700;font-size:14px;color:#444;">
+                                <input type="checkbox" id="reindexRub" disabled>
+                                reindex_rub
+                            </label>
+                            <div class="help">Reset position IDs per rubric (requires rubric_independent_attn).</div>
+                        </div>
+                    </div>
                     <div class="grid">
                         <div class="form-group"><label for="numBidirLayers">Num Bidirectional Layers</label><input type="number" id="numBidirLayers" value="0" min="0" step="1"></div>
                         <div class="form-group"><label for="numPruneLayers">Num Pruned Layers</label><input type="number" id="numPruneLayers" value="0" min="0" step="1"></div>
@@ -721,9 +769,15 @@ def _build_template() -> str:
                         <div class="form-group"><label for="maxEpoch">Max Epoch</label><input type="number" id="maxEpoch" value="4" min="1"></div>
                         <div class="form-group"><label for="seed">Seed</label><input type="number" id="seed" value="114514"></div>
                     </div>
-                    <div class="form-group">
-                        <label for="randomDropRub">Random Drop Rubric Probability</label>
-                        <input type="number" id="randomDropRub" value="0.0" min="0" max="1" step="0.1">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="testDropRub">Test Drop Rubric Probability</label>
+                            <input type="number" id="testDropRub" value="0.0" min="0" max="1" step="0.1">
+                        </div>
+                        <div class="form-group">
+                            <label for="trainDropRub">Train Drop Rubric Probability</label>
+                            <input type="number" id="trainDropRub" value="0.0" min="0" max="1" step="0.1">
+                        </div>
                     </div>
                     <div class="checkbox-grid">
                         <label class="checkbox-item"><input type="checkbox" id="useLora" checked>use_lora</label>
@@ -811,20 +865,14 @@ def _build_template() -> str:
         }}
 
         function computeAutoName(cfg) {{
-            const trainTasks = cfg.train_tasks || [];
-            const evalTasks = (cfg.eval_tasks && cfg.eval_tasks.length) ? cfg.eval_tasks : trainTasks;
-            const testTasks = (cfg.test_tasks && cfg.test_tasks.length) ? cfg.test_tasks : trainTasks;
-
-            const parts = ['multi', taskSig(trainTasks), shortModel(cfg.base_model)];
+            const parts = ['multi', shortModel(cfg.base_model)];
             parts.push(cfg.model_class === 'span' ? (cfg.span_fuse_type || 'p-concat') : cfg.model_class);
-            if (evalTasks.join(',') !== trainTasks.join(',')) {{
-                parts.push('eval-' + taskSig(evalTasks, 2));
-            }}
-            if (testTasks.join(',') !== trainTasks.join(',')) {{
-                parts.push('test-' + taskSig(testTasks, 2));
-            }}
             if (cfg.random_solution) {{
                 parts.push('randsolu');
+            }}
+            if (cfg.rubric_independent_attn) {{
+                parts.push('rub-ind');
+                if (cfg.reindex_rub) parts.push('reindex');
             }}
             return parts.join('-');
         }}
@@ -853,7 +901,8 @@ def _build_template() -> str:
                 lr: Number(document.getElementById('lr').value || 2e-4),
                 max_epoch: Number(document.getElementById('maxEpoch').value || 4),
                 seed: Number(document.getElementById('seed').value || 114514),
-                random_drop_rub: Number(document.getElementById('randomDropRub').value || 0.0),
+                test_drop_rub: Number(document.getElementById('testDropRub').value || 0.0),
+                train_drop_rub: Number(document.getElementById('trainDropRub').value || 0.0),
                 use_lora: document.getElementById('useLora').checked,
                 use_bnb: document.getElementById('useBnb').checked,
                 bf16: document.getElementById('bf16').checked,
@@ -863,6 +912,8 @@ def _build_template() -> str:
                 random_suffix: document.getElementById('randomSuffix').checked,
                 use_translated_prompts: document.getElementById('useTranslated').checked,
                 random_solution: document.getElementById('randomSolution').checked,
+                rubric_independent_attn: document.getElementById('rubricIndependentAttn').checked,
+                reindex_rub: document.getElementById('reindexRub').checked,
             }};
         }}
 
@@ -874,6 +925,23 @@ def _build_template() -> str:
             wrap.style.opacity = hasSpan ? '1' : '0.5';
             fuse.disabled = !hasSpan;
             spanPool.disabled = !hasSpan;
+
+            const rubIndChk = document.getElementById('rubricIndependentAttn');
+            const reindexChk = document.getElementById('reindexRub');
+            const rubIndWrap = document.getElementById('rubIndWrap');
+            rubIndWrap.style.opacity = hasSpan ? '1' : '0.5';
+            rubIndChk.disabled = !hasSpan;
+
+            const rubIndOn = hasSpan && rubIndChk.checked;
+            reindexChk.disabled = !rubIndOn;
+            document.getElementById('reindexWrap').style.opacity = rubIndOn ? '1' : '0.5';
+            if (!rubIndOn) reindexChk.checked = false;
+
+            if (rubIndOn) {{
+                Array.from(fuse.options).forEach((o) => {{ o.selected = o.value === 'l-only'; }});
+                fuse.disabled = true;
+                wrap.style.opacity = '0.5';
+            }}
         }}
 
         function buildExperimentConfigs() {{

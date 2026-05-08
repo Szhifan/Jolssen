@@ -60,7 +60,7 @@ Use LLMs to synthesize or normalize:
 
 ## Universal ASAG objective
 The longer-term goal is a **single cohesive model** trained across multiple benchmarks.
-All benchmarks are registered in `src/data_processing_asag/benchmark_meta.py`.
+All benchmarks are registered in `scripts_asag/data_processing/benchmark_meta.py`.
 Label semantics are rubric descriptions; default 3-level scale: *Incorrect / Partially Correct / Correct* (`LEVEL2LABEL`).
 
 | Benchmark | Key | Lang | Labels | Context | Notes |
@@ -74,10 +74,6 @@ Label semantics are rubric descriptions; default 3-level scale: *Incorrect / Par
 | **iSTudio** | `istudio` | EN | 3 | question\_context, question, sample\_solution | Includes broader question context field |
 | **PT-ASAG** | `pt_asag` | PT | 4 | question, sample\_solution | Portuguese ASAG; cross-lingual zero-shot transfer target |
 
-Key research questions include:
-- Can a single model learn across heterogeneous benchmarks?
-- Can rubric/reference normalization reduce benchmark mismatch?
-- Can an English-trained model transfer to German/Portuguese in few-shot or zero-shot settings?
 
 ## Cross-lingual angle
 Cross-lingual transfer is a defined part of the proposal.
@@ -93,60 +89,76 @@ The analogy is:
 - **question / sample solution / instruction** -> task-specific context
 - **rubrics** -> label descriptions
 
-## Non-ASAG benchmarks (`other_benchmarks/`)
+## Non-ASAG benchmarks
 
 Used to test whether the framework generalises beyond ASAG to other classification tasks with meaningful label semantics.
-All benchmarks are registered in `src/data_processing_other/benchmark_meta.py`.
+All benchmarks are registered in `scripts_others/data_processing/benchmark_meta.py`.
+Most datasets are stored as normalized JSON under `other_benchmarks/`. FigQA/`fiqa` and AG News are loaded directly from HuggingFace, so they do not require local directories under `other_benchmarks/`.
 
-| Benchmark | Lang | Task | Labels |
-|---|---|---|---|
-| **Winogrande** | EN | Commonsense: choose the word that best completes a sentence | 2 (free-text options) |
-| **PIQA** | EN | Physical commonsense: choose the more plausible solution to a goal | 2 (free-text options) |
-| **FiQA** | EN | Figurative language: choose the ending matching the figurative meaning | 2 (free-text options) |
-| **xStance** | EN/DE/FR/IT | Political stance of a comment toward a question | 2 Against/Favor |
-| **SemEval-2016 Task 6** | EN | Stance of a tweet toward a named target | 3 Against/Favor/None |
-| **C-STANCE** | ZH | Chinese zero-shot stance detection (~48 k pairs, ACL 2023) | 3 反对/支持/中立 |
-| **Yelp Polarity** | EN | Binary sentiment of reviews (560 k train) | 2 Negative/Positive |
-| **EIC** | EN | Edit intent in scientific paper revisions | 5 Claim/Clarity/Fact/Grammar/Other |
+Each formatter returns examples in the shared preprocessing shape:
+- `text_col`: the input sequence to classify.
+- `context_cols`: optional task context prepended to the input.
+- `label_semantics`: the example field containing label/rubric descriptions.
+- `label_col`: the gold class index.
 
-xStance is the primary cross-lingual benchmark; C-STANCE is the Chinese zero-shot transfer target.
+For span-style preprocessing, the values in the `label_semantics` field are encoded as rubric/label spans. The gold label is therefore an index into that list.
+
+| Benchmark | Key | Source | Lang | Text / context | Label semantics | Labels |
+|---|---|---|---|---|---|---|
+| **PIQA** | `piqa` | `other_benchmarks/piqa/` | EN | `goal` | `solution`: two candidate solutions | 2 |
+| **xStance** | `xstance` | `other_benchmarks/xstance/` | DE/FR/IT plus EN question files | `comment`; context: `question` | `stance`: support vs opposition descriptions | 2 |
+| **SemEval-2016 Task 6** | `semeval2016` | `other_benchmarks/semeval2016/` | EN | `tweet`; context: `target` | `stance`: favor/against/none descriptions | 3 |
+| **FigQA / FiQA** | `fiqa` | HuggingFace `nightingal3/fig-qa` | EN | `startphrase` -> `sentence` | `options`: `[ending1, ending2]` | 2 |
+| **AG News** | `ag_news` | HuggingFace `fancyzhx/ag_news` | EN | `text` | `topic`: World, Sports, Business, Sci/Tech | 4 |
+| **IMDB** | `imdb` | `other_benchmarks/imdb/` | EN | `review` | `sentiment`: Negative/Positive | 2 |
+| **EIC** | `eic` | `other_benchmarks/eic/` | EN | `new`; context: `old` | `options`: Claim, Clarity, Fact/Evidence, Grammar, Other | 5 |
+
+xStance is the primary cross-lingual non-ASAG benchmark. FigQA/`fiqa` uses per-example endings as the label descriptions: `ending1` maps to label `0`, and `ending2` maps to label `1`. AG News uses fixed topic labels: `0` World, `1` Sports, `2` Business, and `3` Sci/Tech.
 
 ## Training tasks
 
-Three distinct training scenarios are supported, each with its own entry point.
+Three distinct training scenarios are supported, with benchmark-specific entry points living under `scripts_asag/` and `scripts_others/`.
 
-### 1. Mono-dataset ASAG training (`train.py`)
+### 1. Mono-dataset ASAG training (`scripts_asag/train.py`)
 Train and evaluate on a **single ASAG benchmark**.
 - One benchmark is selected via `TaskArguments` (e.g. `alice_lp`, `beetle`, `asap_sas`).
 - The model learns to align student-answer representations to the label/rubric descriptions for that benchmark only.
 - Evaluation is performed on the held-out split(s) of the same benchmark (standard train / dev / test or UA / UQ / UD splits where applicable).
 - Use case: benchmark-specific fine-tuning, ablation studies, cross-lingual zero-shot evaluation (train EN → eval DE/PT).
 
-### 2. Multi-dataset ASAG training (`train_multitask.py`)
+### 2. Multi-dataset ASAG training (`scripts_asag/train_multi.py`)
 Train jointly on **multiple ASAG benchmarks** and evaluate on all of them.
 - Benchmarks are specified via `MultiTaskArguments`; data is interleaved by `MultiTaskDataPipeline`.
 - A single model learns shared representations across heterogeneous label spaces and languages.
 - Per-benchmark metrics are reported alongside aggregate scores.
 - Use case: universal ASAG model, studying cross-benchmark transfer, reducing per-task data requirements.
 
-### 3. Mono-dataset training for non-ASAG benchmarks (`train_other.py`)
+### 3. Mono-dataset training for non-ASAG benchmarks (`scripts_others/train.py`)
 Train and evaluate on a **single non-ASAG benchmark** (stance, sentiment, commonsense, etc.).
-- Uses the same `TaskArguments` / `main()` pattern as `train.py` but routes through `DataPipelineOther`.
+- Uses the same `TaskArguments` / `main()` pattern as `scripts_asag/train.py` but routes through `DataPipelineOther`.
 - Tests whether the sequence-to-label alignment framework generalises beyond ASAG to other classification tasks with meaningful label semantics.
 - Use case: out-of-domain generalisation experiments, validating the universality of the alignment approach.
 
-## Codebase map (`src/`)
+#### Planned non-ASAG experiments
+
+Three conditions are planned for the non-ASAG benchmarks:
+
+1. **Canonical span-alignment with ConDiff** — the full span model using the conditional-difference fusion mechanism.
+2. **p-only with rubrics** — prediction head uses only the premise/input representation, but rubric/label descriptions are still provided as label semantics.
+3. **p-only without rubrics** — prediction head uses only the premise/input representation with no rubric/label descriptions (plain classification baseline).
+
+## Codebase map
 
 ### Training entry points
 
 | File | Purpose |
 |---|---|
-| `train.py` | Single-benchmark ASAG training. Defines `TaskArguments` + `main()`. |
-| `train_multitask.py` | Multi-benchmark ASAG training. `MultiTaskArguments`, `MultiTaskDataPipeline`, `main()`. |
-| `train_other.py` | Training on non-ASAG benchmarks (same `TaskArguments` / `main()` pattern). |
+| `scripts_asag/train.py` | Single-benchmark ASAG training. Defines `TaskArguments` + `main()`. |
+| `scripts_asag/train_multi.py` | Multi-benchmark ASAG training. `TaskArguments`, `MultiTaskDataPipeline`, `main()`. |
+| `scripts_others/train.py` | Training on non-ASAG benchmarks (same `TaskArguments` / `main()` pattern). |
 | `trainer.py` | Shared training infrastructure: `AsagTrainingArguments`, `ModelLoader` (loads backbone + LoRA), `AsagTrainer` (custom training loop), `compute_metrics()`. |
 
-### Data processing — ASAG (`data_processing_asag/`)
+### Data processing — ASAG (`scripts_asag/data_processing/`)
 
 | File | Purpose |
 |---|---|
@@ -155,12 +167,12 @@ Train and evaluate on a **single non-ASAG benchmark** (stance, sentiment, common
 | `alice_asag_loader.py` | `Alice_Loader(ASAG_Data_Loader)` — ALICE-specific loading. |
 | `data_prep.py` | `DataPipeline` — tokenises and assembles model inputs for ASAG; helpers `is_llm_model()`, `get_tokenizer()`. |
 
-### Data processing — other benchmarks (`data_processing_other/`)
+### Data processing — other benchmarks (`scripts_others/data_processing/`)
 
 | File | Purpose |
 |---|---|
 | `benchmark_meta.py` | Metadata registry for non-ASAG benchmarks (format function names, label configs, language tags, suffix lists). |
-| `data_loader.py` | Per-benchmark format functions: `format_piqa`, `format_xstance`, `format_semeval2016`, `format_cstance`, `format_yelp`, `format_eic`, `format_figqa`, `format_winogrande`. |
+| `data_loader.py` | Per-benchmark format functions: `format_piqa`, `format_xstance`, `format_semeval2016`, `format_figqa`, `format_ag_news`, `format_imdb`, `format_eic`. |
 | `data_prep.py` | `OtherDataLoader`, `DataPipelineOther` — loads and tokenises non-ASAG data; mirrors the ASAG `DataPipeline` interface. |
 
 ### Modelling (`modelling/`)
@@ -178,5 +190,3 @@ Train and evaluate on a **single non-ASAG benchmark** (stance, sentiment, common
 | File | Purpose |
 |---|---|
 | `utils.py` | `evaluate()`, `metrics_calc()`, `eval_report()`, `save_report()`, `save_prediction()`, `get_label_weights()`, `per_qid_metrics()`, `extract_llama_attention()`, misc helpers (`set_seed`, `configure_logging`, `batch_to_device`, `clear_gpu_memory`). |
-
-

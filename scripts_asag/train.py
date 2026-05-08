@@ -1,5 +1,13 @@
 import time 
 import os
+import sys
+from pathlib import Path
+
+REPO_ROOT = Path(__file__).resolve().parents[1]
+for path in (REPO_ROOT,):
+    path_str = str(path)
+    if path_str not in sys.path:
+        sys.path.insert(0, path_str)
 import wandb
 import torch
 from dataclasses import dataclass, field
@@ -16,9 +24,8 @@ from utils import (
     per_qid_metrics
 )
 
-from alice_label_remap import remap_predictions_to_original_alice_labels
-from data_processing_asag.data_prep import DataPipeline
-from data_processing_asag.alice_asag_loader import Alice_Loader
+from scripts_asag.alice_label_remap import remap_predictions_to_original_alice_labels
+from scripts_asag.data_processing.data_prep import DataPipeline
 from modelling.modelling_utils import BackwardSupportedArguments
 from transformers import HfArgumentParser
 import torch.distributed as dist
@@ -27,6 +34,13 @@ import torch.distributed as dist
 def is_main_process():
     """Check if the current process is the main process (rank 0)."""
     return not dist.is_available() or not dist.is_initialized() or dist.get_rank() == 0
+
+
+def normalize_cli_args(args):
+    alias_map = {
+        "--flip-levels": "--flip_levels",
+    }
+    return [alias_map.get(arg, arg) for arg in args]
 
 def load_args_from_checkpoint(cp_dir, current_train_args, current_task_args):
     """
@@ -61,16 +75,17 @@ def load_args_from_checkpoint(cp_dir, current_train_args, current_task_args):
     inference_specific_train_args = {
         'test_only', 'cp_dir', 'save_dir', 'save_attweights', 'log_wandb', 'dry_run'
     }
+    preserve_task_args = {'test_drop_rub'}
     
     for key, value in saved_args.items():
         # Check if this key belongs to train_args
         if hasattr(updated_train_args, key) and key not in inference_specific_train_args:
             setattr(updated_train_args, key, value)
         # Check if this key belongs to task_args  
-        elif hasattr(updated_task_args, key):
+        elif hasattr(updated_task_args, key) and key not in preserve_task_args:
             setattr(updated_task_args, key, value)
 
-    
+    updated_task_args.__post_init__()
     return updated_train_args, updated_task_args
 @dataclass
 class TaskArguments:
@@ -95,18 +110,24 @@ class TaskArguments:
     random_suffix: bool = field(default=False, metadata={"help": "whether to randomly select suffix when multiple are available"})
     use_translated_prompts: bool = field(default=False, metadata={"help": "whether to use translated prompts (e.g., German for Alice)"})
     random_solution: bool = field(default=False, metadata={"help": "whether to use random sample solution from other questions"})
-    random_drop_rub: float = field(default=0.0, metadata={"help": "probability of randomly dropping a rubric (other than correct) during training"})
+    test_drop_rub: float = field(default=0.0, metadata={"help": "probability of randomly dropping one non-gold rubric during span-model test evaluation"})
+    train_drop_rub: float = field(default=0.0, metadata={"help": "probability of randomly dropping one non-gold rubric per training example (data-level regularization for span model)"})
+    flip_levels: bool = field(default=False, metadata={"help": "reverse rubric level order for LASA/span inputs and restore outputs before saving"})
+    drop_all_rubrics: bool = field(default=False, metadata={"help": "drop all rubrics from input during both training and testing (no-rubric baseline). Only compatible with model_class='span' and span_fuse_type='p-only'."})
     def __post_init__(self):
         """Validation checks after initialization"""
         assert self.train_frac > 0, "train_frac must be > 0"
         assert self.train_frac <= 1.0 or float(self.train_frac).is_integer(), (
             "train_frac > 1 must be an integer-valued exact number of training instances"
         )
-        assert 0 <= self.random_drop_rub <= 1.0, "random_drop_rub must be between 0 and 1"
+        assert 0 <= self.test_drop_rub <= 1.0, "test_drop_rub must be between 0 and 1"
+        assert 0 <= self.train_drop_rub <= 1.0, "train_drop_rub must be between 0 and 1"
         if not self.add_suffix:
             self.random_suffix = False
         valid_model_classes = ["span", "xnet"]
         assert self.model_class in valid_model_classes, f"model_class must be one of {valid_model_classes}"
+        if self.flip_levels and self.model_class != "span":
+            raise ValueError("flip_levels is only implemented for the LASA span model (model_class='span').")
 
 def main(task_args: TaskArguments, train_args: AsagTrainingArguments, custom_model_args: BackwardSupportedArguments):
     # If test_only mode and cp_dir is specified, load training args from checkpoint BEFORE anything else
@@ -116,6 +137,14 @@ def main(task_args: TaskArguments, train_args: AsagTrainingArguments, custom_mod
         print(f"After loading - Base model: {task_args.base_model}")
         print(f"After loading - Benchmark: {task_args.benchmark}")
     
+    if task_args.test_drop_rub > 0.0 and task_args.model_class != "span":
+        raise ValueError("Test-time rubric dropping is only implemented for model_class='span'.")
+    if task_args.train_drop_rub > 0.0 and task_args.model_class != "span":
+        raise ValueError("Training-time rubric dropping is only implemented for model_class='span'.")
+
+    if task_args.drop_all_rubrics and custom_model_args.span_fuse_type != "p-only":
+        raise ValueError("drop_all_rubrics requires span_fuse_type='p-only' (rubric spans are not produced).")
+
     set_seed(task_args.seed)
     if not os.path.exists(train_args.save_dir):
         os.makedirs(train_args.save_dir, exist_ok=True)
@@ -145,7 +174,11 @@ def main(task_args: TaskArguments, train_args: AsagTrainingArguments, custom_mod
         use_translated_prompts=task_args.use_translated_prompts,
         random_solution=task_args.random_solution,
         model_class=task_args.model_class,
-        random_drop_rub=task_args.random_drop_rub,
+        test_drop_rub=task_args.test_drop_rub,
+        train_drop_rub=task_args.train_drop_rub,
+        flip_levels=task_args.flip_levels,
+        drop_all_rubrics=task_args.drop_all_rubrics,
+        seed=task_args.seed,
     )
     
     # Get datasets with encoding applied
@@ -249,5 +282,7 @@ def main(task_args: TaskArguments, train_args: AsagTrainingArguments, custom_mod
     clear_gpu_memory()
 if __name__ == "__main__":
     parser = HfArgumentParser((TaskArguments, AsagTrainingArguments, BackwardSupportedArguments))
-    task_args, train_args, custom_model_args = parser.parse_args_into_dataclasses()
+    task_args, train_args, custom_model_args = parser.parse_args_into_dataclasses(
+        args=normalize_cli_args(sys.argv[1:])
+    )
     main(task_args, train_args, custom_model_args)

@@ -47,6 +47,19 @@ def mean_dequeue(deque):
     return sum(deque) / len(deque)
 
 
+def _restore_logits_to_canonical_order(logit_row, rubric_index_map):
+    if rubric_index_map is None:
+        return list(logit_row)
+    if len(rubric_index_map) == 0:
+        return []
+
+    canonical_size = max(int(idx) for idx in rubric_index_map) + 1
+    restored = [None] * canonical_size
+    for compact_idx, canonical_idx in enumerate(rubric_index_map):
+        restored[int(canonical_idx)] = float(logit_row[compact_idx])
+    return restored
+
+
 def get_optimizer_step(optimizer):
     try:
         for params in optimizer.param_groups[0]["params"]:
@@ -136,34 +149,29 @@ def extract_llama_attention(
     attention_mask=None,
 ):
     """
-    Extract attention weights from a specific LLaMA layer during inference.
+    Extract attention weights from a specific LLaMA layer via a forward hook.
+
+    Requires eager attention backend (not FlashAttention/SDPA) so that
+    attn_weights are actually computed. Load the model with
+    attn_implementation="eager" if weights are not captured.
 
     Args:
-        model: LlamaModel or LlamaForCausalLM
+        model: LlamaForSequenceClassification or similar wrapper
         input_ids: (batch, seq_len)
-        layer_idx: int, which transformer layer
+        layer_idx: int, which transformer layer to tap
         attention_mask: optional (batch, seq_len)
 
     Returns:
-        attn_weights: Tensor of shape
-            (batch, num_heads, seq_len, seq_len)
+        attn_weights: Tensor of shape (batch, num_heads, seq_len, seq_len)
     """
-
     model.eval()
-    captured = []
+    captured = {}
 
     def attn_hook(module, input, output):
-        """
-        LLaMA self_attn forward returns:
-        attn_output, attn_weights, past_key_value
-        """
-        # output is a tuple
+        # LlamaAttention.forward returns (attn_output, attn_weights)
+        if isinstance(output, tuple) and len(output) > 1 and output[1] is not None:
+            captured["attn"] = output[1].detach().cpu()
 
-        if isinstance(output, tuple) and len(output) > 1:
-            for i in range(output[1].size(0)):  # Iterate over batch size
-                captured.append(output[1][i].detach().cpu())
-
-    # register hook
     handle = model.model.layers[layer_idx].self_attn.register_forward_hook(attn_hook)
 
     with torch.no_grad():
@@ -171,7 +179,6 @@ def extract_llama_attention(
             input_ids=input_ids,
             attention_mask=attention_mask,
             use_cache=False,
-            output_attentions=False,  # we rely on hook
             return_dict=True,
         )
 
@@ -179,11 +186,13 @@ def extract_llama_attention(
 
     if "attn" not in captured:
         raise RuntimeError(
-            "Attention not captured. "
-            "Check that FlashAttention is disabled and layer index is valid."
+            "Attention weights not captured. "
+            "Ensure the model was loaded with attn_implementation='eager' "
+            "(FlashAttention/SDPA do not materialise attn_weights) "
+            "and that the layer index is valid."
         )
 
-    return captured["attn"]
+    return captured["attn"]  # (batch, num_heads, seq_len, seq_len)
 
 
 @torch.no_grad() 
@@ -199,6 +208,7 @@ def evaluate(model, dataset, batch_size, collate_fn=None, save_attweights=False,
     model = model.to(torch.float32)
     attention_weights = []
     for step, (batch, meta) in enumerate(data_iterator):
+        meta = meta or {}
         batch = batch_to_device(batch, device)
         
         # Extract attention weights if requested
@@ -220,12 +230,32 @@ def evaluate(model, dataset, batch_size, collate_fn=None, save_attweights=False,
         loss = model_output.loss
         logits = model_output.logits.detach().cpu()
         eval_loss.append(loss.item())
-        pred_id = np.argmax(logits, axis=1)
+        logits_list = logits.tolist()
+        compact_pred_id = np.argmax(logits, axis=1).tolist()
+
+        restored_pred_id = []
+        restored_logits = []
+        rubric_index_maps = meta.get("rubric_index_map")
+        for idx, pred in enumerate(compact_pred_id):
+            if rubric_index_maps is None:
+                restored_pred_id.append(pred)
+                restored_logits.append(logits_list[idx])
+            else:
+                restore_map = rubric_index_maps[idx]
+                restored_pred_id.append(int(restore_map[pred]))
+                restored_logits.append(_restore_logits_to_canonical_order(logits_list[idx], restore_map))
+
+        original_labels = meta.get("original_label")
+        if original_labels is None:
+            restored_labels = batch["labels"].detach().cpu().numpy().tolist()
+        else:
+            restored_labels = [int(label) for label in original_labels]
+
         # collect data to put in the prediction dict
-        predictions["pred_id"].extend(pred_id.tolist())
-        predictions["labels"].extend(batch["labels"].detach().cpu().numpy().tolist())
-        predictions["logits"].extend(logits.tolist())
-        acc = accuracy_score(batch["labels"].detach().cpu().numpy(), pred_id)
+        predictions["pred_id"].extend(restored_pred_id)
+        predictions["labels"].extend(restored_labels)
+        predictions["logits"].extend(restored_logits)
+        acc = accuracy_score(restored_labels, restored_pred_id)
         acc_history.append(acc)
         data_iterator.set_description(
             "Evaluating: loss {:.4f} acc {:.4f} ≈".format(
@@ -234,6 +264,8 @@ def evaluate(model, dataset, batch_size, collate_fn=None, save_attweights=False,
             )
         )
         for key, value in meta.items():
+            if key in {"original_label", "rubric_index_map"}:
+                continue
             predictions[key].extend(value)
     pred_df = pd.DataFrame(predictions)
     eval_loss = np.mean(eval_loss)
@@ -321,4 +353,3 @@ def per_qid_metrics(file_path_or_df):
             'accuracy': avg_acc
         })
     return metrics_per_question
-

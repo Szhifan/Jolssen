@@ -1,0 +1,102 @@
+% Appendix section for the non-ASAG sequence-classification benchmarks.
+% Requires: \usepackage{booktabs,array}
+
+\section{Non-ASAG Dataset Overview}
+\label{app:non_asag_datasets}
+
+We evaluate on seven non-ASAG benchmarks covering commonsense reasoning,
+figurative-language interpretation, stance detection, sentiment analysis,
+scientific edit-intent classification, and news topic classification. These
+tasks are useful stress tests for sequence-to-label alignment because their
+labels can be expressed as short natural-language rubrics rather than as opaque
+class IDs.
+
+\begin{table*}[t]
+\centering
+\small
+\begin{tabular}{p{0.13\linewidth}p{0.22\linewidth}p{0.26\linewidth}p{0.27\linewidth}p{0.06\linewidth}}
+\toprule
+\textbf{Dataset} & \textbf{What it is} & \textbf{Prediction target} & \textbf{Splits used} & \textbf{\# labels} \\
+\midrule
+PIQA & Physical commonsense reasoning & Choose the more plausible way to accomplish a goal & train: 16,113; test: 1,838; validation from train & 2 \\
+xStance & Multilingual political stance detection & Decide whether a comment supports or opposes a policy question & train: 45,640; validation: 3,926; test: 17,705 & 2 \\
+SemEval-2016 Task 6 & Tweet stance detection & Decide whether a tweet favors, opposes, or is neutral toward a target & train: 2,814; trial: 100; test A: 1,249; test B: 707 & 3 \\
+FigQA & Figurative-language multiple choice & Choose the ending that matches the intended figurative meaning & HuggingFace \texttt{nightingal3/fig-qa}; 11,914 total rows; train split has 9.67K rows & 2 \\
+AG News & News topic classification & Choose the topic category of a news article & HuggingFace \texttt{fancyzhx/ag\_news}; train: 120,000; test: 7,600; validation from train & 4 \\
+IMDB & Movie-review sentiment analysis & Decide whether a review is negative or positive & train: 25,000; test: 25,000; validation from train & 2 \\
+EIC & Scientific edit-intent classification & Identify the purpose of an edit between an original and revised text & train: 7,478; validation: 1,776; test: 2,312 & 5 \\
+\bottomrule
+\end{tabular}
+\caption{Overview of the non-ASAG benchmarks used in our experiments.}
+\label{tab:non_asag_dataset_overview}
+\end{table*}
+
+\begin{table*}[t]
+\centering
+\small
+\begin{tabular}{p{0.14\linewidth}p{0.80\linewidth}}
+\toprule
+\textbf{Dataset} & \textbf{Available labels or rubrics} \\
+\midrule
+PIQA & Example-specific candidate solutions: option 0 and option 1. \\
+xStance & \textbf{Support}: the author is supportive of the claim; \textbf{Oppose}: the author is against the claim. \\
+SemEval-2016 Task 6 & \textbf{Favor}: supportive of the target; \textbf{Against}: against the target; \textbf{None}: neutral to the target. The rubric text is instantiated with the target name. \\
+FigQA & Example-specific candidate endings: \texttt{ending1} and \texttt{ending2}. Label 0 selects \texttt{ending1}; label 1 selects \texttt{ending2}. \\
+AG News & \textbf{World}: world news; \textbf{Sports}: sports news; \textbf{Business}: business news; \textbf{Sci/Tech}: science and technology news. \\
+IMDB & \textbf{Negative}: the review expresses negative sentiment; \textbf{Positive}: the review expresses positive sentiment. \\
+EIC & \textbf{Claim}: modifies or introduces a claim or argument; \textbf{Clarity}: improves clarity or readability; \textbf{Fact/Evidence}: changes factual information or supporting evidence; \textbf{Grammar}: corrects grammar, spelling, or punctuation; \textbf{Other}: another edit purpose. \\
+\bottomrule
+\end{tabular}
+\caption{Label and rubric descriptions used for the non-ASAG benchmarks. PIQA and FigQA use example-specific choices, while the other benchmarks use fixed label inventories.}
+\label{tab:non_asag_labels}
+\end{table*}
+
+\begin{table*}[t]
+\centering
+\scriptsize
+\begin{tabular}{p{0.10\linewidth}p{0.23\linewidth}p{0.25\linewidth}p{0.31\linewidth}p{0.05\linewidth}}
+\toprule
+\textbf{Dataset} & \textbf{Context} & \textbf{Example input} & \textbf{Candidate labels/rubrics} & \textbf{Gold} \\
+\midrule
+PIQA & -- & When boiling butter, when it is ready, you can & 0: Pour it onto a plate; 1: Pour it into a jar & 1 \\
+xStance & A Swiss ballot initiative asks whether building-zone area should be capped for 20 years. & Eine fixe Groesse verbieten, ist das falsche Mittel & 0: supportive of the claim; 1: against the claim & 1 \\
+SemEval-2016 & Target: Atheism & dear lord thank u for all of ur blessings ... \#SemST & 0: supportive of Atheism; 1: against Atheism; 2: neutral to Atheism & 1 \\
+FigQA & -- & Her word had the strength of titanium. & 0: Her promises can be believed.; 1: Her promises cannot be trusted. & 0 \\
+AG News & -- & Wall St. Bears Claw Back Into the Black (Reuters) ... & 0: World; 1: Sports; 2: Business; 3: Sci/Tech & 2 \\
+IMDB & -- & I rented I AM CURIOUS-YELLOW ... this film does not have much of a plot. & 0: negative sentiment; 1: positive sentiment & 0 \\
+EIC & Original: For MBTI, users were able to provide multiple texts, we report unique users in parentheses. & Revised text is empty & 0: claim; 1: clarity; 2: fact/evidence; 3: grammar; 4: other & 2 \\
+\bottomrule
+\end{tabular}
+\caption{Representative examples from each benchmark. Long inputs are shortened for display.}
+\label{tab:non_asag_examples}
+\end{table*}
+
+\begin{table*}[t]
+\centering
+\small
+\begin{tabular}{p{0.14\linewidth}p{0.80\linewidth}}
+\toprule
+\textbf{Dataset} & \textbf{Canonical instruction} \\
+\midrule
+PIQA & Select the most plausible solution to accomplish the described goal. \\
+xStance & Determine whether the comment supports or opposes the question. \\
+SemEval-2016 Task 6 & Determine whether the tweet supports, opposes, or is neutral toward the target. \\
+FigQA & Choose the ending that best matches the figurative meaning of the sentence. \\
+AG News & Classify the news article as World, Sports, Business, or Sci/Tech. \\
+IMDB & Classify the sentiment of the review as negative or positive. \\
+EIC & Classify the edit intent for the source and target text. \\
+\bottomrule
+\end{tabular}
+\caption{Canonical task instructions used for the non-ASAG benchmarks. Additional paraphrased instruction variants are available in the benchmark metadata.}
+\label{tab:non_asag_instructions}
+\end{table*}
+
+\paragraph{Dataset notes.}
+PIQA and FigQA are multiple-choice style tasks with example-specific rubrics:
+the candidate answers themselves are the label descriptions. xStance and
+SemEval-2016 evaluate stance, but xStance is multilingual and binary, whereas
+SemEval includes a neutral class and target-specific stance descriptions. AG
+News and IMDB provide standard topic and sentiment benchmarks with compact fixed
+label inventories. EIC tests whether the same label-description interface
+extends to a more specialized discourse task, where the labels describe edit
+purposes in scientific writing.

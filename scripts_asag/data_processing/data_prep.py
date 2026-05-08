@@ -1,8 +1,11 @@
+import hashlib
+import json
 import torch
 from typing import Literal, Callable, Optional
 from functools import partial
 from datasets import Dataset, concatenate_datasets
-from data_processing_asag.benchmark_meta import BENCHMARK_DESCRIPTIONS
+from scripts_asag.data_processing.benchmark_meta import BENCHMARK_DESCRIPTIONS
+from scripts_asag.data_processing.lasa_format import build_lasa_llm_input
 from transformers import AutoTokenizer
 
 
@@ -53,12 +56,17 @@ class DataPipeline:
         random_solution: bool = False,
         use_translated_prompts: bool = False,
         model_class: str = "span",
-        random_drop_rub: float = 0.0,
+        test_drop_rub: float = 0.0,
+        train_drop_rub: float = 0.0,
+        flip_levels: bool = False,
+        drop_all_rubrics: bool = False,
+        seed: int = 42,
     ):
         self.base_model = base_model
         self.benchmark = benchmark
         self.train_frac = train_frac
         self.model_class = model_class
+        self.drop_all_rubrics = drop_all_rubrics
         try:
             print(f"Loading benchmark metadata for {benchmark}...")
             print(benchmark)
@@ -71,7 +79,12 @@ class DataPipeline:
         self.random_suffix = random_suffix
         self.random_solution = random_solution
         self.use_translated_prompts = use_translated_prompts
-        self.random_drop_rub = random_drop_rub
+        self.test_drop_rub = test_drop_rub
+        self.train_drop_rub = train_drop_rub
+        self.flip_levels = flip_levels
+        if drop_all_rubrics and model_class != "span":
+            raise ValueError("drop_all_rubrics is only compatible with model_class='span'.")
+        self.seed = seed
 
         self.is_llm = is_llm_model(base_model)
         self.tokenizer = get_tokenizer(base_model)
@@ -79,14 +92,119 @@ class DataPipeline:
 
         self._init_data_loader()
 
+    def _should_apply_test_time_rubric_drop(self) -> bool:
+        return (not self.needs_grouping()) and self.test_drop_rub > 0.0
+
+    def _should_flip_levels(self) -> bool:
+        return (not self.needs_grouping()) and self.flip_levels
+
+    def _prepare_span_example(self, example):
+        label_semantics = self.benchmark_meta["label_semantics"]
+        rubrics = example.get(label_semantics, [])
+        if not isinstance(rubrics, list):
+            rubrics = [rubrics]
+
+        updated = dict(example)
+        current_level = int(updated["level"])
+        rubric_index_map = list(updated.get("rubric_index_map", range(len(rubrics))))
+        updated["original_label"] = int(updated.get("original_label", current_level))
+        updated["rubric_index_map"] = rubric_index_map
+
+        if not self._should_flip_levels():
+            return updated
+
+        updated[label_semantics] = list(reversed(rubrics))
+        updated["rubric_index_map"] = list(reversed(rubric_index_map))
+        updated["level"] = len(rubrics) - 1 - current_level
+        return updated
+
+    def _stable_example_key(self, example):
+        label_semantics = self.benchmark_meta["label_semantics"]
+        text_col = self.benchmark_meta["text_col"]
+        rubrics = example.get(label_semantics, [])
+        if not isinstance(rubrics, list):
+            rubrics = [rubrics]
+        payload = {
+            "seed": self.seed,
+            "benchmark": self.benchmark,
+            "id": example.get("id"),
+            "question_id": example.get("question_id"),
+            "label": int(example.get("level", 0)),
+            "text": example.get(text_col),
+            "rubrics": rubrics,
+        }
+        text = json.dumps(payload, sort_keys=True, ensure_ascii=True, default=str)
+        return hashlib.sha256(text.encode("utf-8")).hexdigest()
+
+    def _hash_to_unit_interval(self, text: str) -> float:
+        value = int(text[:16], 16)
+        return value / float(16 ** 16 - 1)
+
+    def _apply_rubric_drop(self, example, drop_prob: float, salt: str):
+        """Drop one non-gold rubric with probability drop_prob. salt differentiates train/test drops."""
+        label_semantics = self.benchmark_meta["label_semantics"]
+        rubrics = example.get(label_semantics, [])
+        if not isinstance(rubrics, list):
+            rubrics = [rubrics]
+
+        original_label = int(example.get("original_label", example["level"]))
+        rubric_index_map = list(example.get("rubric_index_map", range(len(rubrics))))
+        current_label = int(example["level"])
+
+        updated = dict(example)
+        updated["original_label"] = original_label
+        updated["rubric_index_map"] = rubric_index_map
+
+        if len(rubrics) <= 1:
+            return updated
+
+        candidate_positions = [idx for idx in range(len(rubrics)) if idx != current_label]
+        if not candidate_positions:
+            return updated
+
+        example_key = self._stable_example_key(example)
+        apply_key = hashlib.sha256(f"{example_key}|{salt}|apply".encode("utf-8")).hexdigest()
+        if self._hash_to_unit_interval(apply_key) >= drop_prob:
+            return updated
+
+        sample_key = hashlib.sha256(f"{example_key}|{salt}|sample".encode("utf-8")).hexdigest()
+        sampled_pos = int(sample_key[:16], 16) % len(candidate_positions)
+        dropped_position = candidate_positions[sampled_pos]
+
+        kept_positions = [idx for idx in range(len(rubrics)) if idx != dropped_position]
+        updated[label_semantics] = [rubrics[idx] for idx in kept_positions]
+        updated["rubric_index_map"] = [rubric_index_map[idx] for idx in kept_positions]
+        updated["level"] = kept_positions.index(current_label)
+        return updated
+
+    def _apply_test_time_rubric_drop(self, example):
+        return self._apply_rubric_drop(example, self.test_drop_rub, "test")
+
+    def _apply_train_rubric_drop(self, example):
+        return self._apply_rubric_drop(example, self.train_drop_rub, "train")
+
+    def _encode_dataset(self, dataset, enc_fn, apply_test_time_rubric_drop=False, apply_train_rubric_drop=False):
+        if not self.needs_grouping():
+            dataset = dataset.map(lambda x: self._prepare_span_example(x))
+        if apply_train_rubric_drop and self.train_drop_rub > 0.0 and not self.needs_grouping():
+            dataset = dataset.map(lambda x: self._apply_train_rubric_drop(x))
+        if apply_test_time_rubric_drop and self._should_apply_test_time_rubric_drop():
+            dataset = dataset.map(lambda x: self._apply_test_time_rubric_drop(x))
+        if self.needs_grouping():
+            dataset = self.expand_rubrics(dataset)
+        encoded_ds = dataset.map(lambda x: enc_fn(x))
+        if self.needs_grouping():
+            encoded_ds = self.group_by_id(encoded_ds)
+        return encoded_ds
+
     def _init_data_loader(self):
         """Initialize the appropriate data loader based on benchmark."""
         if "alice" in self.benchmark:
-            from data_processing_asag.alice_asag_loader import Alice_Loader
+            from scripts_asag.data_processing.alice_asag_loader import Alice_Loader
             task_type = self.benchmark.split("_")[-1] if "_" in self.benchmark else "lp"
             self.data_loader = Alice_Loader(train_frac=self.train_frac, task_type=task_type)
         else:
-            from data_processing_asag.general_asag_loader import ASAG_Data_Loader
+            from scripts_asag.data_processing.general_asag_loader import ASAG_Data_Loader
             self.data_loader = ASAG_Data_Loader(
                 benchmark=self.benchmark,
                 train_frac=self.train_frac,
@@ -101,35 +219,22 @@ class DataPipeline:
             if isinstance(self.data_loader.test, dict):
                 test_ds = {}
                 for key, dataset in self.data_loader.test.items():
-                    if self.needs_grouping():
-                        dataset = self.expand_rubrics(dataset)
-                    encoded_ds = dataset.map(lambda x: enc_fn(x))
-                    if self.needs_grouping():
-                        encoded_ds = self.group_by_id(encoded_ds)
-                    test_ds[key] = encoded_ds
+                    test_ds[key] = self._encode_dataset(
+                        dataset,
+                        enc_fn,
+                        apply_test_time_rubric_drop=True,
+                    )
             else:
-                if self.needs_grouping():
-                    test_ds_raw = self.expand_rubrics(self.data_loader.test)
-                else:
-                    test_ds_raw = self.data_loader.test
-                test_ds = test_ds_raw.map(lambda x: enc_fn(x))
-                if self.needs_grouping():
-                    test_ds = self.group_by_id(test_ds)
+                test_ds = self._encode_dataset(
+                    self.data_loader.test,
+                    enc_fn,
+                    apply_test_time_rubric_drop=True,
+                )
             train_ds, val_ds = self.data_loader.train, self.data_loader.val
         else:
             enc_fn = self.get_encode_fn()
-            if self.needs_grouping():
-                train_raw = self.expand_rubrics(self.data_loader.train)
-                val_raw = self.expand_rubrics(self.data_loader.val)
-            else:
-                train_raw = self.data_loader.train
-                val_raw = self.data_loader.val
-            train_ds = train_raw.map(lambda x: enc_fn(x))
-            val_ds = val_raw.map(lambda x: enc_fn(x))
-
-            if self.needs_grouping():
-                train_ds = self.group_by_id(train_ds)
-                val_ds = self.group_by_id(val_ds)
+            train_ds = self._encode_dataset(self.data_loader.train, enc_fn, apply_train_rubric_drop=True)
+            val_ds = self._encode_dataset(self.data_loader.val, enc_fn)
 
             if not self.needs_grouping():
                 input_id = train_ds[0]["input_ids"]
@@ -140,24 +245,30 @@ class DataPipeline:
                 print("answer_span:", sub_tokens[answer_span[0]:answer_span[1]] if answer_span else None)
                 for i, span in enumerate(rubric_span if rubric_span else []):
                     print(f"rubric_span {i}:", sub_tokens[span[0]:span[1]])
+            else:
+                sample_group = train_ds[0]
+                print("Sample xnet encoded examples:")
+                for i, input_ids in enumerate(sample_group["input_ids"]):
+                    decoded = self.tokenizer.decode(input_ids)
+                    rubric_level = None
+                    if sample_group.get("rubric_level") is not None:
+                        rubric_level = sample_group["rubric_level"][i]
+                    print(f"rubric_pair {i} (rubric_level={rubric_level}): {decoded}")
 
             if isinstance(self.data_loader.test, dict):
                 test_ds = {}
                 for key, dataset in self.data_loader.test.items():
-                    if self.needs_grouping():
-                        dataset = self.expand_rubrics(dataset)
-                    encoded_ds = dataset.map(lambda x: enc_fn(x))
-                    if self.needs_grouping():
-                        encoded_ds = self.group_by_id(encoded_ds)
-                    test_ds[key] = encoded_ds
+                    test_ds[key] = self._encode_dataset(
+                        dataset,
+                        enc_fn,
+                        apply_test_time_rubric_drop=True,
+                    )
             else:
-                if self.needs_grouping():
-                    test_ds_raw = self.expand_rubrics(self.data_loader.test)
-                else:
-                    test_ds_raw = self.data_loader.test
-                test_ds = test_ds_raw.map(lambda x: enc_fn(x))
-                if self.needs_grouping():
-                    test_ds = self.group_by_id(test_ds)
+                test_ds = self._encode_dataset(
+                    self.data_loader.test,
+                    enc_fn,
+                    apply_test_time_rubric_drop=True,
+                )
 
         return train_ds, val_ds, test_ds
 
@@ -229,7 +340,8 @@ class DataPipeline:
     def encode_spans_bert(self, example):
         """
         Encode example with span information for BERT-like models.
-        Tracks spans for rubrics and answer in the tokenized sequence.
+        Tracks spans for rubrics and answer in the tokenized sequence, including
+        the following SEP token when present.
         Output example:
         Instruction sep_token Context sep_token text sep_token label_semantic_1 sep_token label_semantic_2 ... sep_token suffix
         """
@@ -277,17 +389,18 @@ class DataPipeline:
         new_str = self.tokenizer.sep_token.join(input_parts)
         answer_end_char = len(new_str)
         
-        # Add rubrics with span tracking
-        for rubric in rubrics:
-                current_str = self.tokenizer.sep_token.join(input_parts)
-                start_char = len(current_str) + (len(self.tokenizer.sep_token) if input_parts else 0)
-                
-                input_parts.append(f"{label_semantics}: {str(rubric)}")
-                
-                new_str = self.tokenizer.sep_token.join(input_parts)
-                end_char = len(new_str)
-                span_indices_char.append((start_char, end_char))
-        
+        # Add rubrics with span tracking (skip when dropping all rubrics)
+        if not self.drop_all_rubrics:
+            for rubric in rubrics:
+                    current_str = self.tokenizer.sep_token.join(input_parts)
+                    start_char = len(current_str) + (len(self.tokenizer.sep_token) if input_parts else 0)
+
+                    input_parts.append(f"{label_semantics}: {str(rubric)}")
+
+                    new_str = self.tokenizer.sep_token.join(input_parts)
+                    end_char = len(new_str)
+                    span_indices_char.append((start_char, end_char))
+
         # Add suffix if requested
         if self.add_suffix and suffixes:
             # Use translated suffixes if available, otherwise use original
@@ -308,6 +421,18 @@ class DataPipeline:
         )
 
         offsets = encoding["offset_mapping"]
+        input_ids = encoding["input_ids"]
+        sep_token_id = self.tokenizer.sep_token_id
+
+        def include_following_sep(token_end):
+            if (
+                sep_token_id is not None
+                and token_end < len(input_ids)
+                and input_ids[token_end] == sep_token_id
+            ):
+                return token_end + 1
+            return token_end
+
         rubric_spans = []
 
         # Step 3: Map rubric char spans to token spans
@@ -323,6 +448,7 @@ class DataPipeline:
                 token_start = next((i for i, (s, _) in enumerate(offsets) if s >= span_start_char), 0)
             if token_end is None:
                 token_end = next((i for i, (_, e) in enumerate(offsets) if e >= span_end_char), len(offsets) - 1) + 1
+            token_end = include_following_sep(token_end)
             rubric_spans.append((token_start, token_end))
 
         # Step 4: Map answer span to token span
@@ -337,6 +463,7 @@ class DataPipeline:
             answer_token_start = next((i for i, (s, _) in enumerate(offsets) if s >= answer_start_char), 0)
         if answer_token_end is None:
             answer_token_end = next((i for i, (_, e) in enumerate(offsets) if e >= answer_end_char), len(offsets) - 1) + 1 
+        answer_token_end = include_following_sep(answer_token_end)
         encoding["answer_span"] = [answer_token_start, answer_token_end]
 
         # Step 5: Add to encoding
@@ -350,86 +477,23 @@ class DataPipeline:
     def encode_spans_llm(self, example):
         """
         Encode example with span information using tags for LLM models.
-        Tracks spans for rubrics and answer in the tokenized sequence.
+        Tracks spans for rubrics and answer in the tokenized sequence, including
+        the XML-style tags around answer/rubric content.
         Output example:
         Instruction\n<question>question_text</question>\n<answer>answer_text</answer>\n<rubric>rubric_1</rubric>\n<rubric>rubric_2</rubric>\n...
         """
-        import random
-        
-        # Get benchmark metadata
-        context_cols = self.benchmark_meta["context_cols"]
-        text_col = self.benchmark_meta["text_col"]  # "answer"
-        label_semantics = self.benchmark_meta["label_semantics"]  # "rubric"
-        suffixes = self.benchmark_meta.get("suffixes", [])
-        
-        # Get translations if needed
-        context_translate = self.benchmark_meta.get("context_translate", {}) if self.use_translated_prompts else {}
-        text_col_translate = self.benchmark_meta.get("text_col_translate", {}) if self.use_translated_prompts else {}
-        suffix_translate = self.benchmark_meta.get("suffix_translate", []) if self.use_translated_prompts else []
-        
-        # Extract fields
-        rubrics = example[label_semantics] if isinstance(example[label_semantics], list) else [example[label_semantics]]
-        answer = example[text_col]
-
-        # Step 1: Build the input string while tracking character spans
-        input_parts = []
-        span_indices_char = []
-        answer_start_char = answer_end_char = None
-        
-        # Add context columns (question, sample_solution, etc.) with column-specific tags
-        if self.add_context:
-            for col in context_cols:
-                if col in example:
-                    col_display = context_translate.get(col, col.replace("_", " "))
-                    # Handle sample_solution: select one from list if it's a list
-                    if col == "sample_solution" and isinstance(example[col], list):
-                        if len(example[col]) > 0:
-                            solution = random.choice(example[col]) if self.random_solution else example[col][0]
-                   
-                            input_parts.append(f"<{col_display}> {str(solution)} </{col_display}>")
-                    else:
-                        input_parts.append(f"<{col_display}> {str(example[col])} </{col_display}>")
-        
-        # Add answer with span tracking and column-specific tags
-        current_str = "\n".join(input_parts)
-        answer_display = text_col_translate.get(text_col, text_col.replace("_", " "))
-        answer_content = str(answer)
-        answer_tagged = f"<{answer_display}> {answer_content} </{answer_display}>"
-        
-        # Calculate answer span (excluding tags)
-        base_len = len(current_str) + (1 if input_parts else 0)  # +1 for \n
-        opening_tag_len = len(f"<{answer_display}>")
-        answer_start_char = base_len + opening_tag_len
-        answer_end_char = answer_start_char + len(answer_content)
-        
-        input_parts.append(answer_tagged)
-        
-        # Add rubrics with span tracking and column-specific tags
-        for rubric in rubrics:
-                current_str = "\n".join(input_parts)
-                rubric_content = str(rubric)
-                rubric_tagged = f"<{label_semantics}> {rubric_content} </{label_semantics}>"
-                
-                # Calculate rubric span (excluding tags)
-                base_len = len(current_str) + (1 if input_parts else 0)  # +1 for \n
-                opening_tag_len = len(f"<{label_semantics}>")
-                start_char = base_len + opening_tag_len
-                end_char = start_char + len(rubric_content)
-                
-                input_parts.append(rubric_tagged)
-                span_indices_char.append((start_char, end_char))
-        
-        # Add suffix if requested
-        if self.add_suffix and suffixes:
-            # Use translated suffixes if available, otherwise use original
-            if self.use_translated_prompts and suffix_translate:
-                suffix = random.choice(suffix_translate) if self.random_suffix else suffix_translate[0]
-            else:
-                suffix = random.choice(suffixes) if self.random_suffix else suffixes[0]
-            input_parts.append(suffix)
-
-        # Join all parts with newlines
-        input_str = "\n".join(input_parts)
+        # Step 1: Build the canonical LASA LLM input string while tracking spans.
+        input_str, answer_span_char, span_indices_char = build_lasa_llm_input(
+            example,
+            self.benchmark_meta,
+            add_context=self.add_context,
+            add_suffix=self.add_suffix,
+            random_suffix=self.random_suffix,
+            random_solution=self.random_solution,
+            use_translated_prompts=self.use_translated_prompts,
+            drop_all_rubrics=self.drop_all_rubrics,
+        )
+        answer_start_char, answer_end_char = answer_span_char
 
         # Step 2: Tokenize with offset mapping
         encoding = self.tokenizer(
@@ -717,15 +781,14 @@ class DataPipeline:
         
         if final_token_type_ids:
             batch["token_type_ids"] = torch.stack(final_token_type_ids)
-        
-        meta = {
-            "id": [x["id"] for x in input_batch],
-            "level": [x["level"] for x in input_batch],
-            "question_id": [x["question_id"] for x in input_batch],
-            "rubric_level": [x["rubric_level"] for x in input_batch],
-        }
-        
+
         if return_meta:
+            meta = {
+                "id": [x.get("id", None) for x in input_batch],
+                "level": [x.get("level", None) for x in input_batch],
+                "question_id": [x.get("question_id", None) for x in input_batch],
+                "rubric_level": [x.get("rubric_level", None) for x in input_batch],
+            }
             return batch, meta
         return batch
 
@@ -740,7 +803,8 @@ class DataPipeline:
             return_meta: Whether to return metadata
             
         Returns:
-            batch: Dict with input_ids, attention_mask, rubric_spans, answer_span, rubric_mask, labels
+            batch: Dict with input_ids, attention_mask, flat rubric_spans, answer_span,
+                   rubric indices, num_rubrics, labels
             meta: Optional metadata dict
         """
         # Use stored pad_token_id if not provided
@@ -758,19 +822,27 @@ class DataPipeline:
             attention_masks, batch_first=True, padding_value=0
         )
 
-        # Handle rubric spans - pad to max number of rubrics
-        max_rubrics = max(len(x["rubric_spans"]) for x in input_batch)
         batch_size = len(input_batch)
-        
-        # Initialize tensors for spans and masks
-        rubric_spans_tensor = torch.zeros(batch_size, max_rubrics, 2, dtype=torch.long)
-        rubric_mask_tensor = torch.zeros(batch_size, max_rubrics, dtype=torch.bool)
-        
+
+        # Keep only real rubric spans. Missing levels are padded later in logits,
+        # not as fake span rows in the encoder-side batch contract.
+        flat_rubric_spans = []
+        rubric_example_indices = []
+        rubric_indices = []
+        num_rubrics = []
         for i, example in enumerate(input_batch):
-            spans = torch.tensor(example["rubric_spans"], dtype=torch.long)
+            spans = torch.tensor(example["rubric_spans"], dtype=torch.long).reshape(-1, 2)
             num_spans = spans.shape[0]
-            rubric_spans_tensor[i, :num_spans, :] = spans
-            rubric_mask_tensor[i, :num_spans] = True
+            num_rubrics.append(num_spans)
+            if num_spans > 0:
+                flat_rubric_spans.append(spans)
+                rubric_example_indices.extend([i] * num_spans)
+                rubric_indices.extend(range(num_spans))
+
+        if flat_rubric_spans:
+            rubric_spans_tensor = torch.cat(flat_rubric_spans, dim=0)
+        else:
+            rubric_spans_tensor = torch.empty(0, 2, dtype=torch.long)
 
         # Handle answer spans
         answer_spans = torch.tensor([x["answer_span"] for x in input_batch], dtype=torch.long)
@@ -781,14 +853,21 @@ class DataPipeline:
             "attention_mask": batch_attention_mask,
             "rubric_spans": rubric_spans_tensor,
             "answer_span": answer_spans,
-            "rubric_mask": rubric_mask_tensor,
+            "rubric_example_indices": torch.tensor(rubric_example_indices, dtype=torch.long),
+            "rubric_indices": torch.tensor(rubric_indices, dtype=torch.long),
+            "num_rubrics": torch.tensor(num_rubrics, dtype=torch.long),
             "labels": torch.tensor([x["labels"] for x in input_batch], dtype=torch.long),
         }
         
         # Prepare metadata
         meta = {
             "id": [x.get("id", None) for x in input_batch],
-            "question_id": [x.get("question_id", None) for x in input_batch]
+            "question_id": [x.get("question_id", None) for x in input_batch],
+            "original_label": [x.get("original_label", x.get("labels", None)) for x in input_batch],
+            "rubric_index_map": [
+                x.get("rubric_index_map", list(range(len(x["rubric_spans"]))))
+                for x in input_batch
+            ],
         }
         if return_meta:
             return batch, meta
@@ -811,7 +890,11 @@ class MultiTaskDataPipeline(DataPipeline):
         random_solution: bool = False,
         use_translated_prompts: bool = False,
         model_class: str = "span",
-        random_drop_rub: float = 0.0,
+        test_drop_rub: float = 0.0,
+        train_drop_rub: float = 0.0,
+        flip_levels: bool = False,
+        drop_all_rubrics: bool = False,
+        seed: int = 42,
     ):
         self.train_tasks = dedupe_keep_order(train_tasks)
         self.eval_tasks = dedupe_keep_order(eval_tasks) if eval_tasks else list(self.train_tasks)
@@ -834,7 +917,11 @@ class MultiTaskDataPipeline(DataPipeline):
             random_solution=random_solution,
             use_translated_prompts=use_translated_prompts,
             model_class=model_class,
-            random_drop_rub=random_drop_rub,
+            test_drop_rub=test_drop_rub,
+            train_drop_rub=train_drop_rub,
+            flip_levels=flip_levels,
+            drop_all_rubrics=drop_all_rubrics,
+            seed=seed,
         )
 
         self.task_pipelines = {
@@ -848,7 +935,11 @@ class MultiTaskDataPipeline(DataPipeline):
                 random_solution=random_solution,
                 use_translated_prompts=use_translated_prompts,
                 model_class=model_class,
-                random_drop_rub=random_drop_rub,
+                test_drop_rub=test_drop_rub,
+                train_drop_rub=train_drop_rub,
+                flip_levels=flip_levels,
+                drop_all_rubrics=drop_all_rubrics,
+                seed=seed,
             )
             for task in dedupe_keep_order(self.train_tasks + self.eval_tasks + self.test_tasks)
         }

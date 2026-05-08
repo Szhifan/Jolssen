@@ -17,6 +17,29 @@ logger.setLevel("INFO")
 DECODER_MODEL_TYPES = tuple(['gpt2', 'llama', 'mistral', 'qwen2', 'phi3', 'olmo'])
 ARCHITECTURES = tuple(['NONE', 'INPLACE', 'EXTEND', 'INTER', 'EXTRA'])
 
+def normalize_layer_count(value, total_layers, name, min_ratio_layers=1):
+    """
+    Interpret layer-count options consistently.
+
+    Values in (0, 1) are ratios of total_layers. Values >= 1 must be integral
+    counts, including floats parsed from CLI/config values such as 4.0.
+    """
+    if value is None:
+        return 0
+
+    if value < 0:
+        raise ValueError(f"{name} must be non-negative, got {value!r}.")
+    if value == 0:
+        return 0
+    if value < 1:
+        return max(min_ratio_layers, int(total_layers * value))
+    if float(value).is_integer():
+        return int(value)
+
+    raise ValueError(
+        f"{name} must be 0, a ratio in (0, 1), or an integer layer count; got {value!r}."
+    )
+
 class Pooler:
     def __init__(self, pool_type, include_prompt=False):
         self.pool_type = pool_type
@@ -86,6 +109,16 @@ class BackwardSupportedArguments:
         default=0,
         metadata={"help": "Fuse the top n layers of the model into one embedding layer."}
     )
+    frozen_layers: float = field(
+        default=0.0,
+        metadata={
+            "help": (
+                "Freeze the bottom part of the LM backbone. Values between 0 and 1 freeze that "
+                "portion of transformer layers; values >= 1 freeze that many bottom transformer "
+                "layers. Embeddings are also frozen when this is > 0."
+            )
+        }
+    )
     fuse_type: Optional[str] = field(
         default="avg",
         metadata={"help": "Pooling type for the fused layer. Options: avg, weighted"}
@@ -110,10 +143,31 @@ class BackwardSupportedArguments:
         default=0.0,
         metadata={"help": "Weight for rubric contrastive loss. 0 means no contrastive loss."}
     )
-
-
+    rubric_independent_attn: bool = field(
+        default=False,
+        metadata={
+            "help": (
+                "Block-sparse attention: rubric tokens attend to context and their own tokens only, "
+                "not to other rubrics."
+            )
+        },
+    )
+    reindex_rub: bool = field(
+        default=False,
+        metadata={
+            "help": (
+                "Reset position IDs per rubric so every rubric sees the same distance to context "
+                "(matches xnet's per-pair positional distribution). Only valid when "
+                "--rubric-independent-attn is set."
+            )
+        },
+    )
 
     def __post_init__(self):
+        if self.rubric_independent_attn and self.span_fuse_type != "l-only":
+            raise ValueError("--rubric-independent-attn is only compatible with --span-fuse-type l-only.")
+        if self.reindex_rub and not self.rubric_independent_attn:
+            raise ValueError("--reindex-rub requires --rubric-independent-attn to be set.")
 
         if self.pool_type not in ("avg", "weightedavg", "cls", "last"):
             self.pool_type = "last"
@@ -124,6 +178,8 @@ class BackwardSupportedArguments:
             raise ValueError("num_labels must be >= 1.")
         if self.cl_weight < 0.0:
             raise ValueError("cl_weight must be >= 0.")
+        if self.frozen_layers < 0.0:
+            raise ValueError("frozen_layers must be >= 0.")
 
     def to_dict(self):
         """Convert to dictionary using vars() to avoid deepcopy issues."""
@@ -143,6 +199,9 @@ def get_noncausal_attention_mask(self, attention_mask, input_shape, device=None,
     Returns:
         `torch.Tensor` The extended attention mask, with a the same dtype as `attention_mask.dtype`.
     """
+    if attention_mask is None:
+        return None
+
     if self.config._attn_implementation == "flash_attention_2":
         if attention_mask is not None and 0.0 in attention_mask:
             return attention_mask
@@ -151,7 +210,9 @@ def get_noncausal_attention_mask(self, attention_mask, input_shape, device=None,
     if dtype is None:
         dtype = self.dtype
 
-    if not (attention_mask.dim() == 2 and self.config.is_decoder):
+    is_decoder = getattr(self.config, "is_decoder", True)
+
+    if not (attention_mask.dim() == 2 and is_decoder):
         # show warning only if it won't be shown in `create_extended_attention_mask_for_decoder`
         if device is not None:
             warnings.warn(
@@ -193,6 +254,9 @@ def get_noncausal_attention_mask_0(self, attention_mask, input_shape, device=Non
     Returns:
         `torch.Tensor` The extended attention mask, with a the same dtype as `attention_mask.dtype`.
     """
+    if attention_mask is None:
+        return None
+
     # assert attention_mask[:, 0].sum() == attention_mask.shape[0]
     assert self.config._attn_implementation != "flash_attention_2"
     # attention_mask[:, 0] = 0
@@ -205,7 +269,9 @@ def get_noncausal_attention_mask_0(self, attention_mask, input_shape, device=Non
     if dtype is None:
         dtype = self.dtype
 
-    if not (attention_mask.dim() == 2 and self.config.is_decoder):
+    is_decoder = getattr(self.config, "is_decoder", True)
+
+    if not (attention_mask.dim() == 2 and is_decoder):
         # show warning only if it won't be shown in `create_extended_attention_mask_for_decoder`
         if device is not None:
             warnings.warn(
@@ -290,6 +356,164 @@ def flip_tensor(tensor, flag=True):
         return tensor
 
 
+def _rubric_spans_for_example(
+    rubric_spans: torch.Tensor,
+    batch_idx: int,
+    rubric_mask: Optional[torch.Tensor] = None,
+    rubric_example_indices: Optional[torch.Tensor] = None,
+    rubric_indices: Optional[torch.Tensor] = None,
+) -> torch.Tensor:
+    """Return valid rubric spans for one example from flat or legacy padded layout."""
+    if rubric_spans.dim() == 3:
+        if rubric_mask is None:
+            return rubric_spans[batch_idx]
+        return rubric_spans[batch_idx][rubric_mask[batch_idx].bool()]
+
+    if rubric_spans.dim() != 2:
+        raise ValueError("rubric_spans must be [N, 2] or [B, R, 2].")
+    if rubric_example_indices is None:
+        raise ValueError("rubric_example_indices is required when rubric_spans is flat.")
+
+    valid = rubric_example_indices == batch_idx
+    spans = rubric_spans[valid]
+    if rubric_indices is not None and spans.shape[0] > 1:
+        order = torch.argsort(rubric_indices[valid])
+        spans = spans[order]
+    return spans
+
+
+def build_rubric_block_attention_mask(
+    attention_mask: torch.Tensor,   # [B, T]  binary padding mask (1=real, 0=pad)
+    rubric_spans: torch.Tensor,     # [N, 2] or [B, R, 2] token spans, end is exclusive
+    rubric_mask: Optional[torch.Tensor] = None,  # legacy [B, R]  1=valid rubric
+    dtype: Optional[torch.dtype] = None,
+    causal: bool = True,
+    rubric_example_indices: Optional[torch.Tensor] = None,
+    rubric_indices: Optional[torch.Tensor] = None,
+) -> torch.Tensor:                  # [B, 1, T, T]  additive attention mask
+    """
+    Build a block-sparse 4-D attention mask so that each rubric's tokens attend
+    only to the context (everything before the first rubric) and to their own
+    tokens — never to other rubrics.
+
+    By default, the mask preserves autoregressive behavior: context tokens can
+    attend only to previous context tokens, and rubric tokens can attend to
+    previous context tokens plus previous tokens in their own rubric span.
+    Set causal=False for the older bidirectional block behavior.
+
+    Returned tensor is additive (0.0 for allowed pairs, finfo.min for blocked),
+    ready to be added directly to raw attention scores.
+    """
+    if isinstance(rubric_mask, torch.dtype) and dtype is None:
+        dtype = rubric_mask
+        rubric_mask = None
+    if dtype is None:
+        dtype = attention_mask.dtype if attention_mask.dtype.is_floating_point else torch.float32
+
+    B, T = attention_mask.shape
+    device = attention_mask.device
+    min_val = torch.finfo(dtype).min
+
+    # Build per-sample 2-D boolean allow-masks, then stack.
+    masks = []
+    for b in range(B):
+        spans = _rubric_spans_for_example(
+            rubric_spans,
+            b,
+            rubric_mask=rubric_mask,
+            rubric_example_indices=rubric_example_indices,
+            rubric_indices=rubric_indices,
+        )
+
+        # Context = everything before the first valid rubric span.
+        if spans.shape[0] > 0:
+            ctx_end = int(spans[0, 0])  # start of first rubric
+        else:
+            ctx_end = T  # no rubrics → full attention
+
+        allow = torch.zeros(T, T, dtype=torch.bool, device=device)
+
+        # Context tokens attend within context.
+        if causal:
+            allow[:ctx_end, :ctx_end] = torch.tril(
+                torch.ones(ctx_end, ctx_end, dtype=torch.bool, device=device)
+            )
+        else:
+            allow[:ctx_end, :ctx_end] = True
+
+        # Each valid rubric: attend to context + own tokens, never other rubrics.
+        for span in spans:
+            s, e = int(span[0]), int(span[1])
+            allow[s:e, :ctx_end] = True  # rubric → context
+            if causal:
+                rub_len = e - s
+                allow[s:e, s:e] = torch.tril(
+                    torch.ones(rub_len, rub_len, dtype=torch.bool, device=device)
+                )
+            else:
+                allow[s:e, s:e] = True   # rubric → self (bidirectional within rubric)
+
+        # Zero out columns/rows of padding tokens.
+        pad = attention_mask[b].bool()   # [T]
+        allow &= pad.unsqueeze(0)        # zero-out padded key positions
+        allow &= pad.unsqueeze(1)        # zero-out padded query positions
+
+        masks.append(allow)
+
+    # [B, T, T] bool → [B, 1, T, T] additive float
+    block_mask = torch.stack(masks, dim=0).unsqueeze(1)   # [B, 1, T, T]
+    additive = torch.zeros(B, 1, T, T, dtype=dtype, device=device)
+    additive[~block_mask] = min_val
+    return additive
+
+
+def build_rubric_block_position_ids(
+    attention_mask: torch.Tensor,   # [B, T]  binary padding mask
+    rubric_spans: torch.Tensor,     # [N, 2] or [B, R, 2]
+    rubric_mask: Optional[torch.Tensor] = None,  # legacy [B, R]
+    rubric_example_indices: Optional[torch.Tensor] = None,
+    rubric_indices: Optional[torch.Tensor] = None,
+) -> torch.Tensor:                  # [B, T]  position ids
+    """
+    Reset each rubric's position IDs so that every rubric starts at the same
+    offset from the context end, matching the per-pair positional distribution
+    of xnet's separate forward passes.
+
+    Context tokens keep their natural positions 0..ctx_end-1.
+    Rubric i gets positions ctx_end..ctx_end+(e_i-s_i)-1 regardless of where
+    it actually sits in the flat sequence.
+    Padding positions receive position 0 (ignored by the attention mask).
+    """
+    B, T = attention_mask.shape
+    device = attention_mask.device
+
+    pos_ids = torch.zeros(B, T, dtype=torch.long, device=device)
+    for b in range(B):
+        spans = _rubric_spans_for_example(
+            rubric_spans,
+            b,
+            rubric_mask=rubric_mask,
+            rubric_example_indices=rubric_example_indices,
+            rubric_indices=rubric_indices,
+        )
+        if spans.shape[0] > 0:
+            ctx_end = int(spans[0, 0])
+        else:
+            # No rubrics: normal positions.
+            pos_ids[b] = torch.arange(T, device=device)
+            continue
+
+        # Context: positions 0..ctx_end-1.
+        pos_ids[b, :ctx_end] = torch.arange(ctx_end, device=device)
+
+        # Each rubric: reset to start at ctx_end.
+        for span in spans:
+            s, e = int(span[0]), int(span[1])
+            rub_len = e - s
+            pos_ids[b, s:e] = torch.arange(ctx_end, ctx_end + rub_len, device=device)
+
+    return pos_ids
+
 
 class BaseAsagModel(PreTrainedModel):
     """
@@ -309,18 +533,38 @@ class BaseAsagModel(PreTrainedModel):
         # Initialize encoder
         self._init_encoder()
         
+    @staticmethod
+    def _patch_remote_model_classes(model_name_or_path):
+        """Add all_tied_weights_keys to custom model classes that omit it (e.g. NVEmbedModel)."""
+        try:
+            from transformers.dynamic_module_utils import get_class_from_dynamic_module
+            from transformers import AutoConfig
+            cfg = AutoConfig.from_pretrained(model_name_or_path, trust_remote_code=True)
+            for cls_ref in getattr(cfg, 'auto_map', {}).values():
+                try:
+                    cls = get_class_from_dynamic_module(cls_ref, model_name_or_path)
+                    if not hasattr(cls, 'all_tied_weights_keys'):
+                        cls.all_tied_weights_keys = {}
+                except Exception:
+                    pass
+        except Exception:
+            pass
+
     def _init_encoder(self):
         """Initialize the transformer encoder with optional quantization"""
+        self._patch_remote_model_classes(self.config.base_model_name_or_path)
         if self.bnb_config is not None:
             self.encoder = AutoModel.from_pretrained(
                 self.config.base_model_name_or_path,
                 quantization_config=self.bnb_config,
-                config=self.config
+                config=self.config,
+                trust_remote_code=True
             )
         else:
             self.encoder = AutoModel.from_pretrained(
                 self.config.base_model_name_or_path,
-                config=self.config
+                config=self.config,
+                trust_remote_code=True
             )
 
     def init_peft(self, lora_config=None):
@@ -427,6 +671,108 @@ class BaseAsagModel(PreTrainedModel):
         for param in self.encoder.parameters():
             param.requires_grad = False
 
+    def _get_lm_backbone(self):
+        """Return the underlying LM backbone, unwrapping PEFT containers when needed."""
+        backbone = self.encoder
+        if hasattr(backbone, "get_base_model"):
+            backbone = backbone.get_base_model()
+        if hasattr(backbone, "base_model") and hasattr(backbone.base_model, "model"):
+            backbone = backbone.base_model.model
+        return backbone
+
+    @staticmethod
+    def _find_transformer_layers(backbone):
+        """Find the ordered transformer block list for common HF backbone layouts."""
+        candidate_paths = (
+            ("layers",),
+            ("encoder", "layer"),
+            ("encoder", "layers"),
+            ("transformer", "h"),
+            ("h",),
+            ("model", "layers"),
+            ("model", "encoder", "layers"),
+            ("model", "encoder", "layer"),
+            ("bert", "encoder", "layer"),
+            ("roberta", "encoder", "layer"),
+            ("deberta", "encoder", "layer"),
+            ("deberta_v2", "encoder", "layer"),
+        )
+        for path in candidate_paths:
+            module = backbone
+            for attr in path:
+                if not hasattr(module, attr):
+                    module = None
+                    break
+                module = getattr(module, attr)
+            if module is not None and isinstance(module, (nn.ModuleList, list, tuple)) and len(module) > 0:
+                return module
+        return None
+
+    @staticmethod
+    def _find_embedding_modules(backbone):
+        """Find embedding modules that sit below transformer blocks."""
+        candidate_paths = (
+            ("embed_tokens",),
+            ("embeddings",),
+            ("wte",),
+            ("model", "embed_tokens"),
+            ("model", "embeddings"),
+            ("transformer", "wte"),
+            ("bert", "embeddings"),
+            ("roberta", "embeddings"),
+            ("deberta", "embeddings"),
+            ("deberta_v2", "embeddings"),
+        )
+        modules = []
+        seen = set()
+        for path in candidate_paths:
+            module = backbone
+            for attr in path:
+                if not hasattr(module, attr):
+                    module = None
+                    break
+                module = getattr(module, attr)
+            if isinstance(module, nn.Module) and id(module) not in seen:
+                modules.append(module)
+                seen.add(id(module))
+        return modules
+
+    def freeze_lm_backbone_layers(self, frozen_layers):
+        """
+        Freeze embeddings and the bottom transformer layers of the LM backbone.
+
+        Args:
+            frozen_layers: 0 disables freezing; 0 < x < 1 freezes that fraction of
+                transformer layers; x >= 1 freezes int(x) bottom transformer layers.
+        """
+        frozen_layers = float(frozen_layers or 0.0)
+        if frozen_layers <= 0.0:
+            return 0, 0
+
+        backbone = self._get_lm_backbone()
+        layers = self._find_transformer_layers(backbone)
+        if layers is None:
+            raise ValueError(f"Could not find transformer layers on backbone type {type(backbone).__name__}.")
+
+        total_layers = len(layers)
+        if 0.0 < frozen_layers < 1.0:
+            num_layers = max(1, int(total_layers * frozen_layers))
+        else:
+            num_layers = int(frozen_layers)
+        num_layers = min(num_layers, total_layers)
+
+        frozen_embedding_modules = 0
+        for module in self._find_embedding_modules(backbone):
+            for param in module.parameters():
+                param.requires_grad = False
+            frozen_embedding_modules += 1
+
+        for layer in layers[:num_layers]:
+            for param in layer.parameters():
+                param.requires_grad = False
+
+        return num_layers, frozen_embedding_modules
+
     def listwise_loss(
         self,
         logits: torch.Tensor,          # [B, R]
@@ -453,15 +799,17 @@ class BaseAsagModel(PreTrainedModel):
 
     
 
-    def get_encoder_outputs(self, input_ids, attention_mask, token_type_ids=None):
-        """Get encoder outputs with optional token type ids"""
+    def get_encoder_outputs(self, input_ids, attention_mask, token_type_ids=None, position_ids=None):
+        """Get encoder outputs with optional token type ids and position ids"""
         inputs = {
             "input_ids": input_ids,
             "attention_mask": attention_mask
         }
         if token_type_ids is not None:
             inputs["token_type_ids"] = token_type_ids
-            
+        if position_ids is not None:
+            inputs["position_ids"] = position_ids
+
         return self.encoder(**inputs)
 
 

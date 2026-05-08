@@ -6,6 +6,12 @@ from transformers import (
     TrainingArguments
 )
 import json
+import sys
+from pathlib import Path
+
+REPO_ROOT = Path(__file__).resolve().parent
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
 import torch
 import os 
 from dataclasses import dataclass, field
@@ -18,7 +24,7 @@ import tempfile
 import shutil
 import torch.distributed as dist
 from modelling.modelling_span import SpanAlignmentModel
-from data_processing_asag.data_prep import get_tokenizer
+from scripts_asag.data_processing.data_prep import get_tokenizer
 
 DEFAULT_DEVICE = "cuda" if torch.cuda.is_available() else "mps" if torch.backends.mps.is_available() else "cpu"
 # logger = logging.getLogger(__name__)
@@ -117,19 +123,12 @@ class ModelLoader:
         self.device_map = device_map
         self.data_pipeline = data_pipeline
         
-        # Determine task type for LoRA config
-        lora_task_type = None
-        if hasattr(task_args, 'model_class'):
-            if task_args.model_class == "xnet":
-                lora_task_type = "SEQ_CLS"
-        
         self.lora_config = LoraConfig(
             r=self.train_args.lora_rank,
             lora_alpha=self.train_args.lora_alpha,
             lora_dropout=0.1,
             bias='none',
-            target_modules="all-linear",
-            task_type=lora_task_type,
+            target_modules=["q_proj", "k_proj", "v_proj", "o_proj"],
         )
         self.bnb_config = BitsAndBytesConfig(
             load_in_4bit = True, # Activate 4-bit precision base model loading
@@ -157,7 +156,7 @@ class ModelLoader:
             config.num_labels = self.data_pipeline.num_labels
 
         # Random rubric drop is applied in model-side listwise masking.
-        config.random_drop_rub = float(getattr(self.task_args, "random_drop_rub", 0.0))
+        config.test_drop_rub = float(getattr(self.task_args, "test_drop_rub", 0.0))
 
         return config
     def _init_model(self, use_lora=False, use_bnb=False, config=None):
@@ -210,9 +209,9 @@ class ModelLoader:
         # If we're in test_only mode and have a checkpoint directory, load config from there
         if self.train_args.test_only and self.train_args.cp_dir:
             print(f"Loading config from checkpoint: {self.train_args.cp_dir}")
-            config = AutoConfig.from_pretrained(self.train_args.cp_dir)
+            config = AutoConfig.from_pretrained(self.train_args.cp_dir, trust_remote_code=True)
         else:
-            config = AutoConfig.from_pretrained(self.task_args.base_model)
+            config = AutoConfig.from_pretrained(self.task_args.base_model, trust_remote_code=True)
 
         config = self._update_with_custom_config(config)
         self.train_args.use_bnb = (self.train_args.use_bnb and torch.cuda.is_available()) 
@@ -220,7 +219,7 @@ class ModelLoader:
         
         if self.train_args.cp_dir_init:
             print(f"Initializing model from checkpoint: {self.train_args.cp_dir_init}")
-            config = AutoConfig.from_pretrained(self.train_args.cp_dir_init)
+            config = AutoConfig.from_pretrained(self.train_args.cp_dir_init, trust_remote_code=True)
             assert self.task_args.base_model.lower() == config.base_model_name_or_path.lower(), \
                 "Base model in training arguments must match the model used in the checkpoint."
             model = self._init_model_from_cp(self.train_args.cp_dir_init)
@@ -249,8 +248,8 @@ class ModelLoader:
         print(f"Initializing quantized PEFT model from checkpoint: {cp_path}")
         
         # Read config from checkpoint path
-        config = AutoConfig.from_pretrained(cp_path)
-        
+        config = AutoConfig.from_pretrained(cp_path, trust_remote_code=True)
+
         base_model = self._init_model(
             use_lora=False,
             use_bnb=False,
@@ -310,16 +309,29 @@ class ModelLoader:
     def _apply_freeze_policy(self, model):
         """Apply encoder-freezing policy after optional LoRA wrapping."""
         freeze_base = bool(getattr(self.custom_model_args, 'freeze_base_encoder', False))
-        if not freeze_base:
+        frozen_layers = float(getattr(self.custom_model_args, 'frozen_layers', 0.0) or 0.0)
+        if not freeze_base and frozen_layers <= 0.0:
             return model
 
-        if hasattr(model, 'freeze_encoder'):
+        if freeze_base and frozen_layers > 0.0:
+            print("freeze_base_encoder=True overrides frozen_layers; freezing the full encoder.")
+
+        if freeze_base and hasattr(model, 'freeze_encoder'):
             model.freeze_encoder()
-        elif hasattr(model, 'encoder'):
+        elif freeze_base and hasattr(model, 'encoder'):
             for param in model.encoder.parameters():
                 param.requires_grad = False
+        elif frozen_layers > 0.0:
+            if not hasattr(model, 'freeze_lm_backbone_layers'):
+                raise ValueError(f"Model type {type(model).__name__} does not support frozen_layers.")
+            num_layers, num_embedding_modules = model.freeze_lm_backbone_layers(frozen_layers)
+            print(
+                f"frozen_layers={frozen_layers}: froze {num_embedding_modules} embedding module(s) "
+                f"and {num_layers} bottom transformer layer(s)."
+            )
 
-        print("freeze_base_encoder=True: froze all encoder parameters (including LoRA adapters if present).")
+        if freeze_base:
+            print("freeze_base_encoder=True: froze all encoder parameters (including LoRA adapters if present).")
         print_trainable_parameters(model, use_4bit=self.train_args.use_bnb)
         return model
 
@@ -331,7 +343,7 @@ class ModelLoader:
         :return: Loaded model.
         """
         cp_path = str(cp_path)
-        config = AutoConfig.from_pretrained(cp_path)
+        config = AutoConfig.from_pretrained(cp_path, trust_remote_code=True)
         bnb_config = self.bnb_config if self.train_args.use_bnb else None
         model_class = getattr(self.task_args, 'model_class', 'span')
         if model_class == "xnet":
@@ -352,73 +364,27 @@ class ModelLoader:
         model = self._apply_freeze_policy(model)
         return model
 
-class SplitLRTrainer(Trainer):
-    """Trainer with separate learning rates for main model (encoder.*) and other trainable modules."""
+class LoraAwareTrainer(Trainer):
+    def _load_best_model(self):
+        best_ckpt = self.state.best_model_checkpoint
+        if best_ckpt is None:
+            return
+        if os.path.exists(os.path.join(best_ckpt, "adapter_config.json")):
+            from peft import PeftModel
+            encoder = self.model.encoder
+            if not isinstance(encoder, PeftModel):
+                raise RuntimeError("Expected encoder to be a PeftModel but got: " + type(encoder).__name__)
+            encoder.load_adapter(best_ckpt, adapter_name="default")
+            encoder.set_adapter("default")
 
-    def __init__(self, *args, lr_main=None, lr_other=None, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.lr_main = lr_main
-        self.lr_other = lr_other
-
-    @staticmethod
-    def _is_main_model_param(name: str) -> bool:
-        return name.startswith("encoder.")
-
-    def _build_split_lr_param_groups(self):
-        decay_parameters = self.get_decay_parameter_names(self.model)
-
-        groups = {
-            "main_decay": {"params": [], "lr": self.lr_main, "weight_decay": self.args.weight_decay},
-            "main_no_decay": {"params": [], "lr": self.lr_main, "weight_decay": 0.0},
-            "other_decay": {"params": [], "lr": self.lr_other, "weight_decay": self.args.weight_decay},
-            "other_no_decay": {"params": [], "lr": self.lr_other, "weight_decay": 0.0},
-        }
-
-        for name, param in self.model.named_parameters():
-            if not param.requires_grad:
-                continue
-            is_main = self._is_main_model_param(name)
-            use_decay = name in decay_parameters
-
-            if is_main and use_decay:
-                groups["main_decay"]["params"].append(param)
-            elif is_main and not use_decay:
-                groups["main_no_decay"]["params"].append(param)
-            elif (not is_main) and use_decay:
-                groups["other_decay"]["params"].append(param)
+            non_peft_file = os.path.join(best_ckpt, "non_peft_params.bin")
+            if os.path.exists(non_peft_file):
+                non_peft_state = torch.load(non_peft_file, map_location="cpu")
+                self.model.load_state_dict(non_peft_state, strict=False)
             else:
-                groups["other_no_decay"]["params"].append(param)
-
-        final_groups = [g for g in groups.values() if g["params"]]
-
-        main_count = sum(p.numel() for p in groups["main_decay"]["params"] + groups["main_no_decay"]["params"])
-        other_count = sum(p.numel() for p in groups["other_decay"]["params"] + groups["other_no_decay"]["params"])
-        print(
-            f"Split LR groups: main_params={main_count:,d} (lr={self.lr_main}), "
-            f"other_params={other_count:,d} (lr={self.lr_other})"
-        )
-        return final_groups
-
-    def create_optimizer(self):
-        if self.optimizer is not None:
-            return self.optimizer
-
-        use_split_lr = (
-            self.lr_main is not None
-            and self.lr_other is not None
-            and abs(self.lr_main - self.lr_other) > 0.0
-        )
-
-        if not use_split_lr:
-            return super().create_optimizer()
-
-        optimizer_grouped_parameters = self._build_split_lr_param_groups()
-        if not optimizer_grouped_parameters:
-            return super().create_optimizer()
-
-        optimizer_cls, optimizer_kwargs = Trainer.get_optimizer_cls_and_kwargs(self.args, self.model)
-        self.optimizer = optimizer_cls(optimizer_grouped_parameters, **optimizer_kwargs)
-        return self.optimizer
+                print(f"[LoRA Load] non_peft_params.bin not found in best checkpoint: {best_ckpt}")
+            return
+        super()._load_best_model()
 
 
 class AsagTrainer:
@@ -480,6 +446,7 @@ class AsagTrainer:
             remove_unused_columns=False,
             gradient_checkpointing=True if self.is_llm else False,
             gradient_checkpointing_kwargs = {"use_reentrant": False} if self.is_llm else None,
+            save_total_limit=2,
             # logging and saving parameters
             label_names=["labels"],
             greater_is_better=True,
@@ -488,21 +455,18 @@ class AsagTrainer:
             metric_for_best_model="eval_accuracy",
             logging_dir=os.path.join(self.train_args.save_dir, "logs"),
             logging_steps=10,
-            save_strategy="best",
+            save_strategy="epoch",
             eval_strategy="epoch",
-            save_total_limit=2,
             output_dir=self.train_args.save_dir,
         )
 
-        trainer = SplitLRTrainer(
+        trainer = LoraAwareTrainer(
             model=self.model,
             args=train_args,
             train_dataset=self.train_dataset,
             eval_dataset=self.validation_dataset,
             data_collator=self.collate_fn,
             compute_metrics=compute_metrics,
-            lr_main=effective_lr_main,
-            lr_other=effective_lr_other,
         )
         trainer.train()
         trainer.save_model(self.train_args.save_dir)

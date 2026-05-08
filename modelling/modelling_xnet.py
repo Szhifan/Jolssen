@@ -15,7 +15,7 @@ class AsagXnet(BaseAsagModel):
         self.pooler = Pooler(pool_type=config.pool_type)
         self.use_token_type_ids = getattr(config, 'use_token_type_ids', True)
         self.score = nn.Linear(config.hidden_size, 1, bias=False)
-        self.random_drop_rub = float(getattr(config, "random_drop_rub", 0.0))
+        self.test_drop_rub = float(getattr(config, "test_drop_rub", 0.0))
         
 
 
@@ -40,7 +40,7 @@ class AsagXnet(BaseAsagModel):
         labels: Optional[torch.LongTensor],
     ) -> torch.Tensor:
         """Randomly mask one non-gold valid rubric per sample during training."""
-        if (not self.training) or labels is None or self.random_drop_rub <= 0.0:
+        if (not self.training) or labels is None or self.test_drop_rub <= 0.0:
             return rubric_mask
 
         loss_mask = rubric_mask.clone()
@@ -52,7 +52,7 @@ class AsagXnet(BaseAsagModel):
         candidate_mask = valid_mask & (all_idx != labels.unsqueeze(1))
 
         has_candidate = candidate_mask.any(dim=1)
-        apply_drop = (torch.rand(B, device=loss_mask.device) < self.random_drop_rub) & has_candidate
+        apply_drop = (torch.rand(B, device=loss_mask.device) < self.test_drop_rub) & has_candidate
         if not apply_drop.any():
             return loss_mask
 

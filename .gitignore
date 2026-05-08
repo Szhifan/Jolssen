@@ -3,3 +3,12 @@ run_*
 .hypothesis/* 
 .vscode/* 
 test.py
+.env
+*.pyc   
+.conda/
+figures/*
+post_analysis/*
+reports/*
+cleanup_model_params.py
+compute_per_level_metrics.py
+asag_benchmarks/asap_sas/metadata

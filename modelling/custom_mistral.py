@@ -1,5 +1,5 @@
 import logging
-from typing import Optional, Tuple, Union
+from typing import Optional
 
 import torch
 from torch import nn
@@ -18,11 +18,11 @@ from transformers.models.mistral.modeling_mistral import (
 )
 from .modelling_utils import (
     get_noncausal_attention_mask,
+    normalize_layer_count,
     Pooler,
 )
 
 from transformers.utils import TransformersKwargs, logging, auto_docstring
-from transformers.utils.deprecation import deprecate_kwarg
 from transformers.processing_utils import Unpack
 from transformers.masking_utils import create_causal_mask
 from functools import partial
@@ -48,7 +48,6 @@ class MistralDecoderLayer(GradientCheckpointingLayer):
         self.input_layernorm = MistralRMSNorm(config.hidden_size, eps=config.rms_norm_eps)
         self.post_attention_layernorm = MistralRMSNorm(config.hidden_size, eps=config.rms_norm_eps)
 
-    @deprecate_kwarg("past_key_value", new_name="past_key_values", version="4.58")
     def forward(
         self,
         hidden_states: torch.Tensor,
@@ -56,20 +55,18 @@ class MistralDecoderLayer(GradientCheckpointingLayer):
         position_ids: Optional[torch.LongTensor] = None,
         past_key_values: Optional[Cache] = None,
         use_cache: Optional[bool] = False,
-        cache_position: Optional[torch.LongTensor] = None,
-        position_embeddings: Optional[tuple[torch.Tensor, torch.Tensor]] = None,  # necessary, but kept here for BC
+        position_embeddings: Optional[tuple[torch.Tensor, torch.Tensor]] = None,
         **kwargs: Unpack[TransformersKwargs],
     ) -> torch.Tensor:
         residual = hidden_states
         hidden_states = self.input_layernorm(hidden_states)
         # Self Attention
-        hidden_states, attn_weights = self.self_attn(
+        hidden_states, _ = self.self_attn(
             hidden_states=hidden_states,
             attention_mask=attention_mask,
             position_ids=position_ids,
             past_key_values=past_key_values,
             use_cache=use_cache,
-            cache_position=cache_position,
             position_embeddings=position_embeddings,
             **kwargs,
         )
@@ -80,7 +77,7 @@ class MistralDecoderLayer(GradientCheckpointingLayer):
         hidden_states = self.post_attention_layernorm(hidden_states)
         hidden_states = self.mlp(hidden_states)
         hidden_states = residual + hidden_states
-        return hidden_states, attn_weights
+        return hidden_states
 
 class MistralModel(MistralPreTrainedModel):
     def __init__(self, config: MistralConfig):
@@ -100,30 +97,32 @@ class MistralModel(MistralPreTrainedModel):
         # -----------------------------------------------------------------------------------------------------------------
         self.architecture = getattr(config, 'architecture', 'NONE')
         self.mask_type = getattr(config, 'mask_type', "MASK0")
-        self.num_bidir_layers = getattr(config, 'num_bidir_layers', 0)
         self.connect_layers = getattr(config, 'res_connect', None)
         self.use_res_connect = partial(use_res_connect, self.connect_layers)
-        self.num_prune_layers = getattr(config, 'num_prune_layers', 0)
-        self.num_fuse_layers = getattr(config, 'num_fuse_layers', 0)
         self.fuse_type = getattr(config, 'fuse_type', 'avg')  # avg or weighted
         
-        # If num_prune_layers is between 0 and 1 (exclusive), treat it as a ratio
-        if 0 < self.num_prune_layers < 1:
-            self.num_prune_layers = max(0, int(config.num_hidden_layers * self.num_prune_layers))
-        
+        self.num_prune_layers = normalize_layer_count(
+            getattr(config, 'num_prune_layers', 0),
+            config.num_hidden_layers,
+            'num_prune_layers',
+            min_ratio_layers=0,
+        )
         self.num_hidden_layers = config.num_hidden_layers - self.num_prune_layers
 
-        # If num_fuse_layers is between 0 and 1 (exclusive), treat it as a ratio
-        if 0 < self.num_fuse_layers < 1:
-            self.num_fuse_layers = max(1, int(self.num_hidden_layers * self.num_fuse_layers))
+        self.num_fuse_layers = normalize_layer_count(
+            getattr(config, 'num_fuse_layers', 0),
+            self.num_hidden_layers,
+            'num_fuse_layers',
+        )
 
         assert self.num_hidden_layers > 0
         assert self.num_hidden_layers >= self.num_fuse_layers
-        
-        # If num_bidir_layers is between 0 and 1 (exclusive), treat it as a ratio
-        if 0 < self.num_bidir_layers < 1:
-            self.num_bidir_layers = max(1, int(self.num_hidden_layers * self.num_bidir_layers))
-        
+
+        self.num_bidir_layers = normalize_layer_count(
+            getattr(config, 'num_bidir_layers', 0),
+            self.num_hidden_layers,
+            'num_bidir_layers',
+        )
         assert self.num_bidir_layers <= self.num_hidden_layers
 
         self.bidir_layers = {layer for layer in range(self.num_hidden_layers - self.num_bidir_layers, self.num_hidden_layers)}
@@ -152,9 +151,8 @@ class MistralModel(MistralPreTrainedModel):
         past_key_values: Optional[Cache] = None,
         inputs_embeds: Optional[torch.FloatTensor] = None,
         use_cache: Optional[bool] = None,
-        cache_position: Optional[torch.LongTensor] = None,
         **kwargs: Unpack[TransformersKwargs],
-    ) -> Union[Tuple, BaseModelOutputWithPast]:
+    ) -> BaseModelOutputWithPast:
         if (input_ids is None) ^ (inputs_embeds is not None):
             raise ValueError("You must specify exactly one of input_ids or inputs_embeds")
 
@@ -162,54 +160,52 @@ class MistralModel(MistralPreTrainedModel):
             inputs_embeds: torch.Tensor = self.embed_tokens(input_ids)
 
         if use_cache and past_key_values is None:
-            past_key_values = DynamicCache()
-
-        if cache_position is None:
-            past_seen_tokens = past_key_values.get_seq_length() if past_key_values is not None else 0
-            cache_position: torch.Tensor = torch.arange(
-                past_seen_tokens, past_seen_tokens + inputs_embeds.shape[1], device=inputs_embeds.device
-            )
+            past_key_values = DynamicCache(config=self.config)
 
         if position_ids is None:
-            position_ids = cache_position.unsqueeze(0)
+            past_seen_tokens = past_key_values.get_seq_length() if past_key_values is not None else 0
+            position_ids = torch.arange(inputs_embeds.shape[1], device=inputs_embeds.device) + past_seen_tokens
+            position_ids = position_ids.unsqueeze(0)
 
-
-
-        causal_mask = create_causal_mask(
-            config=self.config,
-            input_embeds=inputs_embeds,
-            attention_mask=attention_mask,
-            cache_position=cache_position,
-            past_key_values=past_key_values,
-            position_ids=position_ids
+        past_seen_tokens = past_key_values.get_seq_length() if past_key_values is not None else 0
+        cache_position = torch.arange(
+            past_seen_tokens, past_seen_tokens + inputs_embeds.shape[1], device=inputs_embeds.device
         )
-
         # Get input shape from either input_ids or inputs_embeds
         input_shape = input_ids.shape if input_ids is not None else inputs_embeds.shape[:2]
-        
-        bidir_attention_mask = get_noncausal_attention_mask(self, attention_mask, input_shape)
+
+        if attention_mask is not None and attention_mask.dim() == 4:
+            # Pre-built additive block mask (e.g. rubric_independent_attn) — use directly for all layers
+            causal_mask = attention_mask
+            bidir_attention_mask = attention_mask
+        else:
+            causal_mask = create_causal_mask(
+                config=self.config,
+                input_embeds=inputs_embeds,
+                attention_mask=attention_mask,
+                cache_position=cache_position,
+                past_key_values=past_key_values,
+                position_ids=position_ids,
+            )
+            bidir_attention_mask = get_noncausal_attention_mask(self, attention_mask, input_shape)
         
         hidden_states = inputs_embeds
         position_embeddings = self.rotary_emb(hidden_states, position_ids)
         
         
         # decoder layers
-        h1, h2 = None, 0
         fuse_layers = ()
         for i in range(self.num_hidden_layers):
             decoder_layer = self.layers[i]
             is_bidir = i in self.bidir_layers
             layer_mask = bidir_attention_mask if is_bidir else causal_mask
 
-
-
-            hidden_states, attn_weights = decoder_layer(
+            hidden_states = decoder_layer(
                 hidden_states,
-                attention_mask=causal_mask,
+                attention_mask=layer_mask,
                 position_ids=position_ids,
                 past_key_values=past_key_values,
                 use_cache=use_cache,
-                cache_position=cache_position,
                 position_embeddings=position_embeddings,
                 **kwargs,
             )
@@ -280,7 +276,7 @@ class MistralForSequenceClassification(MistralPreTrainedModel):
         labels: Optional[torch.LongTensor] = None,
         use_cache: Optional[bool] = None,
         **kwargs: Unpack[TransformersKwargs],
-    ) -> Union[Tuple, SequenceClassifierOutput]:
+    ) -> SequenceClassifierOutput:
         
         # Get model outputs
         outputs = self.model(
@@ -308,6 +304,7 @@ class MistralForSequenceClassification(MistralPreTrainedModel):
                 loss = loss_fct(logits, labels)
         
         return SequenceClassifierOutput(
+            loss=loss,
             logits=logits,
             hidden_states=outputs.hidden_states if hasattr(outputs, 'hidden_states') else None,
             attentions=outputs.attentions if hasattr(outputs, 'attentions') else None) 

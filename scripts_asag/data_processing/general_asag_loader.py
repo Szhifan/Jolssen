@@ -4,6 +4,7 @@ from collections import defaultdict
 from pathlib import Path
 from datasets import Dataset
 import json
+from scripts_asag.data_processing.benchmark_meta import BENCHMARK_DESCRIPTIONS
 
 
 class ASAG_Data_Loader:
@@ -16,10 +17,11 @@ class ASAG_Data_Loader:
         self.benchmark = benchmark
         if benchmark:
             self.task_name = Path("asag_benchmarks", benchmark)
+        self.benchmark_meta = BENCHMARK_DESCRIPTIONS.get(benchmark, {})
         self.question_meta = self._load_question_meta()
         self.label_semantics = "rubric"
         self.text_col = "answer"
-        self._score_level_map = None
+        self._score_level_map = self.benchmark_meta.get("label_map", {})
         
         self._load_datasets()
 
@@ -82,7 +84,63 @@ class ASAG_Data_Loader:
             return {}
         with open(meta_path, "r") as f:
             meta = json.load(f)
-        return {str(k): v for k, v in meta.items()}
+        meta = {str(k): v for k, v in meta.items()}
+
+        rubric_meta_path = self.benchmark_meta.get("rubric_meta_path")
+        if rubric_meta_path:
+            generated_path = self.task_name / rubric_meta_path
+            if generated_path.exists():
+                with open(generated_path, "r") as f:
+                    generated_meta = json.load(f)
+                for qid, generated_entry in generated_meta.items():
+                    question_meta = meta.setdefault(str(qid), {})
+                    response = generated_entry.get("response", {})
+                    if isinstance(response, str):
+                        try:
+                            response = json.loads(response)
+                        except json.JSONDecodeError:
+                            response = self._parse_fenced_json(response)
+                    if isinstance(response, dict) and isinstance(response.get("rubrics"), dict):
+                        question_meta["rubrics"] = response["rubrics"]
+                    if "reference_answer" in generated_entry:
+                        question_meta["sample_solution"] = generated_entry["reference_answer"]
+        return meta
+
+    def _parse_fenced_json(self, text):
+        stripped = text.strip()
+        if stripped.startswith("```"):
+            lines = stripped.splitlines()
+            if lines and lines[0].startswith("```"):
+                lines = lines[1:]
+            if lines and lines[-1].strip() == "```":
+                lines = lines[:-1]
+            stripped = "\n".join(lines).strip()
+        try:
+            return json.loads(stripped)
+        except json.JSONDecodeError:
+            return {}
+
+    def _normalize_level(self, raw_level):
+        if raw_level is None:
+            return 0
+        if isinstance(raw_level, str):
+            normalized = raw_level.strip()
+            if normalized in self._score_level_map:
+                return int(self._score_level_map[normalized])
+            lowered = normalized.lower()
+            if lowered in self._score_level_map:
+                return int(self._score_level_map[lowered])
+            raw_level = normalized
+        return int(raw_level)
+
+    def _rubric_items(self, rubrics):
+        if not self._score_level_map:
+            return sorted(rubrics.items(), key=lambda item: float(item[0]))
+        label_order = sorted(self._score_level_map.items(), key=lambda item: item[1])
+        if all(label in rubrics for label, _ in label_order):
+            return [(label, rubrics[label]) for label, _ in label_order]
+        return sorted(rubrics.items(), key=lambda item: float(item[0]))
+
     def _retrieve_meta(self, example, is_training=False):
         """Retrieve and enrich example with metadata. Can be overridden by subclasses."""
         meta = self.question_meta.get(str(example.get("question_id", "")), {})
@@ -98,10 +156,10 @@ class ASAG_Data_Loader:
 
         rubrics = meta["rubrics"]
         rubric_list = [
-            v for _, v in sorted(rubrics.items(), key=lambda item: float(item[0]))
+            v for _, v in self._rubric_items(rubrics)
         ]
         
-        level = int(example.get("level", example.get("score_level", 0)))
+        level = self._normalize_level(example.get("level", example.get("score_level", 0)))
 
         example["rubric"] = rubric_list
         example["level"] = level

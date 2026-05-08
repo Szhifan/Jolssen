@@ -2,7 +2,7 @@ from datasets import Dataset
 import json
 import random
 from collections import defaultdict
-from data_processing_asag.general_asag_loader import ASAG_Data_Loader
+from scripts_asag.data_processing.general_asag_loader import ASAG_Data_Loader
 
 """
 Alice-specific data loader that extends the general ASAG data loader.

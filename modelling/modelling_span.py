@@ -1,4 +1,9 @@
-from modelling.modelling_utils import BaseAsagModel, Pooler
+from modelling.modelling_utils import (
+    BaseAsagModel,
+    Pooler,
+    build_rubric_block_attention_mask,
+    build_rubric_block_position_ids,
+)
 from torch import nn
 from transformers.modeling_outputs import SequenceClassifierOutput
 import torch
@@ -33,7 +38,7 @@ class SpanFuser(nn.Module):
         self.span_fuse_type = getattr(config, "span_fuse_type", "p-concat")
         self.dropout = nn.Dropout(0.1)
         self.num_labels = getattr(config, "num_labels", 3)
-        # self.cl_weight = getattr(config, "cl_weight", 0.0)
+
 
         if getattr(config, "use_proj", False):
             if self.span_fuse_type in ["t-bl", "t-concat", "t-diff", "tpl-concat"]:
@@ -86,13 +91,13 @@ class SpanFuser(nn.Module):
         """
         B, R, H = label_embs.shape
 
-        # # Apply projections if enabled
-        # if hasattr(self, "text_proj"):
-        #     text_emb = self.text_proj(text_emb)
-        # if hasattr(self, "label_proj"):
-        #     label_embs = self.label_proj(label_embs)
-        # if pooled_emb is not None and hasattr(self, "pooled_proj"):
-        #     pooled_emb = self.pooled_proj(pooled_emb)
+        # Apply projections if enabled
+        if hasattr(self, "text_proj"):
+            text_emb = self.text_proj(text_emb)
+        if hasattr(self, "label_proj"):
+            label_embs = self.label_proj(label_embs)
+        if pooled_emb is not None and hasattr(self, "pooled_proj"):
+            pooled_emb = self.pooled_proj(pooled_emb)
 
         if self.span_fuse_type == "p-only":
             # No span fusing, use pooled embedding directly
@@ -100,9 +105,10 @@ class SpanFuser(nn.Module):
                 raise ValueError("pooled_emb is required for 'p-only' fusing type")
             scores = self.to_score(self.dropout(pooled_emb))  # [B, num_labels]
             return scores
-        if self.span_fuse_type == "l-only":
+        elif self.span_fuse_type == "l-only":
             # Use label embeddings only
             scores = self.to_score(self.dropout(label_embs)).squeeze(-1)  # [B, R]
+            return scores
         if self.span_fuse_type == "t-bl":
             # Text-label bilinear fusing
             text_exp = text_emb.unsqueeze(1).expand(-1, R, -1)  # [B, R, H]
@@ -186,13 +192,18 @@ class SpanFuser(nn.Module):
 class SpanAlignmentModel(BaseAsagModel):
     def __init__(self, config, lora_config=None, bnb_config=None):
         super().__init__(config, lora_config=lora_config, bnb_config=bnb_config)
+        self.rubric_independent_attn = getattr(config, "rubric_independent_attn", False)
+        self.reindex_rub = getattr(config, "reindex_rub", False)
+        if self.reindex_rub and not self.rubric_independent_attn:
+            raise ValueError("reindex_rub requires rubric_independent_attn to be set.")
+        if self.rubric_independent_attn:
+            config.span_fuse_type = "l-only"
         self.pooler = Pooler(pool_type=config.pool_type)
         self.span_fuser = SpanFuser(config)
         self.dropout = nn.Dropout(config.hidden_dropout_prob if hasattr(config, "hidden_dropout_prob") else 0.1)
         self.span_pool_type = getattr(config, "span_pool_type", "last")
         self.cl_weight = getattr(config, "cl_weight", 0.0)
         self.label_smoothing = 0.0
-        self.random_drop_rub = float(getattr(config, "random_drop_rub", 0.0))
 
     def _pool_single_span(
         self,
@@ -202,7 +213,7 @@ class SpanAlignmentModel(BaseAsagModel):
         end_idx: int,
         span_pool_type: str,
     ) -> torch.Tensor:
-        """Pool one span with bounds checks while preserving current 'last' semantics."""
+        """Pool one span with bounds checks and exclusive-end span semantics."""
         seq_len = hidden_states.shape[1]
 
         if span_pool_type == "mean":
@@ -214,7 +225,8 @@ class SpanAlignmentModel(BaseAsagModel):
             return hidden_states[batch_idx, start:end].mean(dim=0)
 
 
-        index = max(0, min(int(end_idx), seq_len - 1))
+        # Spans use Python slice semantics: [start_idx, end_idx). "last" is end_idx - 1.
+        index = max(0, min(int(end_idx) - 1, seq_len - 1))
         return hidden_states[batch_idx, index]
 
     def _get_span_alignments(
@@ -222,27 +234,85 @@ class SpanAlignmentModel(BaseAsagModel):
         hidden_states,
         rubric_spans,
         answer_span,
-        rubric_mask,
+        rubric_mask=None,
+        rubric_example_indices=None,
+        rubric_indices=None,
+        num_rubrics=None,
         span_pool_type="last",
     ):
-        """Extract and align span embeddings for rubrics and answer spans."""
-        B, R = rubric_spans.shape[:2]
-        H = hidden_states.shape[-1]
+        """Extract answer embeddings and real rubric span embeddings.
 
-        rubric_embs = []
-        for i in range(R):
-            starts = rubric_spans[:, i, 0]
-            ends = rubric_spans[:, i, 1]
-            emb = torch.stack(
+        New LASA batches pass rubric_spans as [N, 2] with mapping indices.
+        Legacy callers may still pass [B, R, 2] plus rubric_mask.
+        """
+        B = hidden_states.shape[0]
+        H = hidden_states.shape[-1]
+        device = hidden_states.device
+
+        if rubric_spans.dim() == 3:
+            if rubric_mask is None:
+                rubric_mask = torch.ones(
+                    rubric_spans.shape[:2],
+                    dtype=torch.bool,
+                    device=rubric_spans.device,
+                )
+            rubric_mask = rubric_mask.to(device=device, dtype=torch.bool)
+            valid_pairs = torch.nonzero(rubric_mask, as_tuple=False)
+            rubric_example_indices = valid_pairs[:, 0]
+            rubric_indices = valid_pairs[:, 1]
+            rubric_spans = rubric_spans.to(device=device)[rubric_example_indices, rubric_indices]
+            num_rubrics = rubric_mask.long().sum(dim=1)
+        else:
+            rubric_spans = rubric_spans.to(device=device)
+            if rubric_example_indices is None:
+                if num_rubrics is None:
+                    raise ValueError("rubric_example_indices or num_rubrics is required for flat rubric_spans.")
+                rubric_example_indices = torch.repeat_interleave(
+                    torch.arange(B, device=device),
+                    num_rubrics.to(device=device, dtype=torch.long),
+                )
+            else:
+                rubric_example_indices = rubric_example_indices.to(device=device, dtype=torch.long)
+
+            if num_rubrics is None:
+                num_rubrics = torch.bincount(rubric_example_indices, minlength=B)
+            else:
+                num_rubrics = num_rubrics.to(device=device, dtype=torch.long)
+
+            if rubric_indices is None:
+                rubric_indices = torch.cat(
+                    [torch.arange(int(n), device=device) for n in num_rubrics],
+                    dim=0,
+                ) if int(num_rubrics.sum()) > 0 else torch.empty(0, dtype=torch.long, device=device)
+            else:
+                rubric_indices = rubric_indices.to(device=device, dtype=torch.long)
+
+            max_rubrics = int(num_rubrics.max().item()) if num_rubrics.numel() else 0
+            rubric_mask = (
+                torch.arange(max_rubrics, device=device).unsqueeze(0)
+                < num_rubrics.unsqueeze(1)
+            )
+
+        if rubric_spans.shape[0] > 0:
+            flat_rubric_embs = torch.stack(
                 [
-                    self._pool_single_span(hidden_states, b, starts[b], ends[b], span_pool_type)
-                    if rubric_mask[b, i]
-                    else torch.zeros(H, device=hidden_states.device, dtype=hidden_states.dtype)
-                    for b in range(B)
+                    self._pool_single_span(
+                        hidden_states,
+                        int(example_idx),
+                        span[0],
+                        span[1],
+                        span_pool_type,
+                    )
+                    for example_idx, span in zip(rubric_example_indices, rubric_spans)
                 ]
             )
-            rubric_embs.append(emb)
-        rubric_embs = torch.stack(rubric_embs, dim=1)  # [B, R, H]
+        else:
+            flat_rubric_embs = torch.zeros(0, H, device=device, dtype=hidden_states.dtype)
+
+        max_rubrics = rubric_mask.shape[1] if rubric_mask.dim() == 2 else 0
+        dense_rubric_embs = torch.zeros(B, max_rubrics, H, device=device, dtype=hidden_states.dtype)
+        if flat_rubric_embs.shape[0] > 0:
+            dense_rubric_embs[rubric_example_indices, rubric_indices] = flat_rubric_embs
 
         a_starts = answer_span[:, 0]
         a_ends = answer_span[:, 1]
@@ -253,40 +323,15 @@ class SpanAlignmentModel(BaseAsagModel):
             ]
         )  # [B, H]
 
-        return rubric_embs, answer_emb
-
-    def _apply_random_negative_rubric_mask(
-        self,
-        rubric_mask: torch.Tensor,
-        labels: Optional[torch.LongTensor],
-    ) -> torch.Tensor:
-        """Randomly mask one non-gold valid rubric per sample during training."""
-        if (not self.training) or labels is None or self.random_drop_rub <= 0.0:
-            return rubric_mask
-
-        loss_mask = rubric_mask.clone()
-        valid_mask = loss_mask.bool()
-        B, R = valid_mask.shape
-
-        labels = labels.to(device=loss_mask.device, dtype=torch.long)
-        all_idx = torch.arange(R, device=loss_mask.device).unsqueeze(0).expand(B, R)
-        candidate_mask = valid_mask & (all_idx != labels.unsqueeze(1))
-
-        has_candidate = candidate_mask.any(dim=1)
-        apply_drop = (torch.rand(B, device=loss_mask.device) < self.random_drop_rub) & has_candidate
-        if not apply_drop.any():
-            return loss_mask
-
-        sampled = torch.rand(B, R, device=loss_mask.device).masked_fill(~candidate_mask, -1.0).argmax(dim=1)
-        rows = torch.arange(B, device=loss_mask.device)[apply_drop]
-        cols = sampled[apply_drop]
-
-        if loss_mask.dtype == torch.bool:
-            loss_mask[rows, cols] = False
-        else:
-            loss_mask[rows, cols] = 0
-
-        return loss_mask
+        return (
+            flat_rubric_embs,
+            dense_rubric_embs,
+            answer_emb,
+            rubric_mask,
+            rubric_example_indices,
+            rubric_indices,
+            num_rubrics,
+        )
 
     def forward(
         self,
@@ -294,50 +339,103 @@ class SpanAlignmentModel(BaseAsagModel):
         attention_mask: torch.Tensor,
         rubric_spans: torch.Tensor,
         answer_span: torch.Tensor,
-        rubric_mask: torch.Tensor,
+        rubric_mask: Optional[torch.Tensor] = None,
         labels: Optional[torch.LongTensor] = None,
+        rubric_example_indices: Optional[torch.Tensor] = None,
+        rubric_indices: Optional[torch.Tensor] = None,
+        num_rubrics: Optional[torch.Tensor] = None,
     ) -> SequenceClassifierOutput:
         # Encode with base model.
-        outputs = self.get_encoder_outputs(input_ids, attention_mask)
+        enc_mask = attention_mask
+        position_ids = None
+        if self.rubric_independent_attn:
+            dtype = next(self.parameters()).dtype
+            enc_mask = build_rubric_block_attention_mask(
+                attention_mask,
+                rubric_spans,
+                rubric_mask,
+                dtype,
+                rubric_example_indices=rubric_example_indices,
+                rubric_indices=rubric_indices,
+            )
+            if self.reindex_rub:
+                position_ids = build_rubric_block_position_ids(
+                    attention_mask,
+                    rubric_spans,
+                    rubric_mask,
+                    rubric_example_indices=rubric_example_indices,
+                    rubric_indices=rubric_indices,
+                )
+        outputs = self.get_encoder_outputs(input_ids, enc_mask, position_ids=position_ids)
         hidden_states = outputs.last_hidden_state  # [B, T, H]
 
         # Get span alignments from token embeddings.
-        rubric_embs, answer_emb = self._get_span_alignments(
+        (
+            flat_rubric_embs,
+            dense_rubric_embs,
+            answer_emb,
+            rubric_mask,
+            rubric_example_indices,
+            rubric_indices,
+            num_rubrics,
+        ) = self._get_span_alignments(
             hidden_states,
             rubric_spans,
             answer_span,
             rubric_mask,
+            rubric_example_indices=rubric_example_indices,
+            rubric_indices=rubric_indices,
+            num_rubrics=num_rubrics,
             span_pool_type=self.span_pool_type,
         )
 
         # Compute pointer scores.
         pooled_emb = self.pooler(self.dropout(hidden_states), attention_mask) if "p" in self.span_fuser.span_fuse_type else None
 
-        logits = self.span_fuser(
-            text_emb=answer_emb,
-            label_embs=rubric_embs,
-            pooled_emb=pooled_emb,
-        )  # [B, R]
-        logits = logits.masked_fill(~rubric_mask.bool(), float("-inf"))
-
         # Compute loss if labels are provided.
         loss = None
-        if labels is not None:
-            # Main listwise loss with optional train-time random negative rubric masking.
-            loss_rubric_mask = self._apply_random_negative_rubric_mask(rubric_mask, labels)
-            loss_logits = logits.masked_fill(~loss_rubric_mask.bool(), float("-inf"))
-            loss = self.listwise_loss(loss_logits, loss_rubric_mask, labels, label_smoothing=self.label_smoothing)
+        if self.span_fuser.span_fuse_type == "p-only":
+            logits = self.span_fuser(
+                text_emb=answer_emb,
+                label_embs=dense_rubric_embs,
+                pooled_emb=pooled_emb,
+            )
+            # Direct classification — logits are [B, num_labels], labels are class indices.
+            if labels is not None:
+                loss = torch.nn.CrossEntropyLoss()(logits, labels)
+        else:
+            flat_text_emb = answer_emb[rubric_example_indices]
+            flat_pooled_emb = pooled_emb[rubric_example_indices] if pooled_emb is not None else None
+            flat_logits = self.span_fuser(
+                text_emb=flat_text_emb,
+                label_embs=flat_rubric_embs.unsqueeze(1),
+                pooled_emb=flat_pooled_emb,
+            ).reshape(-1)
 
-            # Add contrastive loss if enabled.
-            if self.cl_weight > 0.0:
-                contrastive_loss = self.contrastive_rubric_loss(
-                    seq_emb=pooled_emb if pooled_emb is not None else answer_emb,
-                    rubric_embs=rubric_embs,
-                    rubric_mask=rubric_mask,
-                    pos_idx=labels,
-                    temperature=0.07,
-                )
-                loss = loss + self.cl_weight * contrastive_loss
+            B = hidden_states.shape[0]
+            max_rubrics = rubric_mask.shape[1]
+            logits = torch.full(
+                (B, max_rubrics),
+                float("-inf"),
+                dtype=flat_logits.dtype,
+                device=flat_logits.device,
+            )
+            if flat_logits.shape[0] > 0:
+                logits[rubric_example_indices, rubric_indices] = flat_logits
+
+            if labels is not None:
+                loss = self.listwise_loss(logits, rubric_mask, labels, label_smoothing=self.label_smoothing)
+
+                # Add contrastive loss if enabled.
+                if self.cl_weight > 0.0:
+                    contrastive_loss = self.contrastive_rubric_loss(
+                        seq_emb=pooled_emb if pooled_emb is not None else answer_emb,
+                        rubric_embs=dense_rubric_embs,
+                        rubric_mask=rubric_mask,
+                        pos_idx=labels,
+                        temperature=0.07,
+                    )
+                    loss = loss + self.cl_weight * contrastive_loss
 
             # Add pairwise ranking loss (example usage)
             # pairwise_loss = self.pairwise_ranking_loss(
