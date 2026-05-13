@@ -3,7 +3,6 @@ import sys
 from pathlib import Path
 import wandb
 import torch
-import pandas as pd
 from dataclasses import dataclass, field
 from transformers import HfArgumentParser
 import torch.distributed as dist
@@ -43,6 +42,7 @@ def normalize_cli_args(args):
         "--eval-tasks": "--eval_tasks",
         "--test-tasks": "--test_tasks",
         "--flip-levels": "--flip_levels",
+        "--rub-shuffle": "--rub_shuffle",
     }
     return [alias_map.get(arg, arg) for arg in args]
 
@@ -125,6 +125,7 @@ class TaskArguments:
     train_drop_rub: float = field(default=0.0, metadata={"help": "probability of randomly dropping one non-gold rubric per training example (data-level regularization for span model)"})
     flip_levels: bool = field(default=False, metadata={"help": "reverse rubric level order for LASA/span inputs and restore outputs before saving"})
     drop_all_rubrics: bool = field(default=False, metadata={"help": "drop all rubrics from input during both training and testing (no-rubric baseline). Only compatible with model_class='span' and span_fuse_type='p-only'."})
+    rub_shuffle: bool = field(default=False, metadata={"help": "sanity check: shuffle rubric texts while keeping level labels fixed, breaking rubric-label alignment. Only compatible with model_class='span'."})
 
     def __post_init__(self):
         assert self.train_frac > 0, "train_frac must be > 0"
@@ -138,6 +139,8 @@ class TaskArguments:
         assert self.model_class in VALID_MODEL_CLASSES, f"model_class must be one of {VALID_MODEL_CLASSES}"
         if self.flip_levels and self.model_class != "span":
             raise ValueError("flip_levels is only implemented for the LASA span model (model_class='span').")
+        if self.rub_shuffle and self.model_class != "span":
+            raise ValueError("rub_shuffle is only compatible with model_class='span'.")
 
         self.train_tasks = dedupe_keep_order(self.train_tasks)
         if not self.train_tasks:
@@ -230,6 +233,7 @@ def main(task_args: TaskArguments, train_args: AsagTrainingArguments, custom_mod
         test_drop_rub=task_args.test_drop_rub,
         train_drop_rub=task_args.train_drop_rub,
         flip_levels=task_args.flip_levels,
+        rub_shuffle=task_args.rub_shuffle,
         seed=task_args.seed,
     )
     validate_multitask_configuration(task_args, datappl, custom_model_args)
@@ -273,8 +277,6 @@ def main(task_args: TaskArguments, train_args: AsagTrainingArguments, custom_mod
     pred_dir = os.path.join(train_args.save_dir, "predictions")
     os.makedirs(pred_dir, exist_ok=True)
 
-    all_predictions = []
-
     for dataset_key, test_ds in test_datasets.items():
         split_map = datappl.test_split_map if hasattr(datappl, "test_split_map") else datappl.eval_split_map
         task_name = split_map[dataset_key]["task"]
@@ -309,7 +311,6 @@ def main(task_args: TaskArguments, train_args: AsagTrainingArguments, custom_mod
 
         test_predictions.insert(0, "benchmark", task_name)
         test_predictions.insert(1, "split", split_name)
-        all_predictions.append(test_predictions)
 
         pred_path_prefix = os.path.join(pred_dir, dataset_key)
         test_predictions.to_csv(f"{pred_path_prefix}_predictions.csv", index=False)
@@ -330,15 +331,6 @@ def main(task_args: TaskArguments, train_args: AsagTrainingArguments, custom_mod
 
         print(f"***** {task_name} / {split_name} Results *****")
         for key, value in test_metrics.items():
-            print(f"{key} = {value:.4f}")
-
-    if all_predictions:
-        aggregate_predictions = pd.concat(all_predictions, ignore_index=True)
-        aggregate_metrics = eval_report(aggregate_predictions)
-        save_report(aggregate_metrics, os.path.join(pred_dir, "aggregate_metrics.json"))
-        wandb.log({"aggregate_eval": aggregate_metrics})
-        print("***** Aggregate Evaluation Results *****")
-        for key, value in aggregate_metrics.items():
             print(f"{key} = {value:.4f}")
 
     print("***** Training and evaluation completed *****")

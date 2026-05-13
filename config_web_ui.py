@@ -58,6 +58,16 @@ LLM_GEN_SUPPORTED_BENCHMARKS = {
 }
 LLM_GEN_RESULTS_SUBDIR = "llm_gen"
 
+LLM_ZEROSHOT_SUPPORTED_BENCHMARKS = {
+    "alice_lp",
+    "asap_sas",
+    "beetle",
+    "istudio",
+    "pt_asag",
+    "scientsbank",
+}
+LLM_ZEROSHOT_RESULTS_SUBDIR = "zeroshot"
+
 OTHER_BENCHMARK_OPTIONS = [
     ("piqa", "PIQA"),
     ("xstance", "xStance"),
@@ -93,6 +103,7 @@ class ExperimentConfig:
     random_solution: bool = False
     test_drop_rub: float = 0.0
     train_drop_rub: float = 0.0
+    label_names_only: bool = False
     bf16: bool = True
     log_wandb: bool = True
     seed: int = 114514
@@ -107,7 +118,20 @@ class ExperimentConfig:
     layer_fuse_type: str = "avg"
     num_unsink_layers: float = 0
     pairwise_margin: float = 0.1  # For xnet-pwr
-    
+    drop_all_rubrics: bool = False  # No-rubric baseline; requires span_fuse_type='p-only'
+    rubric_independent_attn: bool = False
+    reindex_rub: bool = False
+
+    def __post_init__(self):
+        if self.rubric_independent_attn and self.span_fuse_type != "l-only":
+            raise ValueError("rubric_independent_attn is only compatible with span_fuse_type='l-only'.")
+        if self.reindex_rub and not self.rubric_independent_attn:
+            raise ValueError("reindex_rub requires rubric_independent_attn to be set.")
+        if self.drop_all_rubrics and self.span_fuse_type != "p-only":
+            raise ValueError("drop_all_rubrics requires span_fuse_type='p-only'.")
+        if self.label_names_only and self.benchmark in {"asap_sas", "pt_asag"}:
+            raise ValueError("label_names_only is not supported for ASAP SAS or PT ASAG.")
+
     def generate_exp_name(self) -> str:
         if self.exp_name:
             return self.exp_name
@@ -123,6 +147,14 @@ class ExperimentConfig:
             parts.append(self.span_fuse_type)
         if self.random_solution:
             parts.append("randsolu")
+        if self.rubric_independent_attn:
+            parts.append("rub-ind")
+            if self.reindex_rub:
+                parts.append("reindex")
+        if self.drop_all_rubrics:
+            parts.append("norub")
+        if self.label_names_only:
+            parts.append("labelnames")
         return "-".join(parts)
 
 
@@ -671,6 +703,18 @@ HTML_TEMPLATE = """
                             <input type="number" id="trainDropRub" name="train_drop_rub" value="0.0" min="0" max="1" step="0.1" placeholder="0.0 to 1.0">
                         </div>
                     </div>
+                    <div class="form-group" id="dropAllRubricsGroup">
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="dropAllRubrics" name="drop_all_rubrics" onchange="onDropAllRubricsChange()">
+                            <label for="dropAllRubrics">Drop All Rubrics (no-rubric baseline) <span class="model-specific">— requires span + p-only</span></label>
+                        </div>
+                    </div>
+                    <div class="form-group" id="labelNamesOnlyGroup">
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="labelNamesOnly" name="label_names_only" onchange="onLabelNamesOnlyChange()">
+                            <label for="labelNamesOnly">Label Names Only <span class="model-specific">— unified 2/3-level ASAG labels; excludes ASAP SAS and PT ASAG</span></label>
+                        </div>
+                    </div>
                 </div>
 
                 <!-- Modelling Arguments -->
@@ -684,6 +728,7 @@ HTML_TEMPLATE = """
                                 <option value="xnet">Cross-Network (xnet)</option>
                                 <option value="xnet-pwr">Cross-Network with Pairwise Ranking (xnet-pwr)</option>
                                 <option value="llm-gen">LLM Generation (llm-gen)</option>
+                                <option value="llm-zeroshot">LLM Zero-Shot (llm-zeroshot)</option>
 
                             </select>
                         </div>
@@ -725,6 +770,20 @@ HTML_TEMPLATE = """
                                 <option value="mean">Mean Pooling</option>
                                 <option value="last" selected>Last Token</option>
                             </select>
+                        </div>
+                    </div>
+                    <div class="form-row" id="riaRow">
+                        <div class="form-group">
+                            <div class="checkbox-item">
+                                <input type="checkbox" id="rubricIndependentAttn" name="rubric_independent_attn" onchange="onRubricIndependentAttnChange()">
+                                <label for="rubricIndependentAttn">Rubric Independent Attention <span class="model-specific">(span only, requires l-only)</span></label>
+                            </div>
+                        </div>
+                        <div class="form-group" id="reindexRubGroup">
+                            <div class="checkbox-item">
+                                <input type="checkbox" id="reindexRub" name="reindex_rub" onchange="updateExperimentNames()" disabled>
+                                <label for="reindexRub">Reindex Rubrics <span class="model-specific">(requires RIA)</span></label>
+                            </div>
                         </div>
                     </div>
                     <div class="form-row">
@@ -893,6 +952,7 @@ HTML_TEMPLATE = """
     
     <script>
         let experimentConfigs = [];
+        const LABEL_NAMES_ONLY_EXCLUDED = new Set(['asap_sas', 'pt_asag']);
         
         function updateModelClassUI() {
             const modelClasses = Array.from(document.getElementById('modelClass').selectedOptions).map(o => o.value);
@@ -904,15 +964,46 @@ HTML_TEMPLATE = """
             const spanFuseType = document.getElementById('spanFuseType');
             const spanPoolType = document.getElementById('spanPoolType');
             const pairwiseMarginGroup = document.getElementById('pairwiseMarginGroup');
+            const riaRow = document.getElementById('riaRow');
+            const rubricIndependentAttn = document.getElementById('rubricIndependentAttn');
+            const reindexRub = document.getElementById('reindexRub');
+            const reindexRubGroup = document.getElementById('reindexRubGroup');
+            const dropAllRubrics = document.getElementById('dropAllRubrics');
             
             if (hasSpan) {
                 spanFuseTypeRow.classList.remove('disabled-field');
-                spanFuseType.disabled = false;
+                if (!rubricIndependentAttn.checked) {
+                    spanFuseType.disabled = false;
+                }
                 spanPoolType.disabled = false;
             } else {
                 spanFuseTypeRow.classList.add('disabled-field');
                 spanFuseType.disabled = true;
                 spanPoolType.disabled = true;
+                rubricIndependentAttn.checked = false;
+                reindexRub.checked = false;
+            }
+
+            if (riaRow) {
+                riaRow.classList.toggle('disabled-field', !hasSpan);
+            }
+            rubricIndependentAttn.disabled = !hasSpan;
+
+            if (rubricIndependentAttn.checked && hasSpan) {
+                Array.from(spanFuseType.options).forEach(o => { o.selected = o.value === 'l-only'; });
+                spanFuseType.disabled = true;
+                spanFuseTypeRow.classList.add('disabled-field');
+                if (dropAllRubrics.checked) {
+                    dropAllRubrics.checked = false;
+                }
+            }
+
+            reindexRub.disabled = !(hasSpan && rubricIndependentAttn.checked);
+            if (reindexRubGroup) {
+                reindexRubGroup.classList.toggle('disabled-field', reindexRub.disabled);
+            }
+            if (reindexRub.disabled) {
+                reindexRub.checked = false;
             }
             
             // Show/hide pairwise margin for xnet-pwr
@@ -936,6 +1027,7 @@ HTML_TEMPLATE = """
             const randomSuffixOpts = Array.from(document.getElementById('randomSuffix').selectedOptions).map(o => o.value === 'true');
             const randomSolutionOpts = Array.from(document.getElementById('randomSolution').selectedOptions).map(o => o.value === 'true');
             const useTranslatedOpts = Array.from(document.getElementById('useTranslated').selectedOptions).map(o => o.value === 'true');
+            const labelNamesOnly = document.getElementById('labelNamesOnly').checked;
             
             // Use actual selected values (don't override with defaults)
             const finalAddSuffix = addSuffixOpts.length > 0 ? addSuffixOpts : [true];
@@ -955,7 +1047,11 @@ HTML_TEMPLATE = """
             let index = 0;
             models.forEach(model => {
                 benchmarks.forEach(benchmark => {
+                    if (labelNamesOnly && LABEL_NAMES_ONLY_EXCLUDED.has(benchmark)) {
+                        return;
+                    }
                     modelClasses.forEach(modelClass => {
+                        const effectiveLabelNamesOnly = labelNamesOnly && ['span', 'xnet', 'xnet-pwr'].includes(modelClass);
                         finalAddSuffix.forEach(addSuffix => {
                             finalAddContext.forEach(addContext => {
                                 finalRandomSuffix.forEach(randomSuffix => {
@@ -978,7 +1074,8 @@ HTML_TEMPLATE = """
                                                         randomSuffix,
                                                         randomSolution,
                                                         useTranslated,
-                                                        autoName: generateAutoName(model, benchmark, modelClass, fuseType, addSuffix, addContext, randomSuffix, randomSolution, useTranslated),
+                                                        labelNamesOnly: effectiveLabelNamesOnly,
+                                                        autoName: generateAutoName(model, benchmark, modelClass, fuseType, addSuffix, addContext, randomSuffix, randomSolution, useTranslated, effectiveLabelNamesOnly),
                                                         customName: ''
                                                     };
                                                     experimentConfigs.push(config);
@@ -996,7 +1093,8 @@ HTML_TEMPLATE = """
                                                     randomSuffix,
                                                     randomSolution,
                                                     useTranslated,
-                                                    autoName: generateAutoName(model, benchmark, modelClass, null, addSuffix, addContext, randomSuffix, randomSolution, useTranslated),
+                                                    labelNamesOnly: effectiveLabelNamesOnly,
+                                                    autoName: generateAutoName(model, benchmark, modelClass, null, addSuffix, addContext, randomSuffix, randomSolution, useTranslated, effectiveLabelNamesOnly),
                                                     customName: ''
                                                 };
                                                 experimentConfigs.push(config);
@@ -1014,11 +1112,13 @@ HTML_TEMPLATE = """
             updateBatchSummary();
         }
         
-        function generateAutoName(model, benchmark, modelClass, fuseType, addSuffix, addContext, randomSuffix, randomSolution, useTranslated) {
+        function generateAutoName(model, benchmark, modelClass, fuseType, addSuffix, addContext, randomSuffix, randomSolution, useTranslated, labelNamesOnly) {
             let simplifiedModel = model.split('/').pop().toLowerCase();
             simplifiedModel = simplifiedModel.replace('llama-', 'llama');
             simplifiedModel = simplifiedModel.replace('llama-3.2', 'llama3.2');
-            
+
+            const dropAllRubrics = document.getElementById('dropAllRubrics').checked;
+
             let parts = [benchmark, simplifiedModel];
             if (modelClass !== 'span') {
                 parts.push(modelClass);
@@ -1026,13 +1126,17 @@ HTML_TEMPLATE = """
             if (fuseType) {
                 parts.push(fuseType);
             }
-            
+
             if (!addSuffix) parts.push('nosuffix');
             if (!addContext) parts.push('nocontext');
             if (randomSuffix === false) parts.push('fixins');
             if (randomSolution) parts.push('randsolu');
+            if (document.getElementById('rubricIndependentAttn').checked) parts.push('rub-ind');
+            if (document.getElementById('reindexRub').checked) parts.push('reindex');
             if (!useTranslated) parts.push('notranslate');
-            
+            if (dropAllRubrics) parts.push('norub');
+            if (labelNamesOnly) parts.push('labelnames');
+
             return parts.join('-');
         }
         
@@ -1062,6 +1166,7 @@ HTML_TEMPLATE = """
                 if (config.randomSuffix === false) datasetOpts.push('fixins');
                 if (config.randomSolution) datasetOpts.push('randsolu');
                 if (!config.useTranslated) datasetOpts.push('notranslate');
+                if (config.labelNamesOnly) datasetOpts.push('labelnames');
                 
                 if (datasetOpts.length > 0) {
                     displayParts.push(`[${datasetOpts.join(',')}]`);
@@ -1205,6 +1310,7 @@ HTML_TEMPLATE = """
                 config.random_suffix = expConfig.randomSuffix;
                 config.random_solution = expConfig.randomSolution;
                 config.use_translated_prompts = expConfig.useTranslated;
+                config.label_names_only = expConfig.labelNamesOnly;
                 config.exp_name = expConfig.customName || expConfig.autoName;
                 return config;
             });
@@ -1228,11 +1334,58 @@ HTML_TEMPLATE = """
                 seed: document.getElementById('seed').value,
                 test_drop_rub: document.getElementById('testDropRub').value,
                 train_drop_rub: document.getElementById('trainDropRub').value,
+                drop_all_rubrics: document.getElementById('dropAllRubrics').checked,
+                label_names_only: document.getElementById('labelNamesOnly').checked,
+                rubric_independent_attn: document.getElementById('rubricIndependentAttn').checked,
+                reindex_rub: document.getElementById('reindexRub').checked,
                 use_lora: document.getElementById('useLora').checked,
                 use_bnb: document.getElementById('useBnb').checked,
                 bf16: document.getElementById('bf16').checked,
                 log_wandb: document.getElementById('logWandb').checked,
             };
+        }
+
+        function onRubricIndependentAttnChange() {
+            if (document.getElementById('rubricIndependentAttn').checked) {
+                const mcSelect = document.getElementById('modelClass');
+                Array.from(mcSelect.options).forEach(o => { o.selected = o.value === 'span'; });
+                const fuseSelect = document.getElementById('spanFuseType');
+                Array.from(fuseSelect.options).forEach(o => { o.selected = o.value === 'l-only'; });
+                document.getElementById('dropAllRubrics').checked = false;
+            }
+            updateModelClassUI();
+            updateExperimentNames();
+        }
+
+        function onDropAllRubricsChange() {
+            if (document.getElementById('dropAllRubrics').checked) {
+                // Force span model class and p-only fuse type
+                const mcSelect = document.getElementById('modelClass');
+                Array.from(mcSelect.options).forEach(o => { o.selected = o.value === 'span'; });
+                const fuseSelect = document.getElementById('spanFuseType');
+                Array.from(fuseSelect.options).forEach(o => { o.selected = o.value === 'p-only'; });
+                document.getElementById('rubricIndependentAttn').checked = false;
+                document.getElementById('reindexRub').checked = false;
+                updateModelClassUI();
+            }
+            updateExperimentNames();
+        }
+
+        function onLabelNamesOnlyChange() {
+            if (document.getElementById('labelNamesOnly').checked) {
+                const benchmarkSelect = document.getElementById('benchmark');
+                let removed = false;
+                Array.from(benchmarkSelect.options).forEach(o => {
+                    if (LABEL_NAMES_ONLY_EXCLUDED.has(o.value) && o.selected) {
+                        o.selected = false;
+                        removed = true;
+                    }
+                });
+                if (removed) {
+                    alert('ASAP SAS and PT ASAG were removed because Label Names Only does not support their label schemes.');
+                }
+            }
+            updateExperimentNames();
         }
 
         function resetForm() {
@@ -1244,14 +1397,23 @@ HTML_TEMPLATE = """
         }
         
         // Event listeners
-        document.getElementById('benchmark').addEventListener('change', updateExperimentNames);
+        document.getElementById('benchmark').addEventListener('change', function() {
+            if (document.getElementById('labelNamesOnly').checked) {
+                onLabelNamesOnlyChange();
+            } else {
+                updateExperimentNames();
+            }
+        });
         document.getElementById('baseModel').addEventListener('change', updateExperimentNames);
         document.getElementById('spanFuseType').addEventListener('change', updateExperimentNames);
+        document.getElementById('rubricIndependentAttn').addEventListener('change', onRubricIndependentAttnChange);
+        document.getElementById('reindexRub').addEventListener('change', updateExperimentNames);
         document.getElementById('addSuffix').addEventListener('change', updateExperimentNames);
         document.getElementById('addContext').addEventListener('change', updateExperimentNames);
         document.getElementById('randomSuffix').addEventListener('change', updateExperimentNames);
         document.getElementById('randomSolution').addEventListener('change', updateExperimentNames);
         document.getElementById('useTranslated').addEventListener('change', updateExperimentNames);
+        document.getElementById('labelNamesOnly').addEventListener('change', onLabelNamesOnlyChange);
         document.getElementById('modelClass').addEventListener('change', function() {
             updateModelClassUI();
             updateExperimentNames();
@@ -1502,6 +1664,7 @@ MULTI_HTML_TEMPLATE = """
                                 <option value="span" selected>span</option>
                                 <option value="xnet">xnet</option>
                                 <option value="llm-gen">llm-gen</option>
+                                <option value="llm-zeroshot">llm-zeroshot</option>
                             </select>
                         </div>
                         <div class="form-group">
@@ -2362,12 +2525,18 @@ OTHERS_HTML_TEMPLATE = """
                 <div class="form-section">
                     <div class="section-title">🤖 Modelling Arguments</div>
                     <div class="alert-info">
-                        💡 Planned experiments: <strong>span + p-condiff</strong> (canonical), <strong>span + p-only</strong> with rubrics (drop=0), <strong>span + p-only</strong> without rubrics (drop=1.0).
+                        💡 Planned experiments: <strong>span + p-condiff</strong> (canonical), <strong>span + p-only</strong> with rubrics (drop=0), <strong>span + p-only</strong> without rubrics (<em>drop_all_rubrics</em>).
                     </div>
                     <div class="preset-row">
                         <button type="button" class="btn-preset" onclick="applyPreset('condiff')">Preset: p-condiff (canonical)</button>
                         <button type="button" class="btn-preset" onclick="applyPreset('ponly-with')">Preset: p-only with rubrics</button>
                         <button type="button" class="btn-preset" onclick="applyPreset('ponly-without')">Preset: p-only without rubrics</button>
+                    </div>
+                    <div class="form-group">
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="dropAllRubrics" onchange="onDropAllRubricsChange()">
+                            <label for="dropAllRubrics">Drop All Rubrics (no-rubric baseline) <span class="model-specific">— requires span + p-only</span></label>
+                        </div>
                     </div>
                     <div class="form-row">
                         <div class="form-group">
@@ -2592,6 +2761,7 @@ OTHERS_HTML_TEMPLATE = """
             const parts = [benchmark, shortModel];
             if (modelClass !== 'span') parts.push(modelClass);
             if (fuseType) parts.push(fuseType);
+            if (document.getElementById('dropAllRubrics').checked) parts.push('norub');
             return parts.join('-');
         }
 
@@ -2717,11 +2887,23 @@ OTHERS_HTML_TEMPLATE = """
                 seed: document.getElementById('seed').value,
                 test_drop_rub: document.getElementById('testDropRub').value,
                 train_drop_rub: document.getElementById('trainDropRub').value,
+                drop_all_rubrics: document.getElementById('dropAllRubrics').checked,
                 use_lora: document.getElementById('useLora').checked,
                 use_bnb: document.getElementById('useBnb').checked,
                 bf16: document.getElementById('bf16').checked,
                 log_wandb: document.getElementById('logWandb').checked,
             };
+        }
+
+        function onDropAllRubricsChange() {
+            if (document.getElementById('dropAllRubrics').checked) {
+                const mcSelect = document.getElementById('modelClass');
+                Array.from(mcSelect.options).forEach(o => { o.selected = o.value === 'span'; });
+                const fuseSelect = document.getElementById('spanFuseType');
+                Array.from(fuseSelect.options).forEach(o => { o.selected = o.value === 'p-only'; });
+                updateModelClassUI();
+            }
+            updateExperimentNames();
         }
 
         function getBatchConfigs() {
@@ -2767,14 +2949,17 @@ OTHERS_HTML_TEMPLATE = """
                 Array.from(fuseSelect.options).forEach(o => { o.selected = o.value === 'p-condiff'; });
                 document.getElementById('testDropRub').value = '0.0';
                 document.getElementById('trainDropRub').value = '0.0';
+                document.getElementById('dropAllRubrics').checked = false;
             } else if (name === 'ponly-with') {
                 Array.from(fuseSelect.options).forEach(o => { o.selected = o.value === 'p-only'; });
                 document.getElementById('testDropRub').value = '0.0';
                 document.getElementById('trainDropRub').value = '0.0';
+                document.getElementById('dropAllRubrics').checked = false;
             } else if (name === 'ponly-without') {
                 Array.from(fuseSelect.options).forEach(o => { o.selected = o.value === 'p-only'; });
-                document.getElementById('testDropRub').value = '1.0';
-                document.getElementById('trainDropRub').value = '1.0';
+                document.getElementById('testDropRub').value = '0.0';
+                document.getElementById('trainDropRub').value = '0.0';
+                document.getElementById('dropAllRubrics').checked = true;
             }
             updateModelClassUI();
             updateExperimentNames();
@@ -2838,7 +3023,8 @@ def _build_embedded_multi_template() -> str:
     template = template.replace(
         '<option value="xnet">xnet</option>',
         '<option value="xnet">xnet</option>\n'
-        '                                <option value="llm-gen">llm-gen</option>',
+        '                                <option value="llm-gen">llm-gen</option>\n'
+        '                                <option value="llm-zeroshot">llm-zeroshot</option>',
     )
     return template
 
@@ -3124,6 +3310,49 @@ def _build_train_gen_cmd_parts(
     return _finalize_cmd_parts(cmd_parts)
 
 
+def _is_llm_zeroshot_config(config_dict: dict) -> bool:
+    return str(config_dict.get('model_class', '')).strip() == 'llm-zeroshot'
+
+
+def _validate_llm_zeroshot_tasks(tasks: list[str]) -> None:
+    invalid = [task for task in tasks if task not in LLM_ZEROSHOT_SUPPORTED_BENCHMARKS]
+    if invalid:
+        valid = ', '.join(sorted(LLM_ZEROSHOT_SUPPORTED_BENCHMARKS))
+        raise ValueError(f"llm-zeroshot supports only these benchmarks: {valid}. Unsupported: {invalid}")
+
+
+def _llm_zeroshot_single_exp_root(benchmark: str, exp_name: str) -> Path:
+    return workspace_root / f"results_{benchmark}" / LLM_ZEROSHOT_RESULTS_SUBDIR / exp_name
+
+
+def _zeroshot_tp_size_for(model_id: str) -> int:
+    return 1
+
+
+def _build_zeroshot_cmd_parts(
+    config,
+    save_dir: str,
+    *,
+    benchmark: str,
+):
+    _validate_llm_zeroshot_tasks([benchmark])
+
+    cmd_parts = [
+        'python \\',
+        '    scripts_zeroshot/run_zeroshot.py \\',
+        f'    --base-model "{config.base_model}" \\',
+        f'    --benchmark {benchmark} \\',
+        '    --split all \\',
+        f'    --save-dir {save_dir} \\',
+        f'    --tp-size {_zeroshot_tp_size_for(config.base_model)} \\',
+        f'    --seed {config.seed} \\',
+    ]
+    if getattr(config, 'use_translated_prompts', False):
+        cmd_parts.append('    --use-translated-prompts \\')
+
+    return _finalize_cmd_parts(cmd_parts)
+
+
 def _to_llm_gen_multi_config(config_dict: dict) -> MultiExperimentConfig:
     normalized = dict(config_dict)
     _normalize_multitask_config(normalized)
@@ -3254,6 +3483,8 @@ def _build_others_cmd_parts(config: ExperimentConfig, save_dir: str):
         cmd_parts.append(f'    --test-drop-rub {config.test_drop_rub} \\')
     if config.train_drop_rub > 0:
         cmd_parts.append(f'    --train-drop-rub {config.train_drop_rub} \\')
+    if config.drop_all_rubrics:
+        cmd_parts.append('    --drop-all-rubrics \\')
     if config.use_lora:
         cmd_parts.append('    --use-lora \\')
     if config.use_bnb:
@@ -3312,6 +3543,11 @@ def generate_command():
             if field in config_dict and isinstance(config_dict[field], str):
                 config_dict[field] = float(config_dict[field])
 
+        config_dict['drop_all_rubrics'] = _coerce_bool(config_dict.get('drop_all_rubrics'), False)
+        config_dict['label_names_only'] = _coerce_bool(config_dict.get('label_names_only'), False)
+        config_dict['rubric_independent_attn'] = _coerce_bool(config_dict.get('rubric_independent_attn'), False)
+        config_dict['reindex_rub'] = _coerce_bool(config_dict.get('reindex_rub'), False)
+
         
         config = ExperimentConfig(**{k: v for k, v in config_dict.items() if k in ExperimentConfig.__dataclass_fields__})
         
@@ -3320,6 +3556,18 @@ def generate_command():
             exp_root = _llm_gen_single_exp_root(config.benchmark, exp_name)
             command = "\n".join(
                 _build_train_gen_cmd_parts(
+                    config,
+                    str(exp_root),
+                    benchmark=config.benchmark,
+                )
+            )
+            print(f"✅ Command generated successfully")
+            return jsonify({"success": True, "command": command, "exp_name": exp_name, "save_dir": str(exp_root)})
+
+        if config.model_class == 'llm-zeroshot':
+            exp_root = _llm_zeroshot_single_exp_root(config.benchmark, exp_name)
+            command = "\n".join(
+                _build_zeroshot_cmd_parts(
                     config,
                     str(exp_root),
                     benchmark=config.benchmark,
@@ -3352,6 +3600,10 @@ def generate_command():
             cmd_parts.append(f"    --span-fuse-type {config.span_fuse_type} \\")
             if config.span_pool_type != "last":
                 cmd_parts.append(f"    --span-pool-type {config.span_pool_type} \\")
+            if config.rubric_independent_attn:
+                cmd_parts.append("    --rubric-independent-attn \\")
+            if config.reindex_rub:
+                cmd_parts.append("    --reindex-rub \\")
         
 
         if config.model_class == "xnet-pwr":
@@ -3399,17 +3651,21 @@ def generate_command():
             cmd_parts.append(f"    --test-drop-rub {config.test_drop_rub} \\")
         if config.train_drop_rub > 0:
             cmd_parts.append(f"    --train-drop-rub {config.train_drop_rub} \\")
+        if config.drop_all_rubrics:
+            cmd_parts.append("    --drop-all-rubrics \\")
+        if config.label_names_only:
+            cmd_parts.append("    --label-names-only \\")
 
         if config.bf16:
             cmd_parts.append("    --bf16 \\")
-        
+
         if config.log_wandb:
             cmd_parts.append("    --log-wandb")
-        
+
         # Remove trailing backslash from last line
         if cmd_parts and cmd_parts[-1].endswith(" \\"):
             cmd_parts[-1] = cmd_parts[-1].rstrip(" \\")
-        
+
         command = "\n".join(cmd_parts);
         print(f"✅ Command generated successfully");
         return jsonify({"success": True, "command": command});
@@ -3454,9 +3710,13 @@ def start_batch():
                 for field in float_fields:
                     if field in config_dict and isinstance(config_dict[field], str):
                         config_dict[field] = float(config_dict[field])
-                
+                config_dict['drop_all_rubrics'] = _coerce_bool(config_dict.get('drop_all_rubrics'), False)
+                config_dict['label_names_only'] = _coerce_bool(config_dict.get('label_names_only'), False)
+                config_dict['rubric_independent_attn'] = _coerce_bool(config_dict.get('rubric_independent_attn'), False)
+                config_dict['reindex_rub'] = _coerce_bool(config_dict.get('reindex_rub'), False)
+
                 config = ExperimentConfig(**{k: v for k, v in config_dict.items() if k in ExperimentConfig.__dataclass_fields__})
-                
+
                 exp_name = config.generate_exp_name()
                 if config.model_class == 'llm-gen':
                     exp_root = _llm_gen_single_exp_root(config.benchmark, exp_name)
@@ -3466,6 +3726,29 @@ def start_batch():
                         f"mkdir -p ${{EXP_ROOT}}",
                         f"export WANDB_NAME=\"{exp_name}\"",
                         *_build_train_gen_cmd_parts(
+                            config,
+                            "${EXP_ROOT}",
+                            benchmark=config.benchmark,
+                        ),
+                    ]
+                    cmd_parts[-1] += f" 2>&1 | tee ${{EXP_ROOT}}/out.log"
+                    cmd_parts.append("")
+                    commands.append("\n".join(cmd_parts))
+                    batch_results.append({
+                        "exp_name": exp_name,
+                        "status": "configured"
+                    })
+                    print(f"✅ [{i+1}/{len(configs)}] Command prepared: {exp_name}")
+                    continue
+
+                if config.model_class == 'llm-zeroshot':
+                    exp_root = _llm_zeroshot_single_exp_root(config.benchmark, exp_name)
+                    cmd_parts = [
+                        f"# Experiment {i+1}: {exp_name}",
+                        f"EXP_ROOT=\"{exp_root}\"",
+                        f"mkdir -p ${{EXP_ROOT}}",
+                        f"export WANDB_NAME=\"{exp_name}\"",
+                        *_build_zeroshot_cmd_parts(
                             config,
                             "${EXP_ROOT}",
                             benchmark=config.benchmark,
@@ -3508,6 +3791,10 @@ def start_batch():
                     cmd_parts.append(f"    --span-fuse-type {config.span_fuse_type} \\")
                     if config.span_pool_type != "last":
                         cmd_parts.append(f"    --span-pool-type {config.span_pool_type} \\")
+                    if config.rubric_independent_attn:
+                        cmd_parts.append("    --rubric-independent-attn \\")
+                    if config.reindex_rub:
+                        cmd_parts.append("    --reindex-rub \\")
                 
                 # Add xnet-pwr specific parameters
                 if config.model_class == "xnet-pwr":
@@ -3555,13 +3842,17 @@ def start_batch():
                     cmd_parts.append(f"    --test-drop-rub {config.test_drop_rub} \\")
                 if config.train_drop_rub > 0:
                     cmd_parts.append(f"    --train-drop-rub {config.train_drop_rub} \\")
-                
+                if config.drop_all_rubrics:
+                    cmd_parts.append("    --drop-all-rubrics \\")
+                if config.label_names_only:
+                    cmd_parts.append("    --label-names-only \\")
+
                 if config.bf16:
                     cmd_parts.append("    --bf16 \\")
-                
+
                 if config.log_wandb:
                     cmd_parts.append("    --log-wandb")
-                
+
                 # Remove trailing backslash from last line and add log redirection
                 if cmd_parts and cmd_parts[-1].endswith(" \\"):
                     cmd_parts[-1] = cmd_parts[-1].rstrip(" \\")
@@ -3629,6 +3920,11 @@ def generate_command_multi():
             return jsonify({"success": False, "error": "expected JSON body"})
 
         raw_config = request.get_json(silent=True) or {}
+        if _is_llm_zeroshot_config(raw_config):
+            return jsonify({
+                "success": False,
+                "error": "llm-zeroshot does not support multi-benchmark training (no training step). Use the single-benchmark UI instead.",
+            })
         if _is_llm_gen_config(raw_config):
             config = _to_llm_gen_multi_config(raw_config)
             exp_name = config.generate_exp_name()
@@ -3685,6 +3981,8 @@ def start_batch_multi():
         parse_errors = []
         for idx, raw in enumerate(raw_configs, 1):
             try:
+                if _is_llm_zeroshot_config(raw):
+                    raise ValueError("llm-zeroshot does not support multi-benchmark training (no training step). Use the single-benchmark UI instead.")
                 if _is_llm_gen_config(raw):
                     parsed_configs.append(_to_llm_gen_multi_config(raw))
                 else:
@@ -3748,7 +4046,7 @@ def generate_command_others():
         _coerce_numeric_fields(config_dict, int_fields, float_fields)
         config = ExperimentConfig(**{k: v for k, v in config_dict.items() if k in ExperimentConfig.__dataclass_fields__})
         exp_name = config.generate_exp_name()
-        exp_root = workspace_root / f"results_others_{config.benchmark}" / exp_name
+        exp_root = workspace_root / "results_others" / config.benchmark / exp_name
         command = "\n".join(_build_others_cmd_parts(config, str(exp_root)))
         return jsonify({"success": True, "command": command, "exp_name": exp_name, "save_dir": str(exp_root)})
     except Exception as e:
@@ -3775,11 +4073,11 @@ def start_batch_others():
         for i, config_dict in enumerate(configs_raw):
             try:
                 _coerce_numeric_fields(config_dict, int_fields, float_fields)
-                for field, default in [('use_lora', True), ('use_bnb', True), ('bf16', True), ('log_wandb', True)]:
+                for field, default in [('use_lora', True), ('use_bnb', True), ('bf16', True), ('log_wandb', True), ('drop_all_rubrics', False)]:
                     config_dict[field] = _coerce_bool(config_dict.get(field), default)
                 config = ExperimentConfig(**{k: v for k, v in config_dict.items() if k in ExperimentConfig.__dataclass_fields__})
                 exp_name = config.generate_exp_name()
-                exp_root = workspace_root / f"results_others_{config.benchmark}" / exp_name
+                exp_root = workspace_root / "results_others" / config.benchmark / exp_name
                 cmd_lines = _build_others_cmd_parts(config, '${EXP_ROOT}')
                 cmd_lines[-1] += ' 2>&1 | tee ${EXP_ROOT}/out.log'
                 block = [

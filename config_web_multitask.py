@@ -169,6 +169,7 @@ class MultiExperimentConfig:
     random_solution: bool = False
     rubric_independent_attn: bool = False
     reindex_rub: bool = False
+    rub_shuffle: bool = False
 
     exp_name: str = ""
 
@@ -191,6 +192,8 @@ class MultiExperimentConfig:
             parts.append("rub-ind")
             if self.reindex_rub:
                 parts.append("reindex")
+        if self.rub_shuffle:
+            parts.append("rub-shuf")
         return "-".join(parts)
 
 
@@ -285,6 +288,7 @@ def _normalize_config_dict(config_dict: dict) -> dict:
         "random_solution",
         "rubric_independent_attn",
         "reindex_rub",
+        "rub_shuffle",
     ]
     defaults = {
         "use_lora": True,
@@ -298,6 +302,7 @@ def _normalize_config_dict(config_dict: dict) -> dict:
         "random_solution": False,
         "rubric_independent_attn": False,
         "reindex_rub": False,
+        "rub_shuffle": False,
     }
     if out["rubric_independent_attn"] and out.get("span_fuse_type") != "l-only":
         raise ValueError("rubric_independent_attn is only compatible with span_fuse_type='l-only'.")
@@ -399,6 +404,8 @@ def _build_command_lines(config: MultiExperimentConfig, save_dir: str) -> list[s
         lines.append(f"    --test-drop-rub {config.test_drop_rub} \\")
     if config.train_drop_rub > 0:
         lines.append(f"    --train-drop-rub {config.train_drop_rub} \\")
+    if config.rub_shuffle:
+        lines.append("    --rub-shuffle \\")
     if config.bf16:
         lines.append("    --bf16 \\")
     if config.log_wandb:
@@ -789,6 +796,7 @@ def _build_template() -> str:
                         <label class="checkbox-item"><input type="checkbox" id="randomSuffix" checked>random_suffix</label>
                         <label class="checkbox-item"><input type="checkbox" id="useTranslated" checked>use_translated_prompts</label>
                         <label class="checkbox-item"><input type="checkbox" id="randomSolution">random_solution</label>
+                        <label class="checkbox-item"><input type="checkbox" id="rubShuffle">rub_shuffle</label>
                     </div>
                 </div>
 
@@ -874,6 +882,7 @@ def _build_template() -> str:
                 parts.push('rub-ind');
                 if (cfg.reindex_rub) parts.push('reindex');
             }}
+            if (cfg.rub_shuffle) parts.push('rub-shuf');
             return parts.join('-');
         }}
 
@@ -914,6 +923,7 @@ def _build_template() -> str:
                 random_solution: document.getElementById('randomSolution').checked,
                 rubric_independent_attn: document.getElementById('rubricIndependentAttn').checked,
                 reindex_rub: document.getElementById('reindexRub').checked,
+                rub_shuffle: document.getElementById('rubShuffle').checked,
             }};
         }}
 

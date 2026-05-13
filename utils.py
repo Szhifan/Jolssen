@@ -142,6 +142,38 @@ def transform_for_inference(pred_df, other_filds=None):
 
 import torch
 
+def _find_self_attention_layers(model):
+    """Return the transformer layer stack after unwrapping common PEFT/HF wrappers."""
+    seen = set()
+    stack = [model]
+
+    while stack:
+        module = stack.pop()
+        if module is None or id(module) in seen:
+            continue
+        seen.add(id(module))
+
+        layers = getattr(module, "layers", None)
+        if layers is not None and len(layers) > 0 and hasattr(layers[0], "self_attn"):
+            return layers
+
+        for attr in ("model", "base_model", "encoder"):
+            child = getattr(module, attr, None)
+            if child is not None and id(child) not in seen:
+                stack.append(child)
+
+        get_base_model = getattr(module, "get_base_model", None)
+        if callable(get_base_model):
+            try:
+                child = get_base_model()
+            except Exception:
+                child = None
+            if child is not None and id(child) not in seen:
+                stack.append(child)
+
+    raise RuntimeError(f"Could not find a LLaMA-style layer stack in {type(model).__name__}.")
+
+
 def extract_llama_attention(
     model,
     input_ids,
@@ -172,13 +204,20 @@ def extract_llama_attention(
         if isinstance(output, tuple) and len(output) > 1 and output[1] is not None:
             captured["attn"] = output[1].detach().cpu()
 
-    handle = model.model.layers[layer_idx].self_attn.register_forward_hook(attn_hook)
+    layers = _find_self_attention_layers(model)
+    if layer_idx < 0:
+        layer_idx = len(layers) + layer_idx
+    if layer_idx < 0 or layer_idx >= len(layers):
+        raise IndexError(f"layer_idx={layer_idx} is outside the available range 0..{len(layers) - 1}")
+
+    handle = layers[layer_idx].self_attn.register_forward_hook(attn_hook)
 
     with torch.no_grad():
         _ = model(
             input_ids=input_ids,
             attention_mask=attention_mask,
             use_cache=False,
+            output_attentions=True,
             return_dict=True,
         )
 
@@ -196,7 +235,15 @@ def extract_llama_attention(
 
 
 @torch.no_grad() 
-def evaluate(model, dataset, batch_size, collate_fn=None, save_attweights=False, layer_idx=-1): 
+def evaluate(
+    model,
+    dataset,
+    batch_size,
+    collate_fn=None,
+    save_attweights=False,
+    layer_idx=-1,
+    attn_max_examples=0,
+): 
     dataloader = DataLoader(dataset, batch_size=batch_size, collate_fn=collate_fn, shuffle=False) 
     data_iterator = tqdm(dataloader, desc="Evaluating", position=0)
     device = "cuda" if torch.cuda.is_available() else "cpu"
@@ -207,22 +254,46 @@ def evaluate(model, dataset, batch_size, collate_fn=None, save_attweights=False,
     predictions = defaultdict(list)
     model = model.to(torch.float32)
     attention_weights = []
+    captured_attention_examples = 0
     for step, (batch, meta) in enumerate(data_iterator):
         meta = meta or {}
         batch = batch_to_device(batch, device)
         
         # Extract attention weights if requested
-        if save_attweights:
+        if save_attweights and (attn_max_examples <= 0 or captured_attention_examples < attn_max_examples):
+            attn_batch_size = batch["input_ids"].shape[0]
+            if attn_max_examples > 0:
+                attn_batch_size = min(attn_batch_size, attn_max_examples - captured_attention_examples)
+
+            attn_input_ids = batch["input_ids"][:attn_batch_size]
+            attn_attention_mask = batch.get("attention_mask", None)
+            if attn_attention_mask is not None:
+                attn_attention_mask = attn_attention_mask[:attn_batch_size]
+
             # For SpanAlignmentModel, we need to access the encoder
             base_model = model.encoder if hasattr(model, 'encoder') else model
             try:
                 attn_weights = extract_llama_attention(
                     base_model,
-                    batch['input_ids'],
-                    layer_idx=layer_idx if layer_idx >= 0 else base_model.config.num_hidden_layers - 1,
-                    attention_mask=batch.get('attention_mask', None)
+                    attn_input_ids,
+                    layer_idx=layer_idx,
+                    attention_mask=attn_attention_mask,
                 )
-                attention_weights.append(attn_weights)
+                attn_meta = {
+                    key: value[:attn_batch_size]
+                    for key, value in meta.items()
+                    if isinstance(value, list)
+                }
+                attention_weights.append(
+                    {
+                        "weights": attn_weights,
+                        "input_ids": attn_input_ids.detach().cpu(),
+                        "attention_mask": attn_attention_mask.detach().cpu() if attn_attention_mask is not None else None,
+                        "meta": attn_meta,
+                        "layer_idx": layer_idx,
+                    }
+                )
+                captured_attention_examples += attn_batch_size
             except Exception as e:
                 print(f"Warning: Could not extract attention weights: {e}")
         

@@ -37,12 +37,12 @@
       ]
     },
     "rubrics": {
-      "3": "The response describes three additional pieces of information that would be needed to accurately replicate the experiment.",
-      "2": "The response describes two additional pieces of information that would be needed to accurately replicate the experiment.",
-      "1": "The response describes one additional piece of information that would be needed to accurately replicate the experiment.",
-      "0": "The response describes little or no accurate or relevant information from the acid rain investigation."
+      "0": "Responses in this category demonstrate little to no understanding of the task. They fail to identify any relevant pieces of information needed to replicate the experiment, often focusing on unrelated aspects or expressing confusion about the procedure.",
+      "1": "Responses in this category identify at least one relevant piece of information needed to replicate the experiment, but they lack completeness or specificity. Students may mention general concepts such as the amount of vinegar but fail to specify multiple essential details or provide clear procedural steps.",
+      "2": "Responses in this category provide two relevant pieces of information required to replicate the experiment. Students demonstrate partial understanding by identifying some necessary components like the type of materials or specific measurements but may overlook the need for a complete set of instructions or additional critical details.",
+      "3": "Responses in this category thoroughly identify three or more specific and relevant pieces of information needed to replicate the experiment. Students demonstrate a clear understanding by detailing essential elements such as the type and amount of vinegar, the size of the containers, and the sample characteristics, ensuring replicability."
     },
-    "question": "After reading the group\u2019s procedure, describe what additional information you would need in order to replicate the experiment. Make sure to include at least three pieces of information.",
+    "question": "After reading the group’s procedure, describe what additional information you would need in order to replicate the experiment. Make sure to include at least three pieces of information.",
     "sample_solution": [
       "To replicate the experiment, I need to know the specific type of vinegar used, the exact volume of vinegar added to each sample, and the duration for which the samples were submerged.",
       "I would require the size and shape of the samples being tested, the precise amount of vinegar to use, and whether the containers need to be covered during the experiment.",
@@ -76,10 +76,10 @@
       ]
     },
     "rubrics": {
-      "3": "The response draws a valid conclusion supported by the student\u2019s data and describes two ways the student could have improved the experimental design and/or the validity of the results.",
-      "2": "The response draws a valid conclusion supported by the student\u2019s data and describes one way the student could have improved the experimental design and/or the validity of the results. -or- The response describes two ways the student could have improved the experimental design and/or the validity of the results but fails to draw or incorrectly draws a conclusion from the student\u2019s data.",
-      "1": "The response draws a valid conclusion supported by the student\u2019s data but fails to describe, or incorrectly describes, how the student could have improved the experimental design and/or the validity of the results. -or- The response describes one way the student could have improved the experimental design and/or the validity of the results but fails to draw or incorrectly draws a conclusion from the student\u2019s data.",
-      "0": "The response provides little or no correct information from the polymer investigation."
+      "0": "Responses in this category demonstrate a lack of understanding of how to draw conclusions from data and propose improvements to experimental design. These responses often fail to identify key trends in the data or provide vague and irrelevant suggestions for improvement, lacking specificity and clarity.",
+      "1": "Responses in this category show an attempt to draw conclusions and suggest improvements but lack clarity and depth. These responses may correctly identify some data trends but often include vague improvement suggestions or fail to provide specific details about the experiment's methodology.",
+      "2": "Responses in this category demonstrate a basic understanding of the experiment's findings and suggest relevant improvements. These responses provide conclusions based on the data and propose valid, if somewhat general, suggestions for improving experimental design or validity, such as increasing trials or standardizing variables.",
+      "3": "Responses in this category indicate a strong understanding of the experiment's outcomes and propose specific, detailed improvements. They clearly identify key data trends and offer well-reasoned suggestions for enhancing experimental design, such as specifying variable controls and increasing methodological precision."
     },
     "polymer_investigation_rubrics": {
       "possible_conclusions": [
@@ -98,7 +98,7 @@
         "Other acceptable responses"
       ]
     },
-    "question": "a. Draw a conclusion based on the student\u2019s data. b. Describe two ways the student could have improved the experimental design and/or validity of the results.",
+    "question": "a. Draw a conclusion based on the student’s data. b. Describe two ways the student could have improved the experimental design and/or validity of the results.",
     "sample_solution": [
       "Based on the student's data, the experiment indicates that the type of material affects the mass change after exposure to vinegar; improving the experimental design could be achieved by ensuring consistent sample sizes and conducting multiple trials for reliability.",
       "The student's data suggests that the material's response to vinegar is significant, and to enhance the experiment's validity, they could standardize the sample sizes and conduct the experiment in a controlled environment.",
@@ -133,9 +133,9 @@
       ]
     },
     "rubrics": {
-      "2": "The response demonstrates an exploration or development of the ideas presented in the text; a strong conceptual understanding by the inclusion of specific relevant information from the text; an extension of ideas that may include extensive and/or insightful inferences, connections between ideas in the text, and references to prior knowledge and/or experiences.",
-      "1": "The response demonstrates some exploration or development of ideas presented in the text; a fundamental understanding by the inclusion of some relevant information from the text; an extension of ideas that lacks depth, although may include some inferences, connections between ideas in the text, or references to prior knowledge and/or experiences.",
-      "0": "The response demonstrates limited or no exploration or development of ideas presented in the text; limited or no understanding of the text, may be illogical, vague, or irrelevant; possible incomplete or limited inferences, connections between ideas in the text, or references to prior knowledge and/or experiences."
+      "0": "Responses in this category demonstrate a basic understanding of pandas and koalas being specialists but lack clarity and depth in explaining how they are different from pythons. These responses often contain inaccuracies or incomplete comparisons between the species. Students may provide vague or overly simplistic statements without supporting details from the article.",
+      "1": "Responses in this category show an understanding that pandas and koalas are specialists with specific diets, and pythons are generalists. However, these responses may lack depth or clear differentiation of the species' adaptations and habitats. Students typically reference the article but do not fully integrate the information to support their comparisons.",
+      "2": "Responses in this category clearly articulate the similarities between pandas and koalas as specialists, including their specific dietary needs and limited adaptability. They accurately differentiate these from pythons, noting pythons' generalist nature and adaptability to varied environments. Students effectively support their explanations with detailed references to the article."
     },
     "question": "Explain how pandas in China are similar to koalas in Australia and how they both are different from pythons. Support your response with information from the article.",
     "sample_solution": [
@@ -171,11 +171,11 @@
       ]
     },
     "rubrics": {
-      "2": "The response demonstrates: a thoughtful and thorough examination of the text, uses information to move beyond the boundaries of the text, possible consideration of how, why or for whom the text was written, an ability to evaluate explicit and implicit information and/or makes insightful judgments about the text, possible evaluation of the author\u2019s craft, including literary devices and/or a projection of the implications raised.",
-      "1": "The response demonstrates: sufficient, though limited, examination of the text, some attempt to use information to move beyond the boundaries of the text, possible consideration of how, why, or for whom the text was written, some ability to evaluate explicit and implicit information and/or makes plausible judgments about the text, possible evaluation of the author\u2019s craft, including literary devices and/or a projection of the implications raised.",
-      "0": "The response demonstrates: a cursory examination of the text, does not move beyond the boundaries of the text, little or no consideration of how, why, or for whom the text was written, little or no ability to evaluate explicit and implicit information and/or makes superficial judgments about the text, the author\u2019s craft, including literary devices and/or a projection of the implications raised, possible simplistic, unsupported, illogical, vague, and/or irrelevant information."
+      "0": "Responses in this category demonstrate minimal understanding of the term 'invasive' as it relates to the article. Students often misinterpret or lack clarity on the definition and significance of 'invasive,' providing unrelated or incorrect information. Key characteristics include a lack of reference to the impact or context of invasive species within ecosystems, and the absence of supporting details from the article.",
+      "1": "Responses in this category show a basic understanding of the term 'invasive' as it relates to the article. Students recognize the concept of non-native species affecting new environments but often provide incomplete or surface-level explanations. These responses may include some relevant information from the article but lack depth or full integration of the article's main points regarding ecological impact.",
+      "2": "Responses in this category demonstrate a clear and comprehensive understanding of the term 'invasive' and its significance within the article. Students accurately explain how invasive species affect ecosystems, referencing specific examples or impacts mentioned in the article. These responses reflect a well-developed analysis that connects the term 'invasive' to broader ecological and environmental issues discussed."
     },
-    "question": "Explain the significance of the word \u201cinvasive\u201d to the rest of the article. Support your response with information from the article.",
+    "question": "Explain the significance of the word “invasive” to the rest of the article. Support your response with information from the article.",
     "sample_solution": [
       "The term 'invasive' highlights the detrimental impact of non-native species on local ecosystems, as discussed in the article, where it details how these species can outcompete indigenous flora and fauna.",
       "Invasive species are significant in the article because they disrupt the balance of ecosystems, leading to loss of biodiversity and altered habitats.",
@@ -191,10 +191,10 @@
   },
   "5": {
     "rubrics": {
-      "3": "Four key elements",
-      "2": "Three key elements",
-      "1": "One or two key elements",
-      "0": "Other"
+      "0": "Responses in this category show a fundamental misunderstanding of the protein synthesis process, often confusing it with unrelated biological processes or providing irrelevant information. Students may mention incorrect locations, steps, or concepts not related to mRNA and protein synthesis, such as mitosis or DNA replication. There is a lack of correct sequencing of the steps involved in protein synthesis.",
+      "1": "Responses in this category demonstrate a partial understanding of protein synthesis, identifying some correct components like mRNA and ribosomes but with significant errors in the process sequence or steps. Students may confuse the roles of tRNA and ribosomes or incorrectly describe interactions among mRNA, ribosomes, and tRNA. The steps may be out of order or include incorrect details.",
+      "2": "Responses in this category illustrate a good understanding of protein synthesis, correctly identifying key components such as mRNA, tRNA, and ribosomes, and describing their roles. Students accurately sequence most steps, such as the binding of mRNA to ribosomes and the involvement of tRNA in bringing amino acids, but may lack depth in explaining specific processes like peptide bond formation or stop codon recognition.",
+      "3": "Responses in this category show a comprehensive understanding of protein synthesis, accurately describing the detailed sequence of steps from mRNA's exit from the nucleus to the formation of peptide bonds and the termination of the process. Students clearly explain the role of each component, including the matching of codons and anticodons, and describe the formation of the polypeptide chain until a stop codon is reached."
     },
     "dataset_info": {
       "type_of_response": "Non-Source Dependent Response",
@@ -219,7 +219,7 @@
       "mRNA travels through the cytoplasm to the ribosome or enters the rough endoplasmic reticulum",
       "mRNA bases are read in triplets called codons (by rRNA)",
       "tRNA carrying the complementary anticodon recognizes the codon of the mRNA",
-      "The corresponding amino acids on the other end of the tRNA are bonded to adjacent tRNA\u2019s amino acids",
+      "The corresponding amino acids on the other end of the tRNA are bonded to adjacent tRNA’s amino acids",
       "A new corresponding amino acid is added to the tRNA",
       "Amino acids are linked together to make a protein beginning with a START codon in the P site (initiation)",
       "Amino acids continue to be linked until a STOP codon is read on the mRNA in the A site (elongation and termination)"
@@ -234,10 +234,10 @@
   },
   "6": {
     "rubrics": {
-      "3": "Three key elements",
-      "2": "Two key elements",
-      "1": "One key element",
-      "0": "Other"
+      "0": "Responses in this category demonstrate little to no understanding of cellular transport processes. They often mention unrelated biological concepts (e.g., mitosis, organelles) or use incorrect terminology and mechanisms. There is no accurate description of any transport process across the cell membrane.",
+      "1": "Responses in this category show partial understanding with some correct terminology. They may mention one or more relevant processes, such as osmosis or diffusion, but often provide inaccurate or incomplete descriptions, and may confuse different processes or their functions.",
+      "2": "Responses in this category display a clearer understanding by accurately describing at least two processes of cellular transport (e.g., osmosis, diffusion, or active transport) with some correct terminology. However, they may still contain minor inaccuracies or lack depth in explaining how these processes function across the cell membrane.",
+      "3": "Responses in this category demonstrate a thorough understanding of cellular transport processes. They accurately describe at least three processes (e.g., osmosis, diffusion, and active transport) with correct terminology and provide clear explanations of how each process facilitates the movement of substances across the cell membrane."
     },
     "dataset_info": {
       "type_of_response": "Non-Source Dependent Response",
@@ -286,9 +286,9 @@
   },
   "7": {
     "rubrics": {
-      "2": "Identifies one character trait of Rose and includes story details that adequately support the answer, related to the conversations with Anna or Aunt Kolab.",
-      "1": "Identifies one character trait of Rose.",
-      "0": "No character trait of Rose is identified."
+      "0": "Responses in this category demonstrate a lack of alignment with the task requirements. Students in this category often fail to identify a clear, relevant trait of Rose based on her conversations and frequently provide details that are either incorrect, too vague, or not directly related to the prompt. These responses may also include unsupported or overly general statements that do not directly pertain to Rose's interactions with Anna or Aunt Kolab.",
+      "1": "Responses in this category show a basic understanding of the task by identifying a trait of Rose, but they may lack depth or clarity in explanation. Students in this category usually provide a trait and an example, but the connection between the two is often weak or not well elaborated. The responses may demonstrate some relevant details, but they do not fully develop or support the characterization with specific evidence from the story.",
+      "2": "Responses in this category demonstrate a thorough understanding of the task by clearly identifying a specific trait of Rose and providing a well-supported example from her conversations with Anna or Aunt Kolab. Students in this category effectively explain how the chosen detail supports the identified trait, showing a strong connection between the textual evidence and Rose's character. The responses are well-organized and clearly articulate the character traits with appropriate justification."
     },
     "dataset_info": {
       "type_of_response": "Source Dependent Response",
@@ -324,9 +324,9 @@
   },
   "8": {
     "rubrics": {
-      "2": "Proficient: The response fulfills all the requirements of the task. The information given is text-based and relevant to the task.",
-      "1": "Partially Proficient: The response fulfills some of the requirements of the task, but some of the information may be too general, too simplistic, or not supported by the text.",
-      "0": "Not Proficient: The response does not fulfill the requirements of the task because it contains information that is inaccurate, incomplete, and/or missing altogether."
+      "0": "Responses in this category demonstrate a limited understanding of the effect of Mr. Leonard's background information on Paul. These responses often list facts about Mr. Leonard or the story without linking them to Paul's emotions, actions, or development. They lack specific details or evidence from the story to support how Paul's character is influenced.",
+      "1": "Responses in this category show a basic understanding of the relationship between Mr. Leonard's background information and its effect on Paul. These responses acknowledge a connection or similarity between Paul and Mr. Leonard but provide only a general or surface-level explanation of this effect. They may mention motivation or realization but lack detailed support or specific evidence from the story.",
+      "2": "Responses in this category demonstrate a thorough understanding of how Mr. Leonard's background information affects Paul's character. These responses clearly articulate the impact on Paul's emotions, actions, or growth, often using specific examples or quotes from the story. They effectively link the background information to Paul's development and provide detailed evidence to support their claims."
     },
     "dataset_info": {
       "type_of_response": "Source Dependent Response",
@@ -362,9 +362,9 @@
   },
   "9": {
     "rubrics": {
-      "2": "Proficient: The response fulfills all the requirements of the task. The information given is text-based and relevant to the task.",
-      "1": "Partially Proficient: The response fulfills some of the requirements of the task, but some of the information may be too general, too simplistic, or not supported by the text.",
-      "0": "Not Proficient: The response does not fulfill the requirements of the task because it contains information that is inaccurate, incomplete, and/or missing altogether."
+      "0": "Responses in this category demonstrate minimal understanding of the article's organization. They often include vague or incomplete references to the article's structure, lack specific details or examples, and may include unrelated information. The student may misinterpret the task or provide a disorganized answer that does not clearly identify how the article is organized.",
+      "1": "Responses in this category show a basic understanding of the article's organization. Students typically identify some structural elements, such as headings or sections, and provide a general overview without detailed examples. These responses often include some mention of the article's introduction, body, and conclusion but lack depth in explaining the organization using specific content or examples from the article.",
+      "2": "Responses in this category demonstrate a clear and accurate understanding of the article's organization. Students provide specific details and examples of how the article is structured, such as identifying sections with their titles and summarizing the content of each section. These responses include a coherent analysis of the article's organization, showing how it supports the overall message or argument."
     },
     "dataset_info": {
       "type_of_response": "Source Dependent Response",
@@ -400,9 +400,9 @@
   },
   "10": {
     "rubrics": {
-      "2": "The response uses the results from the experiment to describe the best paint color for the doghouse by choosing a color and: (1) describing how that color might affect the inside of the doghouse, and (2) using results from the experiment to support the description.",
-      "1": "The response chooses a color and describes how that color might affect the inside of the doghouse BUT the results from the experiment are missing \u2014OR\u2014 the response chooses a color and includes results from the experiment BUT the description of how that color might affect the inside of the doghouse is missing.",
-      "0": "The response demonstrates little or no understanding of the Content Standard."
+      "0": "Responses in this category demonstrate minimal or no understanding of the effect of lid color on temperature. These answers often include irrelevant information or misconceptions, such as focusing on unrelated factors like aesthetics or failing to address the concept of heat absorption or reflection by different colors.",
+      "1": "Responses in this category show a basic understanding of the relationship between lid color and temperature but lack specificity or completeness. These answers typically recognize that colors can affect temperature but may not accurately connect this to the concept of heat absorption or fail to provide detailed explanations or data support.",
+      "2": "Responses in this category demonstrate a clear and accurate understanding of how lid colors affect temperature through heat absorption and reflection. These answers often include specific references to data or experiments, explaining how darker colors absorb more heat and result in higher temperatures, while lighter colors reflect heat and lead to cooler temperatures."
     },
     "dataset_info": {
       "type_of_response": "Source Dependent Response",

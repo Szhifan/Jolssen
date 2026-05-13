@@ -1,192 +1,256 @@
-# Project Background: Aligning Sequence to Labels for Unified ASAG and Beyon
+# Project Background: Jolssen — Joint Label-Span Encoding for ASAS
 
-## Main modeling idea
+## Overview and Motivation
+
+Automatic Short Answer Scoring (ASAS) is a central educational NLP task. Two problems motivate this work:
+
+1. **Label space heterogeneity.** Existing approaches tie model architectures to benchmark-specific label spaces (fixed-head classifiers), making cross-benchmark transfer hard.
+2. **Data privacy.** Sending student responses to external LLM APIs violates data-protection regulations (GDPR, UK DfE guidelines), so locally deployable models are required.
+
+The proposed system, **Jolssen** (Joint Label-Span Encoding), addresses both: it encodes rubric descriptions directly alongside the student answer in a single forward pass, avoiding a fixed global label space while keeping inference entirely local.
+
+## Main Modeling Idea
+
 The core idea is **sequence-to-label alignment**:
-- encode the student answer (and possibly task context such as question/sample solution),
-- encode label descriptions / rubric levels,
-- compute alignment between sequence representation and label representations,
-- predict the score from those alignments.
 
-This should allow:
-- support for varying numbers of labels,
-- a single forward pass prediction design,
+- Encode the student answer together with task context (question, sample solution) and all rubric-level descriptions as one joint sequence using an instruction-tuned LLM.
+- Extract a per-rubric representation by taking the hidden state of the **last token** of each rubric span.
+- Extract a global sequence representation from the **final token** of the full sequence (EOS position).
+- Align the sequence representation with each rubric representation via a fusion function to produce a score per level.
+- Select the highest-scoring level as prediction; optimize with listwise cross-entropy.
 
-## Architecture exploration planned in the proposal
-The proposal highlights several axes of experimentation.
+This allows scoring of a variable number of rubric levels in a single forward pass without expanding instances into answer-rubric pairs.
 
-### 1. Sequence representation choice
-Test how to represent the answer sequence:
-- **span embedding** variants,
-- **mean pooling**,
-- **last token / EOS** representation,
-- **CLS** representation where applicable.
+## Input Format
 
-A recurring question is whether, especially for unidirectional LLMs, the last token might better capture overall sequence meaning than span-style aggregation.
+Each instance is serialized into a single string using **XML-style field tags**:
 
-### 2. Label alignment mechanism
-Directly align rubric/label embeddings with sequence embeddings.
-Possible representations or feature-combination functions include:
-- **difference (Diff)**
-- **concatenation (Concat)**
-- **bilinear attention**
+```text
+<question> ... </question>
+<sample solution> ... </sample solution>
+<answer> ... </answer>
+<rubric> Rubric text level 0 </rubric>
+<rubric> Rubric text level 1 </rubric>
+<rubric> Rubric text level 2 </rubric>
+Instruction (sampled from pool)
+```
 
-The design space here is a major experimental variable.
+Rubric span boundaries are tracked in the tokenized sequence. The closing `>` token of each `<rubric>` tag is used as the pooling anchor for the rubric representation.
 
-### 3. Model variants and baselines
+An instruction is randomly sampled from a pool of M=10 templates per training and test instance, encouraging robustness to instruction phrasing. For multilingual benchmarks (German, Portuguese), field tags and instructions are translated; the `<rubric>` tag is kept in English across all benchmarks. See `scripts_asag/data_processing/benchmark_meta.py` for the full instruction pools.
 
-#### Span model (`span`)
-The main proposed architecture. Encodes the full student answer (together with task context and all rubric descriptions) as **a single joint sequence**. Span pooling is used to extract per-rubric representations directly from this shared contextualised encoding. Alignment scores are computed from the resulting spans and predictions are made in a single forward pass.
+## Architecture: Jolssen
 
-#### Cross-encoder / xnet (`xnet`)
-A **cross-encoder baseline** for comparison with the span model. Each (answer, rubric) pair is encoded **independently** as a separate sequence, yielding one scalar score per pair. During training, the individual per-pair logits for all rubrics belonging to the same answer are **regrouped** and passed through a softmax together, so the loss is still computed jointly over all rubric options (listwise cross-entropy). At inference the predicted rubric is the one with the highest score.
+### Sequence and Rubric Representations
 
-This design makes no assumptions about how many rubrics exist per question and requires no span extraction, but it cannot model interactions between rubric descriptions within the same forward pass.
+Given encoder hidden states **H** ∈ ℝ^(T×d):
 
+- **Rubric representation** r_k = H[e_k], the hidden state at the last token position of rubric span k (exclusive-end indexing: position e_k - 1 in 0-indexed terms).
+- **Sequence representation** z = H[T], the final-token embedding. This carries information from the full sequence under autoregressive attention and is the standard pooling choice for LLM-based classifiers.
 
-## Dataset and benchmark strategy
-A major part of the project is not just architecture, but also **benchmark unification / augmentation**.
+### Alignment Fusion Functions
 
-### Rubric-based and reference-based ASAG
-The proposed architecture is naturally suited to **rubric-based** scoring, but rubric-based benchmarks are limited.
-So the proposal suggests augmenting conventional ASAG datasets with richer task metadata.
+Three fusion variants are compared:
 
-### Planned augmentation ideas
-Use LLMs to synthesize or normalize:
-- per-level rubrics,
-- multiple reference/sample solutions,
-- task instructions,
-- multilingual variants.
+| Name | Expression | Linear head input size |
+| --- | --- | --- |
+| `concat` | [z; r_k] | 2H |
+| `diff` | z − r_k | H |
+| `condiff` | [z; r_k; (z − r_k)] | 3H |
 
+Each variant feeds the fused representation through a linear layer to produce a scalar score s_k per rubric level.
 
-## Universal ASAG objective
-The longer-term goal is a **single cohesive model** trained across multiple benchmarks.
-All benchmarks are registered in `scripts_asag/data_processing/benchmark_meta.py`.
-Label semantics are rubric descriptions; default 3-level scale: *Incorrect / Partially Correct / Correct* (`LEVEL2LABEL`).
+Additional experimental variants in `SpanFuser` include bilinear (`p-bl`), gated (`p-gate`), text-span-based (`t-concat`, `t-diff`), and no-alignment (`p-only`, `l-only`) modes.
 
-| Benchmark | Key | Lang | Labels | Context | Notes |
-|---|---|---|---|---|---|
-| **ALICE-LP** | `alice_lp` | DE | 3 | question, sample\_solution | ALICE learning-progress subtask; German student answers |
-| **ALICE-KE** | `alice_ke` | DE | 3 | question, sample\_solution | ALICE knowledge-elements subtask; rubrics focus on concept usage |
-| **ALICE-SK** | `alice_sk` | DE | 3 | question, sample\_solution | ALICE scientific-skills subtask; rubrics focus on cognitive/reasoning skills |
-| **ASAP-SAS** | `asap_sas` | EN | varies | question, sample\_solution | Kaggle ASAP short-answer scoring; per-question label count |
-| **SciEntsBank** | `scientsbank` | EN | 3 | question, sample\_solution | Science Entailment Bank; UA / UQ / UD test splits |
-| **Beetle** | `beetle` | EN | 3 | question, sample\_solution | Electronics tutoring dialogues; UA / UQ test splits |
-| **iSTudio** | `istudio` | EN | 3 | question\_context, question, sample\_solution | Includes broader question context field |
-| **PT-ASAG** | `pt_asag` | PT | 4 | question, sample\_solution | Portuguese ASAG; cross-lingual zero-shot transfer target |
+### Training Objective
 
+Scores s_k over all K rubric levels are normalized with softmax into a probability distribution:
 
-## Cross-lingual angle
-Cross-lingual transfer is a defined part of the proposal.
-Examples:
-Train on all the english-language benchamrk and perform zero-shot evaluatio on 
-german and portuguese datasets.
+```text
+p_k = exp(s_k) / sum_k' exp(s_k')
+```
 
-## Connection to broader NLP
-The proposal explicitly states that the framework may generalize beyond ASAG to **sequence classification with label semantics**.
+Optimized with cross-entropy against the gold label. Batches may mix instances with different label cardinalities: padding slots are filled with −∞ before softmax via a validity mask, so they do not contribute to the distribution.
 
-The analogy is:
-- **answer** -> input text
-- **question / sample solution / instruction** -> task-specific context
-- **rubrics** -> label descriptions
+### Rubric-Independent Attention (RIA)
 
-## Non-ASAG benchmarks
+Under standard causal attention, the hidden state of rubric k attends to all tokens from rubrics 1,...,k−1, making the rubric representation dependent on the ordering and wording of preceding rubrics. This degrades zero-shot transfer to unseen benchmarks that have different rubric sets.
 
-Used to test whether the framework generalises beyond ASAG to other classification tasks with meaningful label semantics.
-All benchmarks are registered in `scripts_others/data_processing/benchmark_meta.py`.
-Most datasets are stored as normalized JSON under `other_benchmarks/`. FigQA/`fiqa` and AG News are loaded directly from HuggingFace, so they do not require local directories under `other_benchmarks/`.
+**RIA** is a block-sparse attention masking strategy that removes this dependency:
 
-Each formatter returns examples in the shared preprocessing shape:
-- `text_col`: the input sequence to classify.
-- `context_cols`: optional task context prepended to the input.
-- `label_semantics`: the example field containing label/rubric descriptions.
-- `label_col`: the gold class index.
+- The input is split into a **context block** (question + sample solution + answer) and K **rubric blocks**.
+- Each rubric block attends only to the context block and its own tokens, never to other rubric blocks.
+- **Position ID reindexing**: each rubric block's position IDs are reset to start from the last context token position, so positional embeddings are also independent across rubrics.
 
-For span-style preprocessing, the values in the `label_semantics` field are encoded as rubric/label spans. The gold label is therefore an index into that list.
+Under RIA, the scoring head uses the rubric representation r_k directly (`l-only` fusion) without sequence alignment, because the sequence-level interaction is already baked into the context-conditioned rubric representation. Instruction tokens are excluded from RIA inputs since full-sequence conditioning is not needed.
 
-| Benchmark | Key | Source | Lang | Text / context | Label semantics | Labels |
-|---|---|---|---|---|---|---|
-| **PIQA** | `piqa` | `other_benchmarks/piqa/` | EN | `goal` | `solution`: two candidate solutions | 2 |
-| **xStance** | `xstance` | `other_benchmarks/xstance/` | DE/FR/IT plus EN question files | `comment`; context: `question` | `stance`: support vs opposition descriptions | 2 |
-| **SemEval-2016 Task 6** | `semeval2016` | `other_benchmarks/semeval2016/` | EN | `tweet`; context: `target` | `stance`: favor/against/none descriptions | 3 |
-| **FigQA / FiQA** | `fiqa` | HuggingFace `nightingal3/fig-qa` | EN | `startphrase` -> `sentence` | `options`: `[ending1, ending2]` | 2 |
-| **AG News** | `ag_news` | HuggingFace `fancyzhx/ag_news` | EN | `text` | `topic`: World, Sports, Business, Sci/Tech | 4 |
-| **IMDB** | `imdb` | `other_benchmarks/imdb/` | EN | `review` | `sentiment`: Negative/Positive | 2 |
-| **EIC** | `eic` | `other_benchmarks/eic/` | EN | `new`; context: `old` | `options`: Claim, Clarity, Fact/Evidence, Grammar, Other | 5 |
+RIA substantially improves zero-shot transfer to unseen and cross-lingual benchmarks while retaining single-pass efficiency.
 
-xStance is the primary cross-lingual non-ASAG benchmark. FigQA/`fiqa` uses per-example endings as the label descriptions: `ending1` maps to label `0`, and `ending2` maps to label `1`. AG News uses fixed topic labels: `0` World, `1` Sports, `2` Business, and `3` Sci/Tech.
+## Model Variants and Baselines
 
-## Training tasks
+### Jolssen (main model, `span`)
 
-Three distinct training scenarios are supported, with benchmark-specific entry points living under `scripts_asag/` and `scripts_others/`.
+`SpanAlignmentModel` in `modelling/modelling_span.py`. Encodes the full joint sequence, extracts per-rubric span representations, and aligns them with the sequence embedding via a fusion function. Two sub-variants:
 
-### 1. Mono-dataset ASAG training (`scripts_asag/train.py`)
-Train and evaluate on a **single ASAG benchmark**.
-- One benchmark is selected via `TaskArguments` (e.g. `alice_lp`, `beetle`, `asap_sas`).
-- The model learns to align student-answer representations to the label/rubric descriptions for that benchmark only.
-- Evaluation is performed on the held-out split(s) of the same benchmark (standard train / dev / test or UA / UQ / UD splits where applicable).
-- Use case: benchmark-specific fine-tuning, ablation studies, cross-lingual zero-shot evaluation (train EN → eval DE/PT).
+- **Standard** (causal attention): competitive for mono-benchmark training.
+- **RIA** (`--rubric-independent-attn --reindex-rub`): substantially better for zero-shot and cross-lingual transfer.
 
-### 2. Multi-dataset ASAG training (`scripts_asag/train_multi.py`)
-Train jointly on **multiple ASAG benchmarks** and evaluate on all of them.
-- Benchmarks are specified via `MultiTaskArguments`; data is interleaved by `MultiTaskDataPipeline`.
-- A single model learns shared representations across heterogeneous label spaces and languages.
-- Per-benchmark metrics are reported alongside aggregate scores.
-- Use case: universal ASAG model, studying cross-benchmark transfer, reducing per-task data requirements.
+### Baselines
 
-### 3. Mono-dataset training for non-ASAG benchmarks (`scripts_others/train.py`)
-Train and evaluate on a **single non-ASAG benchmark** (stance, sentiment, commonsense, etc.).
-- Uses the same `TaskArguments` / `main()` pattern as `scripts_asag/train.py` but routes through `DataPipelineOther`.
-- Tests whether the sequence-to-label alignment framework generalises beyond ASAG to other classification tasks with meaningful label semantics.
-- Use case: out-of-domain generalisation experiments, validating the universality of the alignment approach.
+**No Alignment (`cls`)**
+Standard sequence classifier (without or with rubric text in the input, denoted +rubric / -rubric). Uses a fixed-label linear head trained with cross-entropy; excludes ASAP-SAS because its per-question label counts vary. Implemented via `--model-class span --span-fuse-type p-only` (no span extraction required) or by dropping rubrics with `--drop-all-rubrics`.
 
-#### Planned non-ASAG experiments
+**Rubric Retrieval (`xnet`)**
+`AsagXnet` in `modelling/modelling_xnet.py`. Each (answer, rubric) pair is encoded independently as a separate sequence; a linear head produces a scalar score per pair. During training, per-pair logits are regrouped and normalized with softmax for listwise cross-entropy. At inference, the highest-scoring rubric is selected. Cannot model inter-rubric interactions; training cost scales linearly with the number of rubric levels. Not evaluated with 7B/8B models due to prohibitive cost.
 
-Three conditions are planned for the non-ASAG benchmarks:
+**LLM Generation (`gen`)**
+A causal LLM fine-tuned to generate the label string autoregressively (e.g. "Correct", "Partially Correct", "Incorrect"). No classification head; prediction is the highest-likelihood generated token(s). Implemented via `scripts_asag/train_gen.py`.
 
-1. **Canonical span-alignment with ConDiff** — the full span model using the conditional-difference fusion mechanism.
-2. **p-only with rubrics** — prediction head uses only the premise/input representation, but rubric/label descriptions are still provided as label semantics.
-3. **p-only without rubrics** — prediction head uses only the premise/input representation with no rubric/label descriptions (plain classification baseline).
+## Backbone Models
 
-## Codebase map
+Experiments use four instruction-tuned LLMs as encoders:
 
-### Training entry points
+| Model | Size | Notes |
+| --- | --- | --- |
+| Llama-3.2-1B-Instruct | 1B | Smallest; used for all baselines |
+| Llama-3.2-3B-Instruct | 3B | Balanced size |
+| Mistral-7B-v0.1 | 7B | Rubric Retrieval excluded |
+| Llama-3.1-8B-Instruct | 8B | Rubric Retrieval excluded |
+
+All models are fine-tuned with LoRA (rank 64, α=64, target="all-linear"). Learning rate: 2×10⁻⁴ for 1B/3B, 5×10⁻⁵ for 7B/8B. Optimizer: paged AdamW for LLMs, AdamW otherwise.
+
+## ASAS Benchmarks
+
+Six public ASAS benchmarks are used. Native rubric annotations exist only for `alice_lp`; all others are augmented with LLM-synthesized rubrics using `gpt-4o-mini`.
+
+| Benchmark | Key | Lang | Levels | Original Context | Augmented | Test Splits |
+| --- | --- | --- | --- | --- | --- | --- |
+| **ALICE-LP** | `alice_lp` | DE | 3 | q, s, r (native) | — | UA, UQ |
+| **ASAP-SAS** | `asap_sas` | EN | 3–4 | q, r (native) | s | UA |
+| **iStudio** | `istudio` | EN | 3 | q, qc, s | r | UA |
+| **PT-ASAG** | `pt_asag` | PT | 4 | q, s | r | UA |
+| **SciEntsBank** | `scientsbank` | EN | 3 | q, s | r | UA, UQ, UD |
+| **Beetle** | `beetle` | EN | 3 | q, s | r | UA, UQ |
+
+*q = question; s = sample solution; r = rubrics; qc = question context. Test splits: UA (unseen answers), UQ (unseen questions), UD (unseen domains).*
+
+Note: SciEntsBank uses correct/partially\_correct/incorrect (not the original correct/incorrect/contradictory) to follow the convention of other benchmarks.
+
+The benchmark_meta also registers `alice_ke` (knowledge elements) and `alice_sk` (scientific skills) as additional ALICE subtasks, though these are not reported in the main paper results.
+
+### LLM-Based Benchmark Augmentation
+
+For datasets without native rubric annotations, `gpt-4o-mini` generates per-level rubric descriptions given the question, available reference answers, and up to 10 student answer examples per level. ASAP-SAS also lacks sample solutions; these are generated separately from the question alone. Details and prompts are in `generate_rubrics_workflow.ipynb` and `generate_reference_answers.ipynb`.
+
+## Experimental Protocol
+
+### Mono-benchmark Training
+
+Train and evaluate on a single benchmark. Evaluation is on the held-out test split(s) of that benchmark (UA/UQ/UD where applicable). Used for ablation studies and cross-lingual zero-shot evaluation (train EN, eval DE/PT).
+
+### Joint Training and Cross-benchmark Evaluation
+
+Train jointly on the English ASAS benchmarks (ASAP-SAS, SciEntsBank, Beetle), with iStudio held out as an unseen-benchmark validation set. Evaluate:
+
+1. On English training benchmarks — measures positive transfer from joint training.
+2. On non-English benchmarks (Alice-LP, PT-ASAG) under zero-shot and few-shot settings — measures cross-lingual and domain transfer.
+
+## Cross-lingual Transfer
+
+The framework supports cross-lingual zero-shot transfer:
+
+- Training on English benchmarks, evaluation on German (Alice-LP) and Portuguese (PT-ASAG).
+- For multilingual benchmarks, field tags and instructions are translated into the target language. Under multi-benchmark training, the English format is used uniformly for all benchmarks.
+
+## Non-ASAS Benchmarks
+
+Seven benchmarks test whether the sequence-to-label alignment framework generalizes beyond ASAS.
+
+| Benchmark | Key | Lang | Task | Labels |
+| --- | --- | --- | --- | --- |
+| **PIQA** | `piqa` | EN | Physical commonsense: pick the more plausible solution | 2 (instance-specific options) |
+| **FigQA** | `fiqa` | EN | Figurative language: pick the matching ending | 2 (instance-specific options) |
+| **xStance** | `xstance` | EN/DE/FR/IT | Political stance of comment toward question | 2 Against/Favor |
+| **SemEval-2016 Task 6** | `semeval2016` | EN | Stance of tweet toward named target | 3 Against/Favor/None |
+| **IMDB** | `imdb` | EN | Binary sentiment of movie reviews | 2 Negative/Positive |
+| **AG News** | `ag_news` | EN | News topic classification | 4 World/Sports/Business/Sci-Tech |
+| **EIC** | `eic` | EN | Edit intent in scientific paper revisions | 5 Claim/Clarity/Fact/Grammar/Other |
+
+xStance is the primary cross-lingual benchmark (covers German, French, Italian). PIQA and FigQA use instance-specific rubric labels (the candidate options serve directly as label descriptions).
+
+## Universal ASAS Objective
+
+The longer-term goal is a single cohesive model trained across multiple benchmarks. The framework generalizes beyond ASAS to any classification task with meaningful label semantics:
+
+- **answer** = input text
+- **question / sample solution / instruction** = task-specific context
+- **rubrics** = label descriptions
+
+## Training Tasks
+
+Three distinct training scenarios are supported.
+
+### 1. Mono-dataset ASAS Training (`scripts_asag/train.py`)
+
+Train and evaluate on a single ASAG benchmark via `TaskArguments` + `main()`. Entry point for mono-benchmark fine-tuning, ablation studies, and cross-lingual zero-shot evaluation.
+
+### 2. Multi-dataset ASAG Training (`scripts_asag/train_multi.py`)
+
+Train jointly on multiple ASAG benchmarks via `MultiTaskArguments` and `MultiTaskDataPipeline`. A single model learns shared representations across heterogeneous label spaces and languages. Per-benchmark metrics and aggregate scores are reported.
+
+### 3. Mono-dataset Training for Non-ASAS Benchmarks (`scripts_others/train.py`)
+
+Train and evaluate on a single non-ASAS benchmark using the same `TaskArguments` / `main()` pattern but routing through `DataPipelineOther`. Tests whether the alignment framework generalizes beyond ASAS.
+
+## Codebase Map
+
+### Training Entry Points
 
 | File | Purpose |
-|---|---|
-| `scripts_asag/train.py` | Single-benchmark ASAG training. Defines `TaskArguments` + `main()`. |
-| `scripts_asag/train_multi.py` | Multi-benchmark ASAG training. `TaskArguments`, `MultiTaskDataPipeline`, `main()`. |
-| `scripts_others/train.py` | Training on non-ASAG benchmarks (same `TaskArguments` / `main()` pattern). |
-| `trainer.py` | Shared training infrastructure: `AsagTrainingArguments`, `ModelLoader` (loads backbone + LoRA), `AsagTrainer` (custom training loop), `compute_metrics()`. |
+| --- | --- |
+| `scripts_asag/train.py` | Single-benchmark ASAG training. `TaskArguments` + `main()`. |
+| `scripts_asag/train_gen.py` | LLM generation baseline training. |
+| `scripts_asag/train_multi.py` | Multi-benchmark ASAG training. `MultiTaskArguments`, `MultiTaskDataPipeline`, `main()`. |
+| `scripts_others/train.py` | Training on non-ASAS benchmarks (same `TaskArguments` / `main()` pattern). |
+| `trainer.py` | Shared training infrastructure: `AsagTrainingArguments`, `ModelLoader` (loads backbone + LoRA + optional BnB quantization), `LoraAwareTrainer` (handles LoRA checkpoint loading), `AsagTrainer` (custom training loop), `compute_metrics()`. |
 
-### Data processing — ASAG (`scripts_asag/data_processing/`)
-
-| File | Purpose |
-|---|---|
-| `benchmark_meta.py` | Metadata registry for all ASAG benchmarks (paths, label maps, rubric configs). |
-| `general_asag_loader.py` | Base class `ASAG_Data_Loader` — shared loading / preprocessing logic for all ASAG datasets. |
-| `alice_asag_loader.py` | `Alice_Loader(ASAG_Data_Loader)` — ALICE-specific loading. |
-| `data_prep.py` | `DataPipeline` — tokenises and assembles model inputs for ASAG; helpers `is_llm_model()`, `get_tokenizer()`. |
-
-### Data processing — other benchmarks (`scripts_others/data_processing/`)
+### Data Processing — ASAG (`scripts_asag/data_processing/`)
 
 | File | Purpose |
-|---|---|
-| `benchmark_meta.py` | Metadata registry for non-ASAG benchmarks (format function names, label configs, language tags, suffix lists). |
+| --- | --- |
+| `benchmark_meta.py` | Metadata registry for all ASAG benchmarks: paths, label maps, rubric configs, instruction pools per language. |
+| `general_asag_loader.py` | Base class `ASAG_Data_Loader` — shared loading and preprocessing logic. |
+| `alice_asag_loader.py` | `Alice_Loader(ASAG_Data_Loader)` — ALICE-specific loading (LP/KE/SK subtasks). |
+| `lasa_format.py` | `build_lasa_llm_input()` — serializes one instance into the XML-tagged input string and returns character-level span boundaries for the answer and each rubric. |
+| `data_prep.py` | `DataPipeline` — tokenises and assembles model inputs for ASAG; `MultiTaskDataPipeline` for multi-benchmark training; helpers `is_llm_model()`, `get_tokenizer()`. |
+
+### Data Processing — Other Benchmarks (`scripts_others/data_processing/`)
+
+| File | Purpose |
+| --- | --- |
+| `benchmark_meta.py` | Metadata registry for non-ASAS benchmarks: format function names, label configs, language tags, suffix lists. |
 | `data_loader.py` | Per-benchmark format functions: `format_piqa`, `format_xstance`, `format_semeval2016`, `format_figqa`, `format_ag_news`, `format_imdb`, `format_eic`. |
-| `data_prep.py` | `OtherDataLoader`, `DataPipelineOther` — loads and tokenises non-ASAG data; mirrors the ASAG `DataPipeline` interface. |
+| `data_prep.py` | `OtherDataLoader`, `DataPipelineOther` — loads and tokenises non-ASAS data; mirrors the ASAG `DataPipeline` interface. |
 
 ### Modelling (`modelling/`)
 
 | File | Purpose |
-|---|---|
-| `modelling_utils.py` | `BaseAsagModel` (base class), `Pooler` (span / mean / CLS / last-token), `BackwardSupportedArguments` (model config dataclass), attention-mask helpers (`get_noncausal_attention_mask`, `get_backward_attention_mask`), `flip_tensor`. |
-| `modelling_span.py` | `SpanFuser` — fuses span representations; `SpanAlignmentModel(BaseAsagModel)` — the main sequence-to-label alignment model. |
-| `modelling_xnet.py` | `AsagXnet(BaseAsagModel)` — cross-encoder / xnet variant of the alignment model. |
+| --- | --- |
+| `modelling_utils.py` | `BaseAsagModel` (base class with LoRA/BnB support, `listwise_loss`, `freeze_lm_backbone_layers`), `Pooler` (avg / weightedavg / cls / last), `BackwardSupportedArguments` (model config dataclass), `build_rubric_block_attention_mask()` and `build_rubric_block_position_ids()` (RIA helpers), attention-mask helpers, `flip_tensor`. |
+| `modelling_span.py` | `SpanFuser` — fuses span representations (concat/diff/condiff/bilinear/gate/p-only/l-only); `SpanAlignmentModel(BaseAsagModel)` — the main Jolssen model. |
+| `modelling_xnet.py` | `AsagXnet(BaseAsagModel)` — rubric-retrieval / cross-encoder baseline. |
 | `custom_llama.py` | Patched HF Llama classes (`LlamaDecoderLayer`, `LlamaModel`, `LlamaForSequenceClassification`) with residual-connection and bidirectionality support. |
 | `custom_mistral.py` | Same patches for Mistral (`MistralDecoderLayer`, `MistralModel`, `MistralForSequenceClassification`). |
 
 ### Utilities
 
 | File | Purpose |
-|---|---|
-| `utils.py` | `evaluate()`, `metrics_calc()`, `eval_report()`, `save_report()`, `save_prediction()`, `get_label_weights()`, `per_qid_metrics()`, `extract_llama_attention()`, misc helpers (`set_seed`, `configure_logging`, `batch_to_device`, `clear_gpu_memory`). |
+| --- | --- |
+| `utils.py` | `evaluate()`, `metrics_calc()`, `eval_report()`, `save_report()`, `save_prediction()`, `get_label_weights()`, `per_qid_metrics()`, misc helpers (`set_seed`, `configure_logging`, `batch_to_device`, `clear_gpu_memory`). |
+
+### Notebooks
+
+| File | Purpose |
+| --- | --- |
+| `generate_rubrics_workflow.ipynb` | Prompts `gpt-4o-mini` to synthesize per-level rubric descriptions for benchmarks without native annotations. |
+| `generate_reference_answers.ipynb` | Prompts `gpt-4o-mini` to generate sample solutions for ASAP-SAS (which lacks reference answers). |

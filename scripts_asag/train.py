@@ -39,6 +39,8 @@ def is_main_process():
 def normalize_cli_args(args):
     alias_map = {
         "--flip-levels": "--flip_levels",
+        "--rub-shuffle": "--rub_shuffle",
+        "--label-names-only": "--label_names_only",
     }
     return [alias_map.get(arg, arg) for arg in args]
 
@@ -73,7 +75,8 @@ def load_args_from_checkpoint(cp_dir, current_train_args, current_task_args):
     
     # Update train_args with saved values, but preserve some inference-specific settings
     inference_specific_train_args = {
-        'test_only', 'cp_dir', 'save_dir', 'save_attweights', 'log_wandb', 'dry_run'
+        'test_only', 'cp_dir', 'save_dir', 'save_attweights', 'attn_layer_idx',
+        'attn_max_examples', 'multi_gpu', 'log_wandb', 'dry_run'
     }
     preserve_task_args = {'test_drop_rub'}
     
@@ -114,6 +117,8 @@ class TaskArguments:
     train_drop_rub: float = field(default=0.0, metadata={"help": "probability of randomly dropping one non-gold rubric per training example (data-level regularization for span model)"})
     flip_levels: bool = field(default=False, metadata={"help": "reverse rubric level order for LASA/span inputs and restore outputs before saving"})
     drop_all_rubrics: bool = field(default=False, metadata={"help": "drop all rubrics from input during both training and testing (no-rubric baseline). Only compatible with model_class='span' and span_fuse_type='p-only'."})
+    rub_shuffle: bool = field(default=False, metadata={"help": "sanity check: shuffle rubric texts while keeping level labels fixed, breaking rubric-label alignment. Only compatible with model_class='span'."})
+    label_names_only: bool = field(default=False, metadata={"help": "replace full rubric descriptions with unified label names only (e.g. Incorrect, Partially Correct, Correct). Not supported for asap_sas or pt_asag."})
     def __post_init__(self):
         """Validation checks after initialization"""
         assert self.train_frac > 0, "train_frac must be > 0"
@@ -128,6 +133,13 @@ class TaskArguments:
         assert self.model_class in valid_model_classes, f"model_class must be one of {valid_model_classes}"
         if self.flip_levels and self.model_class != "span":
             raise ValueError("flip_levels is only implemented for the LASA span model (model_class='span').")
+        if self.rub_shuffle and self.model_class != "span":
+            raise ValueError("rub_shuffle is only compatible with model_class='span'.")
+        if self.label_names_only and self.benchmark in {"asap_sas", "pt_asag"}:
+            raise ValueError(
+                "label_names_only is not supported for asap_sas or pt_asag because their "
+                "levels cannot be captured by the unified label-name scheme."
+            )
 
 def main(task_args: TaskArguments, train_args: AsagTrainingArguments, custom_model_args: BackwardSupportedArguments):
     # If test_only mode and cp_dir is specified, load training args from checkpoint BEFORE anything else
@@ -178,6 +190,8 @@ def main(task_args: TaskArguments, train_args: AsagTrainingArguments, custom_mod
         train_drop_rub=task_args.train_drop_rub,
         flip_levels=task_args.flip_levels,
         drop_all_rubrics=task_args.drop_all_rubrics,
+        rub_shuffle=task_args.rub_shuffle,
+        label_names_only=task_args.label_names_only,
         seed=task_args.seed,
     )
     
@@ -229,7 +243,9 @@ def main(task_args: TaskArguments, train_args: AsagTrainingArguments, custom_mod
             test_ds,
             batch_size=train_args.batch_size,
             collate_fn=lambda x: trainer.collate_fn(x, return_meta=True),
-            save_attweights=train_args.save_attweights
+            save_attweights=train_args.save_attweights,
+            layer_idx=train_args.attn_layer_idx,
+            attn_max_examples=train_args.attn_max_examples,
         )
         
         # Handle different return values based on whether attention weights were saved

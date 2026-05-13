@@ -66,6 +66,8 @@ class AsagTrainingArguments:
     lora_alpha: int = field(default=64, metadata={"help": "LoRA alpha"})
     multi_gpu: bool = field(default=True, metadata={"help": "whether to use multiple GPUs"})
     save_attweights: bool = field(default=False, metadata={"help": "save attention weights during inference"})
+    attn_layer_idx: int = field(default=-1, metadata={"help": "transformer layer index to save attention weights from; -1 means last layer"})
+    attn_max_examples: int = field(default=0, metadata={"help": "maximum number of examples to save attention weights for; 0 means all examples"})
     def __post_init__(self):
         """Validation checks after initialization"""
         assert self.batch_size > 0, "batch_size must be positive"
@@ -79,6 +81,7 @@ class AsagTrainingArguments:
         assert self.gradient_accumulation_steps > 0, "gradient_accumulation_steps must be positive"
         assert 0 <= self.dropout <= 1, "dropout must be between 0 and 1"
         assert 0 <= self.warmup_ratio <= 1, "warmup_ratio must be between 0 and 1"
+        assert self.attn_max_examples >= 0, "attn_max_examples must be non-negative"
         if self.test_only:
             assert self.cp_dir is not None, "cp_dir must be specified in test_only mode"
         if self.multi_gpu:
@@ -128,7 +131,7 @@ class ModelLoader:
             lora_alpha=self.train_args.lora_alpha,
             lora_dropout=0.1,
             bias='none',
-            target_modules=["q_proj", "k_proj", "v_proj", "o_proj"],
+            target_modules="all-linear",
         )
         self.bnb_config = BitsAndBytesConfig(
             load_in_4bit = True, # Activate 4-bit precision base model loading

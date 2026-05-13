@@ -12,6 +12,11 @@ from transformers import AutoTokenizer
 # LLM model identifiers
 LLM_IDENTIFIERS = ("llama", "mistral", "gpt", "qwen", "phi")
 XNET_MODEL_CLASSES = {"xnet"}
+LABEL_NAMES_ONLY_EXCLUDED_BENCHMARKS = {"asap_sas", "pt_asag"}
+LABEL_NAMES_BY_NUM_LABELS = {
+    2: ["Incorrect", "Correct"],
+    3: ["Incorrect", "Partially Correct", "Correct"],
+}
 
 
 def dedupe_keep_order(items):
@@ -60,6 +65,8 @@ class DataPipeline:
         train_drop_rub: float = 0.0,
         flip_levels: bool = False,
         drop_all_rubrics: bool = False,
+        rub_shuffle: bool = False,
+        label_names_only: bool = False,
         seed: int = 42,
     ):
         self.base_model = base_model
@@ -84,6 +91,12 @@ class DataPipeline:
         self.flip_levels = flip_levels
         if drop_all_rubrics and model_class != "span":
             raise ValueError("drop_all_rubrics is only compatible with model_class='span'.")
+        if rub_shuffle and model_class != "span":
+            raise ValueError("rub_shuffle is only compatible with model_class='span'.")
+        self.rub_shuffle = rub_shuffle
+        self.label_names_only = label_names_only
+        if self.label_names_only:
+            self._validate_label_names_only()
         self.seed = seed
 
         self.is_llm = is_llm_model(base_model)
@@ -98,6 +111,39 @@ class DataPipeline:
     def _should_flip_levels(self) -> bool:
         return (not self.needs_grouping()) and self.flip_levels
 
+    def _validate_label_names_only(self):
+        if self.benchmark in LABEL_NAMES_ONLY_EXCLUDED_BENCHMARKS:
+            raise ValueError(
+                "label_names_only is not supported for asap_sas or pt_asag because their "
+                "levels cannot be captured by the unified label-name scheme."
+            )
+        if self.num_labels not in LABEL_NAMES_BY_NUM_LABELS:
+            raise ValueError(
+                f"label_names_only only supports unified 2- or 3-level ASAG schemes; "
+                f"benchmark '{self.benchmark}' has num_labels={self.num_labels}."
+            )
+
+    def _label_names_for_example(self, example):
+        label_semantics = self.benchmark_meta["label_semantics"]
+        rubrics = example.get(label_semantics, [])
+        if not isinstance(rubrics, list):
+            rubrics = [rubrics]
+        label_names = LABEL_NAMES_BY_NUM_LABELS.get(len(rubrics))
+        if label_names is None:
+            label_names = LABEL_NAMES_BY_NUM_LABELS[self.num_labels]
+        if len(label_names) != len(rubrics):
+            raise ValueError(
+                f"label_names_only expected {len(label_names)} rubric levels for "
+                f"benchmark '{self.benchmark}', got {len(rubrics)}."
+            )
+        return label_names
+
+    def _apply_label_names_only(self, example):
+        label_semantics = self.benchmark_meta["label_semantics"]
+        updated = dict(example)
+        updated[label_semantics] = self._label_names_for_example(example)
+        return updated
+
     def _prepare_span_example(self, example):
         label_semantics = self.benchmark_meta["label_semantics"]
         rubrics = example.get(label_semantics, [])
@@ -110,12 +156,14 @@ class DataPipeline:
         updated["original_label"] = int(updated.get("original_label", current_level))
         updated["rubric_index_map"] = rubric_index_map
 
-        if not self._should_flip_levels():
-            return updated
+        if self._should_flip_levels():
+            updated[label_semantics] = list(reversed(rubrics))
+            updated["rubric_index_map"] = list(reversed(rubric_index_map))
+            updated["level"] = len(rubrics) - 1 - current_level
 
-        updated[label_semantics] = list(reversed(rubrics))
-        updated["rubric_index_map"] = list(reversed(rubric_index_map))
-        updated["level"] = len(rubrics) - 1 - current_level
+        if self.rub_shuffle:
+            updated = self._apply_rub_shuffle(updated)
+
         return updated
 
     def _stable_example_key(self, example):
@@ -183,7 +231,35 @@ class DataPipeline:
     def _apply_train_rubric_drop(self, example):
         return self._apply_rubric_drop(example, self.train_drop_rub, "train")
 
+    def _apply_rub_shuffle(self, example):
+        """Permute rubric list while keeping `level` unchanged, breaking rubric-label alignment.
+        Permutation is deterministic per example via hash-based Fisher-Yates."""
+        label_semantics = self.benchmark_meta["label_semantics"]
+        rubrics = example.get(label_semantics, [])
+        if not isinstance(rubrics, list):
+            rubrics = [rubrics]
+
+        updated = dict(example)
+        rubric_index_map = list(updated.get("rubric_index_map", range(len(rubrics))))
+
+        if len(rubrics) <= 1:
+            return updated
+
+        example_key = self._stable_example_key(example)
+        indices = list(range(len(rubrics)))
+        for i in range(len(indices) - 1, 0, -1):
+            swap_key = hashlib.sha256(f"{example_key}|shuffle|{i}".encode("utf-8")).hexdigest()
+            j = int(swap_key[:16], 16) % (i + 1)
+            indices[i], indices[j] = indices[j], indices[i]
+
+        updated[label_semantics] = [rubrics[idx] for idx in indices]
+        updated["rubric_index_map"] = [rubric_index_map[idx] for idx in indices]
+        # level intentionally left unchanged — it now indexes the wrong rubric
+        return updated
+
     def _encode_dataset(self, dataset, enc_fn, apply_test_time_rubric_drop=False, apply_train_rubric_drop=False):
+        if self.label_names_only:
+            dataset = dataset.map(lambda x: self._apply_label_names_only(x))
         if not self.needs_grouping():
             dataset = dataset.map(lambda x: self._prepare_span_example(x))
         if apply_train_rubric_drop and self.train_drop_rub > 0.0 and not self.needs_grouping():
@@ -894,6 +970,8 @@ class MultiTaskDataPipeline(DataPipeline):
         train_drop_rub: float = 0.0,
         flip_levels: bool = False,
         drop_all_rubrics: bool = False,
+        rub_shuffle: bool = False,
+        label_names_only: bool = False,
         seed: int = 42,
     ):
         self.train_tasks = dedupe_keep_order(train_tasks)
@@ -921,6 +999,8 @@ class MultiTaskDataPipeline(DataPipeline):
             train_drop_rub=train_drop_rub,
             flip_levels=flip_levels,
             drop_all_rubrics=drop_all_rubrics,
+            rub_shuffle=rub_shuffle,
+            label_names_only=label_names_only,
             seed=seed,
         )
 
@@ -939,6 +1019,8 @@ class MultiTaskDataPipeline(DataPipeline):
                 train_drop_rub=train_drop_rub,
                 flip_levels=flip_levels,
                 drop_all_rubrics=drop_all_rubrics,
+                rub_shuffle=rub_shuffle,
+                label_names_only=label_names_only,
                 seed=seed,
             )
             for task in dedupe_keep_order(self.train_tasks + self.eval_tasks + self.test_tasks)
