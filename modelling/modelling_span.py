@@ -429,7 +429,6 @@ class SpanAlignmentModel(BaseAsagModel):
                 # Add contrastive loss if enabled.
                 if self.cl_weight > 0.0:
                     contrastive_loss = self.contrastive_rubric_loss(
-                        seq_emb=pooled_emb if pooled_emb is not None else answer_emb,
                         rubric_embs=dense_rubric_embs,
                         rubric_mask=rubric_mask,
                         pos_idx=labels,
@@ -437,35 +436,27 @@ class SpanAlignmentModel(BaseAsagModel):
                     )
                     loss = loss + self.cl_weight * contrastive_loss
 
-            # Add pairwise ranking loss (example usage)
-            # pairwise_loss = self.pairwise_ranking_loss(
-            #     seq_emb=pooled_emb if pooled_emb is not None else answer_emb,
-            #     rubric_embs=rubric_embs,
-            #     rubric_mask=rubric_mask,
-            #     pos_idx=labels,
-            #     temperature=0.07,
-            #     margin=0.2,
-            # )
-            # loss = loss + pairwise_weight * pairwise_loss
-
         return SequenceClassifierOutput(loss=loss, logits=logits)
 
     def contrastive_rubric_loss(
         self,
-        seq_emb: torch.Tensor,  # [B, H]   -> z
         rubric_embs: torch.Tensor,  # [B, R, H]
         rubric_mask: torch.Tensor,  # [B, R] in {0,1}
         pos_idx: torch.Tensor,  # [B]
         temperature: float = 0.07,
     ) -> torch.Tensor:
         """
-        Contrastive alignment loss between sequence embedding and rubric embeddings.
+        Contrastive loss operating purely in rubric embedding space.
+
+        For each example, the correct rubric embedding is the anchor. Its
+        similarity to itself is the positive; similarities to all other valid
+        rubric embeddings in the same example are negatives.
 
         Implements:
-            L_b = -log( exp(sim(z, r_y)/tau) / sum_k exp(sim(z, r_k)/tau) )
+            L_b = -log( exp(sim(r_y, r_y)/tau) / sum_k exp(sim(r_y, r_k)/tau) )
+                = -log( exp(1/tau) / sum_k exp(sim(r_y, r_k)/tau) )
 
         Args:
-            seq_emb: [B, H] sequence/global representation
             rubric_embs: [B, R, H] rubric span embeddings
             rubric_mask: [B, R] mask for valid rubric entries
             pos_idx: [B] gold rubric indices
@@ -474,22 +465,14 @@ class SpanAlignmentModel(BaseAsagModel):
         Returns:
             Scalar loss
         """
-
-        # Normalize embeddings for cosine similarity
-        seq_emb = F.normalize(seq_emb, dim=-1)  # [B, H]
         rubric_embs = F.normalize(rubric_embs, dim=-1)  # [B, R, H]
 
-        # Compute cosine similarities
-        # [B, R] = batch matmul
-        similarities = torch.einsum("bh,brh->br", seq_emb, rubric_embs)
+        # Gather the correct rubric embedding for each example: [B, H]
+        pos_embs = rubric_embs[torch.arange(rubric_embs.shape[0], device=rubric_embs.device), pos_idx]
 
-        # Temperature scaling
-        similarities = similarities / temperature
+        # Similarity of each correct rubric against all rubrics in its example: [B, R]
+        similarities = torch.einsum("bh,brh->br", pos_embs, rubric_embs) / temperature
 
-        # Mask invalid rubric entries
-        similarities = similarities.masked_fill(rubric_mask == 0, -1e9)
+        similarities = similarities.masked_fill(~rubric_mask.bool(), -1e9)
 
-        # Compute cross-entropy
-        loss = F.cross_entropy(similarities, pos_idx)
-
-        return loss
+        return F.cross_entropy(similarities, pos_idx)

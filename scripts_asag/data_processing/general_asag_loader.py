@@ -154,7 +154,13 @@ class ASAG_Data_Loader:
             example["question_context"] = meta["question_context"]
 
 
-        rubrics = meta["rubrics"]
+        rubrics = meta.get("rubrics")
+        if not rubrics:
+            qid = example.get("question_id", "<unknown>")
+            raise ValueError(
+                f"No rubrics found for question_id={qid!r}. "
+                "Check question_meta.json or the configured rubric_meta_path."
+            )
         rubric_list = [
             v for _, v in self._rubric_items(rubrics)
         ]
