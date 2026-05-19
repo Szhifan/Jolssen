@@ -30,3 +30,5 @@
 */question_meta_human.json
 */question_meta_llm.jsonother_benchmarks/yelp/train.csv
 __pycache__/
+post_analysis/
+scripts_others/
