@@ -316,7 +316,7 @@ def main(task_args: TaskArguments, train_args: AsagTrainingArguments, custom_mod
         test_predictions.to_csv(f"{pred_path_prefix}_predictions.csv", index=False)
 
         if attention_weights is not None:
-            attn_weights_path = f"{pred_path_prefix}_attention_weights.pt"
+            attn_weights_path = os.path.join(train_args.save_dir, f"{dataset_key}_attention_weights.pt")
             torch.save(attention_weights, attn_weights_path)
 
         test_metrics = eval_report(test_predictions)

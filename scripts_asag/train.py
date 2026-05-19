@@ -274,7 +274,7 @@ def main(task_args: TaskArguments, train_args: AsagTrainingArguments, custom_mod
         # Save attention weights if available
         if attention_weights is not None:
             print(f"Saving attention weights for {test_name}...")
-            attn_weights_path = os.path.join(pred_dir, f"{test_name}_attention_weights.pt")
+            attn_weights_path = os.path.join(train_args.save_dir, f"{test_name}_attention_weights.pt")
             torch.save(attention_weights, attn_weights_path)
             print(f"Attention weights saved to {attn_weights_path}")
         

@@ -1,14 +1,31 @@
-results_* 
-run_* 
-.hypothesis/* 
-.vscode/* 
-test.py
-.env
-*.pyc   
-.conda/
-figures/*
-post_analysis/*
-reports/*
-cleanup_model_params.py
-compute_per_level_metrics.py
-asag_benchmarks/asap_sas/metadata
+# Whitelist: track only ASAG codebase + config files
+
+# Ignore everything at root level
+/*
+
+# Git and environment files
+!.gitignore
+!.env.example
+
+# Config web files
+!config_web_multitask.py
+!config_web_ui.py
+
+# Core files needed by scripts_asag
+!trainer.py
+!utils.py
+
+# ASAG scripts, model code, and benchmark data
+!scripts_asag/
+!modelling/
+!asag_benchmarks/
+
+# Ignore caches and OS artifacts inside allowed directories
+**/__pycache__/
+**/*.pyc
+**/*.DS_Store
+
+
+# metas 
+*/question_meta_human.json
+*/question_meta_llm.json
