@@ -155,36 +155,10 @@ Train jointly on the English ASAS benchmarks (ASAP-SAS, SciEntsBank, Beetle), wi
 1. On English training benchmarks — measures positive transfer from joint training.
 2. On non-English benchmarks (Alice-LP, PT-ASAG) under zero-shot and few-shot settings — measures cross-lingual and domain transfer.
 
-## Cross-lingual Transfer
+## Cross-Benchmark transfer
 
-The framework supports cross-lingual zero-shot transfer:
+The framework supports training on dataset X and testing on Y
 
-- Training on English benchmarks, evaluation on German (Alice-LP) and Portuguese (PT-ASAG).
-- For multilingual benchmarks, field tags and instructions are translated into the target language. Under multi-benchmark training, the English format is used uniformly for all benchmarks.
-
-## Non-ASAS Benchmarks
-
-Seven benchmarks test whether the sequence-to-label alignment framework generalizes beyond ASAS.
-
-| Benchmark | Key | Lang | Task | Labels |
-| --- | --- | --- | --- | --- |
-| **PIQA** | `piqa` | EN | Physical commonsense: pick the more plausible solution | 2 (instance-specific options) |
-| **FigQA** | `fiqa` | EN | Figurative language: pick the matching ending | 2 (instance-specific options) |
-| **xStance** | `xstance` | EN/DE/FR/IT | Political stance of comment toward question | 2 Against/Favor |
-| **SemEval-2016 Task 6** | `semeval2016` | EN | Stance of tweet toward named target | 3 Against/Favor/None |
-| **IMDB** | `imdb` | EN | Binary sentiment of movie reviews | 2 Negative/Positive |
-| **AG News** | `ag_news` | EN | News topic classification | 4 World/Sports/Business/Sci-Tech |
-| **EIC** | `eic` | EN | Edit intent in scientific paper revisions | 5 Claim/Clarity/Fact/Grammar/Other |
-
-xStance is the primary cross-lingual benchmark (covers German, French, Italian). PIQA and FigQA use instance-specific rubric labels (the candidate options serve directly as label descriptions).
-
-## Universal ASAS Objective
-
-The longer-term goal is a single cohesive model trained across multiple benchmarks. The framework generalizes beyond ASAS to any classification task with meaningful label semantics:
-
-- **answer** = input text
-- **question / sample solution / instruction** = task-specific context
-- **rubrics** = label descriptions
 
 ## Training Tasks
 
@@ -248,51 +222,9 @@ Train and evaluate on a single non-ASAS benchmark using the same `TaskArguments`
 | --- | --- |
 | `utils.py` | `evaluate()`, `metrics_calc()`, `eval_report()`, `save_report()`, `save_prediction()`, `get_label_weights()`, `per_qid_metrics()`, misc helpers (`set_seed`, `configure_logging`, `batch_to_device`, `clear_gpu_memory`). |
 
+### Notebooks
 
-
-## Main Text Experiments
-
-### Setting 1: Mono-Benchmark (`Table 1` / `tab:main_results`)
-
-- **Benchmarks:** ASAP-SAS (UA), Alice-LP (UQ), iStudio (UA), PT-ASAG (UA), SciEntsBank (UQ + UD), Beetle (UQ)
-
-**Models (4 backbones):**
-
-- Llama-3.2-1B-Instruct
-- Llama-3.2-3B-Instruct
-- Mistral-7B-v0.1
-- Llama-3.1-8B-Instruct
-
-**Methods compared:**
-
-- Seq. Classification (no fixed head for variable-score benchmarks, so N/A on ASAP-SAS)
-- Rubric Retrieval (only for 1B + 3B; too expensive for 7B/8B)
-- Answer-Rubric Alignment (Gombert et al.)
-- Trained Generation
-- Ruspan (reported with condiff alignment as the fixed default)
-
-**Config:** LoRA rank 64, α 64, dropout 0.1, all linear modules; max seq 2048; batch 16; cosine LR schedule with 1% warmup; 5 epochs (3 for Alice-LP); LR 2e-4 for 1B/3B, 5e-5 for 7B/8B; 2× A100; metric: macro-F1.
-
-### Setting 2: Joint Training + Cross-Benchmark (`Table 2` / `tab:multi_results`)
-
-- **Train on:** English ASAS benchmarks (excluding iStudio)
-- **Evaluate on:** iStudio (sanity check), Alice-LP, PT-ASAG
-- **Models:** Same 4 backbones above
-
-**Methods compared:**
-
-- Rubric Retrieval (only 1B + 3B)
-- Trained Generation
-- Zero-shot Generation (frozen instruction-tuned LLM, no fine-tuning)
-- Ruspan (condiff)
-- Ruspan-RIM (condiff + Rubric Independence Masking)
-- Ruspan-RIM-reindexing (condiff + RIM + position reindexing)
-
-**Note:** Seq. Classification is entirely absent from this table because its fixed output head cannot handle variable score ranges across benchmarks.
-
-### Key config details
-
-- Ruspan variant in main tables: always condiff (pre-specified default; full per-variant breakdown is in the appendix)
-- Generation training: 3 epochs, LR 1e-4 for 1B/3B; greedy decoding (temp 0) at eval
-- Checkpoint selection: best macro-F1 on dev split (10% held-out from train if no official dev)
-- Cross-benchmark checkpoint selection: held-out subset from iStudio training split
+| File | Purpose |
+| --- | --- |
+| `generate_rubrics_workflow.ipynb` | Prompts `gpt-4o-mini` to synthesize per-level rubric descriptions for benchmarks without native annotations. |
+| `generate_reference_answers.ipynb` | Prompts `gpt-4o-mini` to generate sample solutions for ASAP-SAS (which lacks reference answers). |
