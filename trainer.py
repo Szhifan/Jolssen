@@ -260,10 +260,21 @@ class ModelLoader:
         )
         # Step 2: Load PEFT weights and merge
         print("Loading PEFT adapter and merging with base model...")
-        peft_model = base_model._load_peft_adapter(str(cp_path) + '/')
+        base_model._load_peft_adapter(str(cp_path) + '/')
+        peft_model = base_model
         peft_model.encoder = peft_model.encoder.merge_and_unload()
 
-        
+        non_peft_file = os.path.join(cp_path, "non_peft_params.bin")
+        if os.path.exists(non_peft_file):
+            non_peft_state = torch.load(non_peft_file, map_location="cpu")
+            missing, unexpected = peft_model.load_state_dict(non_peft_state, strict=False)
+            if missing:
+                print(f"[LoRA Init] Missing non-PEFT parameters: {missing}")
+            if unexpected:
+                print(f"[LoRA Init] Unexpected non-PEFT parameters: {unexpected}")
+        else:
+            print(f"[LoRA Init] non_peft_params.bin not found in checkpoint: {cp_path}")
+
         # Step 3: If quantization is requested, save and reload with quantization
         if self.train_args.use_bnb:
             print("Applying quantization to merged model...")
@@ -276,12 +287,8 @@ class ModelLoader:
                 # Also save the config
                 config.save_pretrained(temp_dir)
                 
-                # Reload with quantization
-                final_model = self._init_model(
-                    use_lora=False,
-                    use_bnb=True,
-                    config=config
-                )
+                # Reload the merged checkpoint with quantization.
+                final_model = self.load_model(temp_dir, use_lora=False)
                 
             finally:
                 # Clean up temporary directory

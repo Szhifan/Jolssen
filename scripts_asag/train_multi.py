@@ -230,6 +230,7 @@ def main(task_args: TaskArguments, train_args: AsagTrainingArguments, custom_mod
         use_translated_prompts=task_args.use_translated_prompts,
         random_solution=task_args.random_solution,
         model_class=task_args.model_class,
+        span_fuse_type=custom_model_args.span_fuse_type,
         test_drop_rub=task_args.test_drop_rub,
         train_drop_rub=task_args.train_drop_rub,
         flip_levels=task_args.flip_levels,

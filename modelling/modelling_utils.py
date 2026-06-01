@@ -143,11 +143,11 @@ class BackwardSupportedArguments:
         default=0.0,
         metadata={"help": "Weight for rubric contrastive loss. 0 means no contrastive loss."}
     )
-    rubric_independent_attn: bool = field(
+    rim: bool = field(
         default=False,
         metadata={
             "help": (
-                "Block-sparse attention: rubric tokens attend to context and their own tokens only, "
+                "RIM (Rubric Independent Masking): rubric tokens attend to context and their own tokens only, "
                 "not to other rubrics."
             )
         },
@@ -158,16 +158,16 @@ class BackwardSupportedArguments:
             "help": (
                 "Reset position IDs per rubric so every rubric sees the same distance to context "
                 "(matches xnet's per-pair positional distribution). Only valid when "
-                "--rubric-independent-attn is set."
+                "--rim is set."
             )
         },
     )
 
     def __post_init__(self):
-        if self.rubric_independent_attn and self.span_fuse_type != "l-only":
-            raise ValueError("--rubric-independent-attn is only compatible with --span-fuse-type l-only.")
-        if self.reindex_rub and not self.rubric_independent_attn:
-            raise ValueError("--reindex-rub requires --rubric-independent-attn to be set.")
+        if self.rim and self.span_fuse_type != "l-only":
+            raise ValueError("--rim is only compatible with --span-fuse-type l-only.")
+        if self.reindex_rub and not self.rim:
+            raise ValueError("--reindex-rub requires --rim to be set.")
 
         if self.pool_type not in ("avg", "weightedavg", "cls", "last"):
             self.pool_type = "last"

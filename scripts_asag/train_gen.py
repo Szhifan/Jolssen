@@ -691,12 +691,6 @@ def build_alice_lp_examples(
         lp_entry = row.get("learning_performance", {}) or {}
         label_raw = next(iter(lp_entry.values()), 0)
         label = parse_int_like(label_raw)
-        sample_solution = select_sample_solution(
-            meta.get("sample_solution"),
-            rng=rng,
-            random_solution=task_args.random_solution,
-            is_training=is_training,
-        )
         example = {
             "id": str(row.get("id", f"alice_lp_{split_name}_{len(examples)}")),
             "question_id": question_id,
@@ -705,7 +699,7 @@ def build_alice_lp_examples(
             "labels": label,
             "answer": clean_text(row.get("answer")),
             "question": clean_text(meta.get("prompt")),
-            "sample_solution": sample_solution,
+            "sample_solution": clean_text(meta.get("sample_solution", "")),
             "valid_level_ids": valid_level_ids,
             "rubrics": rubrics,
             "rubric": rubrics,

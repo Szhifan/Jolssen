@@ -24,6 +24,17 @@ ASAG_BENCHMARK_OPTIONS: list[tuple[str, str]] = [
     ("scientsbank2", "Scientsbank2"),
 ]
 ASAG_BENCHMARK_SET = {value for value, _ in ASAG_BENCHMARK_OPTIONS}
+LLM_GEN_SUPPORTED_BENCHMARKS = {
+    "alice_lp",
+    "asap_sas",
+    "beetle",
+    "istudio",
+    "pt_asag",
+    "scientsbank",
+    "scientsbank2",
+}
+RIM_RESULTS_SUBDIR = "rim"
+LLM_GEN_RESULTS_SUBDIR = "llm_gen"
 
 MODEL_OPTIONS: list[tuple[str, str]] = [
     ("markussagen/xlm-roberta-longformer-base-4096", "XLM-Roberta Long"),
@@ -167,7 +178,7 @@ class MultiExperimentConfig:
     random_suffix: bool = True
     use_translated_prompts: bool = True
     random_solution: bool = False
-    rubric_independent_attn: bool = False
+    rim: bool = False
     reindex_rub: bool = False
     rub_shuffle: bool = False
 
@@ -188,7 +199,7 @@ class MultiExperimentConfig:
         ]
         if self.random_solution:
             parts.append("randsolu")
-        if self.rubric_independent_attn:
+        if self.rim:
             parts.append("rub-ind")
             if self.reindex_rub:
                 parts.append("reindex")
@@ -224,8 +235,8 @@ def _normalize_config_dict(config_dict: dict) -> dict:
     out["test_tasks"] = test_tasks
 
     out["model_class"] = str(out.get("model_class", "span")).strip()
-    if out["model_class"] not in {"span", "xnet"}:
-        raise ValueError("model_class must be one of: span, xnet")
+    if out["model_class"] not in {"span", "xnet", "llm-gen"}:
+        raise ValueError("model_class must be one of: span, xnet, llm-gen")
     if out["model_class"] == "span":
         out["span_fuse_type"] = str(out.get("span_fuse_type", "p-concat")).strip() or "p-concat"
     else:
@@ -286,7 +297,7 @@ def _normalize_config_dict(config_dict: dict) -> dict:
         "random_suffix",
         "use_translated_prompts",
         "random_solution",
-        "rubric_independent_attn",
+        "rim",
         "reindex_rub",
         "rub_shuffle",
     ]
@@ -300,16 +311,29 @@ def _normalize_config_dict(config_dict: dict) -> dict:
         "random_suffix": True,
         "use_translated_prompts": True,
         "random_solution": False,
-        "rubric_independent_attn": False,
+        "rim": False,
         "reindex_rub": False,
         "rub_shuffle": False,
     }
-    if out["rubric_independent_attn"] and out.get("span_fuse_type") != "l-only":
-        raise ValueError("rubric_independent_attn is only compatible with span_fuse_type='l-only'.")
-    if out["reindex_rub"] and not out["rubric_independent_attn"]:
-        raise ValueError("reindex_rub requires rubric_independent_attn to be set.")
     for field_name in bool_fields:
         out[field_name] = _coerce_bool(out.get(field_name), defaults[field_name])
+    if out["rim"] and out.get("span_fuse_type") != "l-only":
+        raise ValueError("rim is only compatible with span_fuse_type='l-only'.")
+    if out["reindex_rub"] and not out["rim"]:
+        raise ValueError("reindex_rub requires rim to be set.")
+    if out["model_class"] == "llm-gen":
+        invalid_llm_gen = [
+            x
+            for x in (train_tasks + eval_tasks + test_tasks)
+            if x not in LLM_GEN_SUPPORTED_BENCHMARKS
+        ]
+        if invalid_llm_gen:
+            valid = ", ".join(sorted(LLM_GEN_SUPPORTED_BENCHMARKS))
+            raise ValueError(f"llm-gen supports only these benchmarks: {valid}. Unsupported: {invalid_llm_gen}")
+        if out["rim"] or out["reindex_rub"]:
+            raise ValueError("llm-gen does not support rim or reindex_rub.")
+        if out["test_drop_rub"] > 0 or out["train_drop_rub"] > 0:
+            raise ValueError("llm-gen does not support test_drop_rub or train_drop_rub.")
 
     out["exp_name"] = str(out.get("exp_name", "") or "").strip()
     return out
@@ -347,7 +371,59 @@ def _write_api_token_exports(file_obj, wandb_api_key: str, hf_token: str):
         file_obj.write("\n")
 
 
+def _experiment_root(config: MultiExperimentConfig, exp_name: str) -> Path:
+    if config.model_class == "llm-gen":
+        return WORKSPACE_ROOT / "results_multi" / LLM_GEN_RESULTS_SUBDIR / exp_name
+    if config.rim:
+        return WORKSPACE_ROOT / "results_multi" / RIM_RESULTS_SUBDIR / exp_name
+    return WORKSPACE_ROOT / "results_multi" / exp_name
+
+
+def _build_train_gen_command_lines(config: MultiExperimentConfig, save_dir: str) -> list[str]:
+    lines = [
+        "accelerate launch \\",
+        "    scripts_asag/train_gen.py \\",
+        f"    --save-dir {save_dir} \\",
+        f"    --train-tasks {' '.join(config.train_tasks)} \\",
+        f"    --eval-tasks {' '.join(config.eval_tasks)} \\",
+        f"    --test-tasks {' '.join(config.test_tasks)} \\",
+        f"    --base-model \"{config.base_model}\" \\",
+        f"    --batch-size {config.batch_size} \\",
+        f"    --gradient-accumulation-steps {config.gradient_accumulation_steps} \\",
+        f"    --train-frac {config.train_frac} \\",
+        f"    --lr {config.lr} \\",
+        f"    --max-epoch {config.max_epoch} \\",
+        f"    --seed {config.seed} \\",
+    ]
+
+    if config.random_solution:
+        lines.append("    --random-solution \\")
+    if config.use_lora:
+        lines.append("    --use-lora \\")
+    if config.use_bnb:
+        lines.append("    --use-bnb \\")
+    if config.add_suffix:
+        lines.append("    --add-suffix \\")
+    if config.add_context:
+        lines.append("    --add-context \\")
+    else:
+        lines.append("    --no_add_context \\")
+    if config.random_suffix:
+        lines.append("    --random-suffix \\")
+    if config.use_translated_prompts:
+        lines.append("    --use-translated-prompts \\")
+    if config.bf16:
+        lines.append("    --bf16 \\")
+    if config.log_wandb:
+        lines.append("    --log-wandb \\")
+
+    return _finalize_cmd_lines(lines)
+
+
 def _build_command_lines(config: MultiExperimentConfig, save_dir: str) -> list[str]:
+    if config.model_class == "llm-gen":
+        return _build_train_gen_command_lines(config, save_dir)
+
     lines = [
         "accelerate launch \\",
         "    scripts_asag/train_multi.py \\",
@@ -369,8 +445,8 @@ def _build_command_lines(config: MultiExperimentConfig, save_dir: str) -> list[s
         lines.append(f"    --span-fuse-type {config.span_fuse_type} \\")
         if config.span_pool_type != "last":
             lines.append(f"    --span-pool-type {config.span_pool_type} \\")
-        if config.rubric_independent_attn:
-            lines.append("    --rubric-independent-attn \\")
+        if config.rim:
+            lines.append("    --rim \\")
             if config.reindex_rub:
                 lines.append("    --reindex-rub \\")
 
@@ -437,7 +513,7 @@ def _build_run_script(
 
     for i, config in enumerate(configs):
         exp_name = config.generate_exp_name()
-        exp_root = WORKSPACE_ROOT / "results_multi" / exp_name
+        exp_root = _experiment_root(config, exp_name)
 
         block = [
             f"# Experiment {i + 1}: {exp_name}",
@@ -477,7 +553,7 @@ def _build_run_script(
 
 DEFAULT_TRAIN_TASKS = {"asap_sas", "beetle", "scientsbank"}
 DEFAULT_EVAL_TASKS = {"istudio"}
-DEFAULT_TEST_TASKS = {"alice_lp", "asap_sas", "beetle", "scientsbank", "istudio", "pt_asag"}
+DEFAULT_TEST_TASKS = {"istudio", "pt_asag", "alice_lp"}
 
 
 def _build_template() -> str:
@@ -698,6 +774,7 @@ def _build_template() -> str:
                             <select id="modelClass" multiple>
                                 <option value="span" selected>span</option>
                                 <option value="xnet">xnet</option>
+                                <option value="llm-gen">llm-gen</option>
                             </select>
                         </div>
                         <div class="form-group">
@@ -739,17 +816,17 @@ def _build_template() -> str:
                     <div class="grid" id="rubIndWrap">
                         <div class="form-group">
                             <label class="checkbox-item" style="font-weight:700;font-size:14px;color:#444;">
-                                <input type="checkbox" id="rubricIndependentAttn">
-                                rubric_independent_attn
+                                <input type="checkbox" id="rim">
+                                RIM (Rubric Independent Masking)
                             </label>
-                            <div class="help">Block-sparse attention: each rubric only attends to context + itself.</div>
+                            <div class="help">RIM: each rubric only attends to context + itself.</div>
                         </div>
                         <div class="form-group" id="reindexWrap">
                             <label class="checkbox-item" style="font-weight:700;font-size:14px;color:#444;">
                                 <input type="checkbox" id="reindexRub" disabled>
                                 reindex_rub
                             </label>
-                            <div class="help">Reset position IDs per rubric (requires rubric_independent_attn).</div>
+                            <div class="help">Reset position IDs per rubric (requires rim).</div>
                         </div>
                     </div>
                     <div class="grid">
@@ -878,7 +955,7 @@ def _build_template() -> str:
             if (cfg.random_solution) {{
                 parts.push('randsolu');
             }}
-            if (cfg.rubric_independent_attn) {{
+            if (cfg.rim) {{
                 parts.push('rub-ind');
                 if (cfg.reindex_rub) parts.push('reindex');
             }}
@@ -921,7 +998,7 @@ def _build_template() -> str:
                 random_suffix: document.getElementById('randomSuffix').checked,
                 use_translated_prompts: document.getElementById('useTranslated').checked,
                 random_solution: document.getElementById('randomSolution').checked,
-                rubric_independent_attn: document.getElementById('rubricIndependentAttn').checked,
+                rim: document.getElementById('rim').checked,
                 reindex_rub: document.getElementById('reindexRub').checked,
                 rub_shuffle: document.getElementById('rubShuffle').checked,
             }};
@@ -936,7 +1013,7 @@ def _build_template() -> str:
             fuse.disabled = !hasSpan;
             spanPool.disabled = !hasSpan;
 
-            const rubIndChk = document.getElementById('rubricIndependentAttn');
+            const rubIndChk = document.getElementById('rim');
             const reindexChk = document.getElementById('reindexRub');
             const rubIndWrap = document.getElementById('rubIndWrap');
             rubIndWrap.style.opacity = hasSpan ? '1' : '0.5';
@@ -988,6 +1065,8 @@ def _build_template() -> str:
                             key: `${{model}}|${{modelClass}}|_`,
                             base_model: model,
                             model_class: modelClass,
+                            rim: false,
+                            reindex_rub: false,
                         }};
                         cfg.autoName = computeAutoName(cfg);
                         cfg.customName = prev.get(cfg.key) || '';
@@ -1282,7 +1361,7 @@ def generate_command():
             return jsonify({"success": False, "error": "expected JSON body"})
         config = _to_config(request.get_json(silent=True) or {})
         exp_name = config.generate_exp_name()
-        exp_root = WORKSPACE_ROOT / "results_multi" / exp_name
+        exp_root = _experiment_root(config, exp_name)
         command = "\n".join(_build_command_lines(config, str(exp_root)))
         return jsonify(
             {

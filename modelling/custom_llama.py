@@ -161,7 +161,7 @@ class LlamaModel(LlamaPreTrainedModel):
         input_shape = input_ids.shape if input_ids is not None else inputs_embeds.shape[:2]
 
         if attention_mask is not None and attention_mask.dim() == 4:
-            # Pre-built additive block mask (e.g. rubric_independent_attn) — use directly for all layers
+            # Pre-built additive block mask (e.g. RIM) — use directly for all layers
             causal_mask = attention_mask
             bidir_attention_mask = attention_mask
         else:

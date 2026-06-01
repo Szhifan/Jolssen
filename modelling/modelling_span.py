@@ -192,11 +192,11 @@ class SpanFuser(nn.Module):
 class SpanAlignmentModel(BaseAsagModel):
     def __init__(self, config, lora_config=None, bnb_config=None):
         super().__init__(config, lora_config=lora_config, bnb_config=bnb_config)
-        self.rubric_independent_attn = getattr(config, "rubric_independent_attn", False)
+        self.rim = getattr(config, "rim", False)
         self.reindex_rub = getattr(config, "reindex_rub", False)
-        if self.reindex_rub and not self.rubric_independent_attn:
-            raise ValueError("reindex_rub requires rubric_independent_attn to be set.")
-        if self.rubric_independent_attn:
+        if self.reindex_rub and not self.rim:
+            raise ValueError("reindex_rub requires rim to be set.")
+        if self.rim:
             config.span_fuse_type = "l-only"
         self.pooler = Pooler(pool_type=config.pool_type)
         self.span_fuser = SpanFuser(config)
@@ -348,7 +348,7 @@ class SpanAlignmentModel(BaseAsagModel):
         # Encode with base model.
         enc_mask = attention_mask
         position_ids = None
-        if self.rubric_independent_attn:
+        if self.rim:
             dtype = next(self.parameters()).dtype
             enc_mask = build_rubric_block_attention_mask(
                 attention_mask,
@@ -401,8 +401,9 @@ class SpanAlignmentModel(BaseAsagModel):
                 pooled_emb=pooled_emb,
             )
             # Direct classification — logits are [B, num_labels], labels are class indices.
-            if labels is not None:
-                loss = torch.nn.CrossEntropyLoss()(logits, labels)
+            # Labels < 0 (e.g. -1) mean "no ground truth" (e.g. unreleased test sets); skip loss.
+            if labels is not None and (labels >= 0).any():
+                loss = torch.nn.CrossEntropyLoss(ignore_index=-1)(logits, labels)
         else:
             flat_text_emb = answer_emb[rubric_example_indices]
             flat_pooled_emb = pooled_emb[rubric_example_indices] if pooled_emb is not None else None

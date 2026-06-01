@@ -119,14 +119,14 @@ class ExperimentConfig:
     num_unsink_layers: float = 0
     pairwise_margin: float = 0.1  # For xnet-pwr
     drop_all_rubrics: bool = False  # No-rubric baseline; requires span_fuse_type='p-only'
-    rubric_independent_attn: bool = False
+    rim: bool = False
     reindex_rub: bool = False
 
     def __post_init__(self):
-        if self.rubric_independent_attn and self.span_fuse_type != "l-only":
-            raise ValueError("rubric_independent_attn is only compatible with span_fuse_type='l-only'.")
-        if self.reindex_rub and not self.rubric_independent_attn:
-            raise ValueError("reindex_rub requires rubric_independent_attn to be set.")
+        if self.rim and self.span_fuse_type != "l-only":
+            raise ValueError("rim is only compatible with span_fuse_type='l-only'.")
+        if self.reindex_rub and not self.rim:
+            raise ValueError("reindex_rub requires rim to be set.")
         if self.drop_all_rubrics and self.span_fuse_type != "p-only":
             raise ValueError("drop_all_rubrics requires span_fuse_type='p-only'.")
         if self.label_names_only and self.benchmark in {"asap_sas", "pt_asag"}:
@@ -147,7 +147,7 @@ class ExperimentConfig:
             parts.append(self.span_fuse_type)
         if self.random_solution:
             parts.append("randsolu")
-        if self.rubric_independent_attn:
+        if self.rim:
             parts.append("rub-ind")
             if self.reindex_rub:
                 parts.append("reindex")
@@ -775,8 +775,8 @@ HTML_TEMPLATE = """
                     <div class="form-row" id="riaRow">
                         <div class="form-group">
                             <div class="checkbox-item">
-                                <input type="checkbox" id="rubricIndependentAttn" name="rubric_independent_attn" onchange="onRubricIndependentAttnChange()">
-                                <label for="rubricIndependentAttn">Rubric Independent Attention <span class="model-specific">(span only, requires l-only)</span></label>
+                                <input type="checkbox" id="rim" name="rim" onchange="onRimChange()">
+                                <label for="rim">RIM (Rubric Independent Masking) <span class="model-specific">(span only, requires l-only)</span></label>
                             </div>
                         </div>
                         <div class="form-group" id="reindexRubGroup">
@@ -965,14 +965,14 @@ HTML_TEMPLATE = """
             const spanPoolType = document.getElementById('spanPoolType');
             const pairwiseMarginGroup = document.getElementById('pairwiseMarginGroup');
             const riaRow = document.getElementById('riaRow');
-            const rubricIndependentAttn = document.getElementById('rubricIndependentAttn');
+            const rim = document.getElementById('rim');
             const reindexRub = document.getElementById('reindexRub');
             const reindexRubGroup = document.getElementById('reindexRubGroup');
             const dropAllRubrics = document.getElementById('dropAllRubrics');
             
             if (hasSpan) {
                 spanFuseTypeRow.classList.remove('disabled-field');
-                if (!rubricIndependentAttn.checked) {
+                if (!rim.checked) {
                     spanFuseType.disabled = false;
                 }
                 spanPoolType.disabled = false;
@@ -980,16 +980,16 @@ HTML_TEMPLATE = """
                 spanFuseTypeRow.classList.add('disabled-field');
                 spanFuseType.disabled = true;
                 spanPoolType.disabled = true;
-                rubricIndependentAttn.checked = false;
+                rim.checked = false;
                 reindexRub.checked = false;
             }
 
             if (riaRow) {
                 riaRow.classList.toggle('disabled-field', !hasSpan);
             }
-            rubricIndependentAttn.disabled = !hasSpan;
+            rim.disabled = !hasSpan;
 
-            if (rubricIndependentAttn.checked && hasSpan) {
+            if (rim.checked && hasSpan) {
                 Array.from(spanFuseType.options).forEach(o => { o.selected = o.value === 'l-only'; });
                 spanFuseType.disabled = true;
                 spanFuseTypeRow.classList.add('disabled-field');
@@ -998,7 +998,7 @@ HTML_TEMPLATE = """
                 }
             }
 
-            reindexRub.disabled = !(hasSpan && rubricIndependentAttn.checked);
+            reindexRub.disabled = !(hasSpan && rim.checked);
             if (reindexRubGroup) {
                 reindexRubGroup.classList.toggle('disabled-field', reindexRub.disabled);
             }
@@ -1131,7 +1131,7 @@ HTML_TEMPLATE = """
             if (!addContext) parts.push('nocontext');
             if (randomSuffix === false) parts.push('fixins');
             if (randomSolution) parts.push('randsolu');
-            if (document.getElementById('rubricIndependentAttn').checked) parts.push('rub-ind');
+            if (document.getElementById('rim').checked) parts.push('rub-ind');
             if (document.getElementById('reindexRub').checked) parts.push('reindex');
             if (!useTranslated) parts.push('notranslate');
             if (dropAllRubrics) parts.push('norub');
@@ -1336,7 +1336,7 @@ HTML_TEMPLATE = """
                 train_drop_rub: document.getElementById('trainDropRub').value,
                 drop_all_rubrics: document.getElementById('dropAllRubrics').checked,
                 label_names_only: document.getElementById('labelNamesOnly').checked,
-                rubric_independent_attn: document.getElementById('rubricIndependentAttn').checked,
+                rim: document.getElementById('rim').checked,
                 reindex_rub: document.getElementById('reindexRub').checked,
                 use_lora: document.getElementById('useLora').checked,
                 use_bnb: document.getElementById('useBnb').checked,
@@ -1345,8 +1345,8 @@ HTML_TEMPLATE = """
             };
         }
 
-        function onRubricIndependentAttnChange() {
-            if (document.getElementById('rubricIndependentAttn').checked) {
+        function onRimChange() {
+            if (document.getElementById('rim').checked) {
                 const mcSelect = document.getElementById('modelClass');
                 Array.from(mcSelect.options).forEach(o => { o.selected = o.value === 'span'; });
                 const fuseSelect = document.getElementById('spanFuseType');
@@ -1364,7 +1364,7 @@ HTML_TEMPLATE = """
                 Array.from(mcSelect.options).forEach(o => { o.selected = o.value === 'span'; });
                 const fuseSelect = document.getElementById('spanFuseType');
                 Array.from(fuseSelect.options).forEach(o => { o.selected = o.value === 'p-only'; });
-                document.getElementById('rubricIndependentAttn').checked = false;
+                document.getElementById('rim').checked = false;
                 document.getElementById('reindexRub').checked = false;
                 updateModelClassUI();
             }
@@ -1406,7 +1406,7 @@ HTML_TEMPLATE = """
         });
         document.getElementById('baseModel').addEventListener('change', updateExperimentNames);
         document.getElementById('spanFuseType').addEventListener('change', updateExperimentNames);
-        document.getElementById('rubricIndependentAttn').addEventListener('change', onRubricIndependentAttnChange);
+        document.getElementById('rim').addEventListener('change', onRimChange);
         document.getElementById('reindexRub').addEventListener('change', updateExperimentNames);
         document.getElementById('addSuffix').addEventListener('change', updateExperimentNames);
         document.getElementById('addContext').addEventListener('change', updateExperimentNames);
@@ -3545,7 +3545,7 @@ def generate_command():
 
         config_dict['drop_all_rubrics'] = _coerce_bool(config_dict.get('drop_all_rubrics'), False)
         config_dict['label_names_only'] = _coerce_bool(config_dict.get('label_names_only'), False)
-        config_dict['rubric_independent_attn'] = _coerce_bool(config_dict.get('rubric_independent_attn'), False)
+        config_dict['rim'] = _coerce_bool(config_dict.get('rim'), False)
         config_dict['reindex_rub'] = _coerce_bool(config_dict.get('reindex_rub'), False)
 
         
@@ -3600,8 +3600,8 @@ def generate_command():
             cmd_parts.append(f"    --span-fuse-type {config.span_fuse_type} \\")
             if config.span_pool_type != "last":
                 cmd_parts.append(f"    --span-pool-type {config.span_pool_type} \\")
-            if config.rubric_independent_attn:
-                cmd_parts.append("    --rubric-independent-attn \\")
+            if config.rim:
+                cmd_parts.append("    --rim \\")
             if config.reindex_rub:
                 cmd_parts.append("    --reindex-rub \\")
         
@@ -3712,7 +3712,7 @@ def start_batch():
                         config_dict[field] = float(config_dict[field])
                 config_dict['drop_all_rubrics'] = _coerce_bool(config_dict.get('drop_all_rubrics'), False)
                 config_dict['label_names_only'] = _coerce_bool(config_dict.get('label_names_only'), False)
-                config_dict['rubric_independent_attn'] = _coerce_bool(config_dict.get('rubric_independent_attn'), False)
+                config_dict['rim'] = _coerce_bool(config_dict.get('rim'), False)
                 config_dict['reindex_rub'] = _coerce_bool(config_dict.get('reindex_rub'), False)
 
                 config = ExperimentConfig(**{k: v for k, v in config_dict.items() if k in ExperimentConfig.__dataclass_fields__})
@@ -3791,8 +3791,8 @@ def start_batch():
                     cmd_parts.append(f"    --span-fuse-type {config.span_fuse_type} \\")
                     if config.span_pool_type != "last":
                         cmd_parts.append(f"    --span-pool-type {config.span_pool_type} \\")
-                    if config.rubric_independent_attn:
-                        cmd_parts.append("    --rubric-independent-attn \\")
+                    if config.rim:
+                        cmd_parts.append("    --rim \\")
                     if config.reindex_rub:
                         cmd_parts.append("    --reindex-rub \\")
                 

@@ -149,7 +149,7 @@ class ASAG_Data_Loader:
         if "question" in meta:
             example["question"] = meta["question"]
         if "sample_solution" in meta:
-            example["sample_solution"] = meta["sample_solution"][:5]
+            example["sample_solution"] = meta["sample_solution"]
         if "question_context" in meta:
             example["question_context"] = meta["question_context"]
 
@@ -161,14 +161,16 @@ class ASAG_Data_Loader:
                 f"No rubrics found for question_id={qid!r}. "
                 "Check question_meta.json or the configured rubric_meta_path."
             )
-        rubric_list = [
-            v for _, v in self._rubric_items(rubrics)
-        ]
-        
+        rubric_items = self._rubric_items(rubrics)
+        rubric_list = [v for _, v in rubric_items]
+        rubric_index_map = [self._normalize_level(k) for k, _ in rubric_items]
+
         level = self._normalize_level(example.get("level", example.get("score_level", 0)))
 
         example["rubric"] = rubric_list
         example["level"] = level
+        example["original_label"] = level
+        example["rubric_index_map"] = rubric_index_map
         example["num_rubrics"] = len(rubric_list)
         return example
 

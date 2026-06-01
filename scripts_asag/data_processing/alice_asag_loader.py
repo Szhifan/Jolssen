@@ -113,7 +113,7 @@ class Alice_Loader(ASAG_Data_Loader):
         meta_info = question_meta.get(question_id, {})
         
         entry["question"] = meta_info["prompt"]
-        entry["sample_solution"] = meta_info["sample_solution"][:5]  
+        entry["sample_solution"] = meta_info["sample_solution"]
         
         rubric = meta_info.get("learning_performance", {})
         rubric_list = [v['rule'] for v in rubric.values()]

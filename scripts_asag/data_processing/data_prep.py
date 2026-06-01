@@ -61,6 +61,7 @@ class DataPipeline:
         random_solution: bool = False,
         use_translated_prompts: bool = False,
         model_class: str = "span",
+        span_fuse_type: str = "p-concat",
         test_drop_rub: float = 0.0,
         train_drop_rub: float = 0.0,
         flip_levels: bool = False,
@@ -73,6 +74,7 @@ class DataPipeline:
         self.benchmark = benchmark
         self.train_frac = train_frac
         self.model_class = model_class
+        self.span_fuse_type = span_fuse_type
         self.drop_all_rubrics = drop_all_rubrics
         try:
             print(f"Loading benchmark metadata for {benchmark}...")
@@ -110,6 +112,38 @@ class DataPipeline:
 
     def _should_flip_levels(self) -> bool:
         return (not self.needs_grouping()) and self.flip_levels
+
+    def _uses_compact_rubric_labels(self) -> bool:
+        if self.needs_grouping():
+            return True
+        return self.model_class == "span" and self.span_fuse_type != "p-only" and not self.drop_all_rubrics
+
+    def _apply_rubric_label_indexing(self, example):
+        label_semantics = self.benchmark_meta["label_semantics"]
+        rubrics = example.get(label_semantics, [])
+        if not isinstance(rubrics, list):
+            rubrics = [rubrics]
+
+        updated = dict(example)
+        current_level = int(updated["level"])
+        original_label = int(updated.get("original_label", current_level))
+        rubric_index_map = list(updated.get("rubric_index_map", range(len(rubrics))))
+
+        updated["original_label"] = original_label
+        if not self._uses_compact_rubric_labels():
+            updated["rubric_index_map"] = list(range(self.num_labels))
+            updated["level"] = original_label
+            return updated
+
+        if original_label not in rubric_index_map:
+            qid = updated.get("question_id", "<unknown>")
+            raise ValueError(
+                f"Label {original_label!r} for question_id={qid!r} is not present in "
+                f"rubric levels {rubric_index_map!r}."
+            )
+        updated["level"] = rubric_index_map.index(original_label)
+        updated["rubric_index_map"] = rubric_index_map
+        return updated
 
     def _validate_label_names_only(self):
         if self.benchmark in LABEL_NAMES_ONLY_EXCLUDED_BENCHMARKS:
@@ -260,6 +294,7 @@ class DataPipeline:
     def _encode_dataset(self, dataset, enc_fn, apply_test_time_rubric_drop=False, apply_train_rubric_drop=False):
         if self.label_names_only:
             dataset = dataset.map(lambda x: self._apply_label_names_only(x))
+        dataset = dataset.map(lambda x: self._apply_rubric_label_indexing(x))
         if not self.needs_grouping():
             dataset = dataset.map(lambda x: self._prepare_span_example(x))
         if apply_train_rubric_drop and self.train_drop_rub > 0.0 and not self.needs_grouping():
@@ -290,6 +325,9 @@ class DataPipeline:
         """
         Get train, validation, and test datasets.
         """
+        # General ASAG loaders preserve original rubric ids in rubric_index_map and
+        # expose compact labels directly. ALICE uses its own result remapping path.
+
         if test_only:
             enc_fn = self.get_encode_fn()
             if isinstance(self.data_loader.test, dict):
@@ -404,8 +442,10 @@ class DataPipeline:
                 "num_rubrics": len(examples),
                 "id": examples[0].get("id", None),
                 "level": examples[0].get("level", None),
+                "original_label": examples[0].get("original_label", examples[0].get("labels", None)),
                 "question_id": examples[0].get("question_id", None),
                 "rubric_level": [ex.get("rubric_level", None) for ex in examples],
+                "rubric_index_map": examples[0].get("rubric_index_map", list(range(len(examples)))),
             }
             if "token_type_ids" in examples[0] and examples[0]["token_type_ids"] is not None:
                 grouped_example["token_type_ids"] = [ex["token_type_ids"] for ex in examples]
@@ -674,6 +714,10 @@ class DataPipeline:
         encoding["level"] = example.get("level", None)
         encoding["question_id"] = example.get("question_id", None)
         encoding["rubric_level"] = example.get("rubric_level", None)
+        if "original_label" in example:
+            encoding["original_label"] = example.get("original_label")
+        if "rubric_index_map" in example:
+            encoding["rubric_index_map"] = example.get("rubric_index_map")
         
         return encoding
 
@@ -744,6 +788,10 @@ class DataPipeline:
         encoding["level"] = example.get("level", None)
         encoding["question_id"] = example.get("question_id", None)
         encoding["rubric_level"] = example.get("rubric_level", None)
+        if "original_label" in example:
+            encoding["original_label"] = example.get("original_label")
+        if "rubric_index_map" in example:
+            encoding["rubric_index_map"] = example.get("rubric_index_map")
         
         return encoding
 
@@ -864,6 +912,11 @@ class DataPipeline:
                 "level": [x.get("level", None) for x in input_batch],
                 "question_id": [x.get("question_id", None) for x in input_batch],
                 "rubric_level": [x.get("rubric_level", None) for x in input_batch],
+                "original_label": [x.get("original_label", x.get("labels", None)) for x in input_batch],
+                "rubric_index_map": [
+                    x.get("rubric_index_map", list(range(x["num_rubrics"])))
+                    for x in input_batch
+                ],
             }
             return batch, meta
         return batch
@@ -966,6 +1019,7 @@ class MultiTaskDataPipeline(DataPipeline):
         random_solution: bool = False,
         use_translated_prompts: bool = False,
         model_class: str = "span",
+        span_fuse_type: str = "p-concat",
         test_drop_rub: float = 0.0,
         train_drop_rub: float = 0.0,
         flip_levels: bool = False,
@@ -995,6 +1049,7 @@ class MultiTaskDataPipeline(DataPipeline):
             random_solution=random_solution,
             use_translated_prompts=use_translated_prompts,
             model_class=model_class,
+            span_fuse_type=span_fuse_type,
             test_drop_rub=test_drop_rub,
             train_drop_rub=train_drop_rub,
             flip_levels=flip_levels,
@@ -1015,6 +1070,7 @@ class MultiTaskDataPipeline(DataPipeline):
                 random_solution=random_solution,
                 use_translated_prompts=use_translated_prompts,
                 model_class=model_class,
+                span_fuse_type=span_fuse_type,
                 test_drop_rub=test_drop_rub,
                 train_drop_rub=train_drop_rub,
                 flip_levels=flip_levels,

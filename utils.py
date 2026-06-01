@@ -56,6 +56,8 @@ def _restore_logits_to_canonical_order(logit_row, rubric_index_map):
     canonical_size = max(int(idx) for idx in rubric_index_map) + 1
     restored = [None] * canonical_size
     for compact_idx, canonical_idx in enumerate(rubric_index_map):
+        if compact_idx >= len(logit_row):
+            break
         restored[int(canonical_idx)] = float(logit_row[compact_idx])
     return restored
 
@@ -300,21 +302,23 @@ def evaluate(
         model_output = model(**batch)
         loss = model_output.loss
         logits = model_output.logits.detach().cpu()
-        eval_loss.append(loss.item())
+        if loss is not None:
+            eval_loss.append(loss.item())
         logits_list = logits.tolist()
-        compact_pred_id = np.argmax(logits, axis=1).tolist()
 
         restored_pred_id = []
         restored_logits = []
         rubric_index_maps = meta.get("rubric_index_map")
-        for idx, pred in enumerate(compact_pred_id):
+        for idx, logit_row in enumerate(logits_list):
             if rubric_index_maps is None:
-                restored_pred_id.append(pred)
-                restored_logits.append(logits_list[idx])
+                restored_pred_id.append(int(np.argmax(logit_row)))
+                restored_logits.append(logit_row)
             else:
                 restore_map = rubric_index_maps[idx]
+                valid_logits = logit_row[:len(restore_map)]
+                pred = int(np.argmax(valid_logits)) if valid_logits else 0
                 restored_pred_id.append(int(restore_map[pred]))
-                restored_logits.append(_restore_logits_to_canonical_order(logits_list[idx], restore_map))
+                restored_logits.append(_restore_logits_to_canonical_order(logit_row, restore_map))
 
         original_labels = meta.get("original_label")
         if original_labels is None:
